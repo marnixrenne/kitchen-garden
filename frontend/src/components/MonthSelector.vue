@@ -1,4 +1,6 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
+
 defineProps({
   months: Array,
   counts: Object,
@@ -6,6 +8,8 @@ defineProps({
 })
 
 defineEmits(['select'])
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -18,7 +22,9 @@ defineEmits(['select'])
       @click="$emit('select', i + 1)"
     >
       {{ name }}
-      <span class="count">{{ counts[i + 1] ? `${counts[i + 1]} crops` : '—' }}</span>
+      <span class="count">
+        {{ counts[i + 1] ? t('cropCount', { n: counts[i + 1] }) : '—' }}
+      </span>
     </button>
   </div>
 </template>

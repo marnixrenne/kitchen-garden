@@ -1,15 +1,19 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import MonthSelector from './components/MonthSelector.vue'
 import VegetableList from './components/VegetableList.vue'
 
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 const CATEGORY_ORDER = ['Fruiting', 'Leafy', 'Brassica', 'Root', 'Legume', 'Herb']
+
+const { t, tm, locale } = useI18n()
 
 const selectedMonth = ref(new Date().getMonth() + 1)
 const counts = ref({})
 const vegetables = ref([])
 const loading = ref(false)
+
+const months = computed(() => tm('months'))
 
 const grouped = computed(() => {
   const g = {}
@@ -19,6 +23,11 @@ const grouped = computed(() => {
   }
   return CATEGORY_ORDER.filter(c => g[c]).map(c => ({ category: c, items: g[c] }))
 })
+
+function switchLocale(lang) {
+  locale.value = lang
+  localStorage.setItem('locale', lang)
+}
 
 async function fetchCounts() {
   const res = await fetch('/api/vegetables/counts')
@@ -42,19 +51,25 @@ onMounted(() => {
 
 <template>
   <header>
-    <h1>🌱 Kitchen Garden</h1>
-    <p>Select a month to see which vegetables you can seed</p>
+    <div class="header-top">
+      <h1>🌱 Kitchen Garden</h1>
+      <div class="lang-switcher">
+        <button :class="{ active: locale === 'en' }" @click="switchLocale('en')">EN</button>
+        <button :class="{ active: locale === 'nl' }" @click="switchLocale('nl')">NL</button>
+      </div>
+    </div>
+    <p>{{ t('tagline') }}</p>
   </header>
   <main>
     <MonthSelector
-      :months="MONTHS"
+      :months="months"
       :counts="counts"
       :selected="selectedMonth"
       @select="selectedMonth = $event"
     />
     <VegetableList
       :grouped="grouped"
-      :month-name="MONTHS[selectedMonth - 1]"
+      :month-name="months[selectedMonth - 1]"
       :total="vegetables.length"
       :loading="loading"
     />
@@ -86,12 +101,47 @@ body {
 header {
   background: var(--green-dark);
   color: #fff;
-  padding: 2rem 1.5rem 1.5rem;
-  text-align: center;
+  padding: 1.5rem 1.5rem 1.25rem;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.4rem;
 }
 
 header h1 { font-size: 2rem; font-weight: 700; }
-header p  { margin-top: 0.4rem; color: var(--green-light); }
+header p  { color: var(--green-light); text-align: center; }
+
+.lang-switcher {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.lang-switcher button {
+  padding: 0.25rem 0.6rem;
+  border: 1.5px solid rgba(255,255,255,0.3);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.lang-switcher button:hover {
+  border-color: rgba(255,255,255,0.7);
+  color: #fff;
+}
+
+.lang-switcher button.active {
+  border-color: #fff;
+  color: #fff;
+}
 
 main { max-width: 860px; margin: 0 auto; padding: 2rem 1rem 4rem; }
 </style>

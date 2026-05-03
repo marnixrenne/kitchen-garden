@@ -1,33 +1,42 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
+
 defineProps({
   grouped: Array,
   monthName: String,
   total: Number,
   loading: Boolean,
 })
+
+const { t, te } = useI18n()
+
+const vegName = (veg) => {
+  const key = `vegetables.${veg.name}`
+  return te(key) ? t(key) : veg.name
+}
 </script>
 
 <template>
-  <div v-if="loading" class="loading">Loading…</div>
+  <div v-if="loading" class="loading">{{ t('loading') }}</div>
 
   <template v-else-if="total === 0">
     <div class="empty-state">
       <div class="icon">🌨️</div>
-      <p>Nothing to seed in {{ monthName }}. Time to plan!</p>
+      <p>{{ t('noCrops', { month: monthName }) }}</p>
     </div>
   </template>
 
   <template v-else>
     <div class="results-header">
-      Seed in <span>{{ monthName }}</span> — {{ total }} crop{{ total !== 1 ? 's' : '' }}
+      {{ t('seedIn', { month: monthName }) }} — {{ t('cropCount', { n: total }) }}
     </div>
 
     <div v-for="group in grouped" :key="group.category" class="category-section">
-      <div class="category-title">{{ group.category }}</div>
+      <div class="category-title">{{ t(`categories.${group.category}`) }}</div>
       <div class="veg-grid">
         <div v-for="veg in group.items" :key="veg.id" class="veg-card">
           <span class="veg-emoji">{{ veg.emoji ?? '🌱' }}</span>
-          <span>{{ veg.name }}</span>
+          <span>{{ vegName(veg) }}</span>
         </div>
       </div>
     </div>
@@ -41,8 +50,6 @@ defineProps({
   color: var(--green-dark);
   margin-bottom: 1.25rem;
 }
-
-.results-header span { color: var(--green-mid); }
 
 .category-section { margin-bottom: 1.75rem; }
 
