@@ -41,4 +41,4 @@ out/
 
 ### Frontend ###
 frontend/node_modules/
-src/main/resources/static/
+frontend/dist/

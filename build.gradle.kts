@@ -59,9 +59,12 @@ val npmBuild by tasks.registering(Exec::class) {
     inputs.dir("frontend/src")
     inputs.file("frontend/index.html")
     inputs.file("frontend/vite.config.js")
-    outputs.dir("src/main/resources/static")
+    outputs.dir("frontend/dist")
 }
 
-tasks.named("processResources") {
+tasks.named<ProcessResources>("processResources") {
     dependsOn(npmBuild)
+    from("frontend/dist") {
+        into("static")
+    }
 }
