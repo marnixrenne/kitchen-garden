@@ -1,39 +1,32 @@
 package org.marnixrenne.kitchengarden
 
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.stereotype.Repository
 
 @Repository
-class VegetableRepository(private val jdbc: NamedParameterJdbcTemplate) {
+class VegetableRepository {
 
-    fun findByMonth(month: Int): List<Vegetable> =
-        jdbc.query(
-            """
-            SELECT v.id, v.name, v.category, v.emoji
-            FROM vegetables v
-            JOIN seeding_months sm ON v.id = sm.vegetable_id
-            WHERE sm.month_num = :month
-            ORDER BY v.category, v.name
-            """.trimIndent(),
-            mapOf("month" to month)
-        ) { rs, _ ->
-            Vegetable(
-                id       = rs.getLong("id"),
-                name     = rs.getString("name"),
-                category = rs.getString("category"),
-                emoji    = rs.getString("emoji")
-            )
-        }
+    fun findByMonth(month: Int): List<Vegetable> = transaction {
+        (Vegetables innerJoin SeedingMonths)
+            .selectAll()
+            .where { SeedingMonths.monthNum eq month }
+            .orderBy(Vegetables.category to SortOrder.ASC, Vegetables.name to SortOrder.ASC)
+            .map { row ->
+                Vegetable(
+                    id       = row[Vegetables.id],
+                    name     = row[Vegetables.name],
+                    category = row[Vegetables.category],
+                    emoji    = row[Vegetables.emoji]
+                )
+            }
+    }
 
-    fun countPerMonth(): Map<Int, Int> =
-        jdbc.query(
-            """
-            SELECT month_num, COUNT(*) AS cnt
-            FROM seeding_months
-            GROUP BY month_num
-            ORDER BY month_num
-            """.trimIndent(),
-            emptyMap<String, Any>()
-        ) { rs, _ -> rs.getInt("month_num") to rs.getInt("cnt") }
-            .toMap()
+    fun countPerMonth(): Map<Int, Int> = transaction {
+        SeedingMonths
+            .selectAll()
+            .map { it[SeedingMonths.monthNum] }
+            .groupingBy { it }
+            .eachCount()
+    }
 }

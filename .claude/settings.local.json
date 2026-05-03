@@ -5,7 +5,10 @@
       "Bash(./gradlew bootRun)",
       "Bash(sleep 8 curl -s http://localhost:8080/api/vegetables?month=4)",
       "Bash(curl -s \"http://localhost:8080/api/vegetables?month=4\")",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(./gradlew build *)",
+      "Bash(pkill -f bootRun)",
+      "Bash(python3 -m json.tool)"
     ]
   }
 }
