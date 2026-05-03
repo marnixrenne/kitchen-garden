@@ -1,4 +1,5 @@
 <script setup>
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 defineProps({
@@ -8,6 +9,7 @@ defineProps({
   loading: Boolean,
 })
 
+const router = useRouter()
 const { t, te } = useI18n()
 
 const vegName = (veg) => {
@@ -34,7 +36,12 @@ const vegName = (veg) => {
     <div v-for="group in grouped" :key="group.category" class="category-section">
       <div class="category-title">{{ t(`categories.${group.category}`) }}</div>
       <div class="veg-grid">
-        <div v-for="veg in group.items" :key="veg.id" class="veg-card">
+        <div
+          v-for="veg in group.items"
+          :key="veg.id"
+          class="veg-card"
+          @click="router.push(`/vegetable/${veg.id}`)"
+        >
           <span class="veg-emoji">{{ veg.emoji ?? '🌱' }}</span>
           <span>{{ vegName(veg) }}</span>
         </div>
@@ -79,6 +86,13 @@ const vegName = (veg) => {
   border-radius: var(--radius);
   font-size: 0.9rem;
   font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.veg-card:hover {
+  border-color: var(--green-light);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .veg-emoji { font-size: 1.2rem; flex-shrink: 0; }

@@ -1,65 +1,21 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import MonthSelector from './components/MonthSelector.vue'
-import VegetableList from './components/VegetableList.vue'
+import { RouterView } from 'vue-router'
 import LoginForm from './components/LoginForm.vue'
 import { user, checkAuth, logout } from './stores/auth.js'
 
-const CATEGORY_ORDER = ['Fruiting', 'Leafy', 'Brassica', 'Root', 'Legume', 'Herb']
-
-const { t, tm, locale } = useI18n()
-
-const selectedMonth = ref(new Date().getMonth() + 1)
-const counts        = ref({})
-const vegetables    = ref([])
-const loading       = ref(false)
-const authChecked   = ref(false)
-
-const months = computed(() => tm('months'))
-
-const grouped = computed(() => {
-  const g = {}
-  for (const v of vegetables.value) {
-    if (!g[v.category]) g[v.category] = []
-    g[v.category].push(v)
-  }
-  return CATEGORY_ORDER.filter(c => g[c]).map(c => ({ category: c, items: g[c] }))
-})
+const { t, locale } = useI18n()
+const authChecked = ref(false)
 
 function switchLocale(lang) {
   locale.value = lang
   localStorage.setItem('locale', lang)
 }
 
-async function fetchCounts() {
-  const res = await fetch('/api/vegetables/counts')
-  counts.value = await res.json()
-}
-
-async function fetchVegetables(month) {
-  loading.value = true
-  const res = await fetch(`/api/vegetables?month=${month}`)
-  vegetables.value = await res.json()
-  loading.value = false
-}
-
-watch(selectedMonth, month => fetchVegetables(month))
-
-watch(user, (u) => {
-  if (u) {
-    fetchCounts()
-    fetchVegetables(selectedMonth.value)
-  }
-})
-
 onMounted(async () => {
   await checkAuth()
   authChecked.value = true
-  if (user.value) {
-    fetchCounts()
-    fetchVegetables(selectedMonth.value)
-  }
 })
 </script>
 
@@ -81,22 +37,8 @@ onMounted(async () => {
           </div>
         </div>
       </div>
-      <p>{{ t('tagline') }}</p>
     </header>
-    <main>
-      <MonthSelector
-        :months="months"
-        :counts="counts"
-        :selected="selectedMonth"
-        @select="selectedMonth = $event"
-      />
-      <VegetableList
-        :grouped="grouped"
-        :month-name="months[selectedMonth - 1]"
-        :total="vegetables.length"
-        :loading="loading"
-      />
-    </main>
+    <RouterView />
   </template>
 </template>
 
@@ -125,18 +67,18 @@ body {
 header {
   background: var(--green-dark);
   color: #fff;
-  padding: 1.5rem 1.5rem 1.25rem;
+  padding: 1rem 1.5rem;
 }
 
 .header-top {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 0.4rem;
+  max-width: 860px;
+  margin: 0 auto;
 }
 
-header h1 { font-size: 2rem; font-weight: 700; }
-header p  { color: var(--green-light); text-align: center; }
+header h1 { font-size: 1.5rem; font-weight: 700; }
 
 .header-controls {
   display: flex;
@@ -162,15 +104,9 @@ header p  { color: var(--green-light); text-align: center; }
   transition: border-color 0.15s, color 0.15s;
 }
 
-.logout-btn:hover {
-  border-color: rgba(255,255,255,0.8);
-  color: #fff;
-}
+.logout-btn:hover { border-color: rgba(255,255,255,0.8); color: #fff; }
 
-.lang-switcher {
-  display: flex;
-  gap: 0.25rem;
-}
+.lang-switcher { display: flex; gap: 0.25rem; }
 
 .lang-switcher button {
   padding: 0.25rem 0.6rem;
@@ -184,15 +120,6 @@ header p  { color: var(--green-light); text-align: center; }
   transition: border-color 0.15s, color 0.15s;
 }
 
-.lang-switcher button:hover {
-  border-color: rgba(255,255,255,0.7);
-  color: #fff;
-}
-
-.lang-switcher button.active {
-  border-color: #fff;
-  color: #fff;
-}
-
-main { max-width: 860px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+.lang-switcher button:hover { border-color: rgba(255,255,255,0.7); color: #fff; }
+.lang-switcher button.active { border-color: #fff; color: #fff; }
 </style>

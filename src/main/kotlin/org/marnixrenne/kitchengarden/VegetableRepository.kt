@@ -22,6 +22,25 @@ class VegetableRepository {
             }
     }
 
+    fun findById(id: Long): VegetableDetail? = transaction {
+        Vegetables.selectAll()
+            .where { Vegetables.id eq id }
+            .map { row ->
+                val months = SeedingMonths.selectAll()
+                    .where { SeedingMonths.vegetableId eq id }
+                    .map { it[SeedingMonths.monthNum] }
+                    .sorted()
+                VegetableDetail(
+                    id           = row[Vegetables.id],
+                    name         = row[Vegetables.name],
+                    category     = row[Vegetables.category],
+                    emoji        = row[Vegetables.emoji],
+                    seedingMonths = months
+                )
+            }
+            .firstOrNull()
+    }
+
     fun countPerMonth(): Map<Int, Int> = transaction {
         SeedingMonths
             .selectAll()
