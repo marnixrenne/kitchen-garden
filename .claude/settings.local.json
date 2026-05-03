@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew test *)",
+      "Bash(./gradlew bootRun)",
+      "Bash(sleep 8 curl -s http://localhost:8080/api/vegetables?month=4)",
+      "Bash(curl -s \"http://localhost:8080/api/vegetables?month=4\")",
+      "Bash(curl *)"
+    ]
+  }
+}

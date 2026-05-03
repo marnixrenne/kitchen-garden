@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kitchen Garden</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green-dark:  #1b4332;
+      --green-mid:   #2d6a4f;
+      --green-light: #74c69d;
+      --green-pale:  #d8f3dc;
+      --bg:          #f4f1eb;
+      --card-bg:     #ffffff;
+      --text:        #1b4332;
+      --text-muted:  #52796f;
+      --radius:      10px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--green-dark);
+      color: #fff;
+      padding: 2rem 1.5rem 1.5rem;
+      text-align: center;
+    }
+
+    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+    header p  { margin-top: 0.4rem; color: var(--green-light); font-size: 1rem; }
+
+    main { max-width: 860px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+
+    /* Month selector */
+    .month-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    @media (max-width: 540px) {
+      .month-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .month-btn {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 0.7rem 0.25rem 0.5rem;
+      border: 2px solid var(--green-pale);
+      border-radius: var(--radius);
+      background: var(--card-bg);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+
+    .month-btn:hover {
+      border-color: var(--green-light);
+      color: var(--green-mid);
+    }
+
+    .month-btn.active {
+      background: var(--green-mid);
+      border-color: var(--green-mid);
+      color: #fff;
+    }
+
+    .month-btn .count {
+      font-size: 0.7rem;
+      font-weight: 400;
+      opacity: 0.75;
+    }
+
+    .month-btn.active .count { opacity: 0.85; }
+
+    /* Results */
+    .results-header {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--green-dark);
+      margin-bottom: 1.25rem;
+    }
+
+    .results-header span {
+      color: var(--green-mid);
+    }
+
+    .category-section { margin-bottom: 1.75rem; }
+
+    .category-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.6rem;
+      padding-left: 0.25rem;
+    }
+
+    .veg-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.6rem;
+    }
+
+    .veg-card {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.7rem 0.9rem;
+      background: var(--card-bg);
+      border: 1.5px solid var(--green-pale);
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .veg-card .veg-emoji { font-size: 1.2rem; flex-shrink: 0; }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+
+    .empty-state .icon { font-size: 3rem; margin-bottom: 0.75rem; }
+
+    .loading { text-align: center; padding: 3rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🌱 Kitchen Garden</h1>
+  <p>Select a month to see which vegetables you can seed</p>
+</header>
+
+<main>
+  <div class="month-grid" id="monthGrid"></div>
+  <div id="results"></div>
+</main>
+
+<script>
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const CATEGORY_ORDER = ['Fruiting','Leafy','Brassica','Root','Legume','Herb'];
+
+  let counts = {};
+  let selectedMonth = new Date().getMonth() + 1; // 1-based
+
+  async function loadCounts() {
+    try {
+      const res = await fetch('/api/vegetables/counts');
+      counts = await res.json();
+      renderMonthGrid();
+    } catch (e) {
+      renderMonthGrid();
+    }
+  }
+
+  function renderMonthGrid() {
+    const grid = document.getElementById('monthGrid');
+    grid.innerHTML = MONTHS.map((name, i) => {
+      const m = i + 1;
+      const cnt = counts[m] ?? 0;
+      const active = m === selectedMonth ? ' active' : '';
+      return `
+        <button class="month-btn${active}" onclick="selectMonth(${m})">
+          ${name}
+          <span class="count">${cnt > 0 ? cnt + ' crops' : '—'}</span>
+        </button>`;
+    }).join('');
+  }
+
+  async function selectMonth(month) {
+    selectedMonth = month;
+    renderMonthGrid();
+    await loadVegetables(month);
+  }
+
+  async function loadVegetables(month) {
+    const results = document.getElementById('results');
+    results.innerHTML = '<div class="loading">Loading…</div>';
+
+    try {
+      const res = await fetch(`/api/vegetables?month=${month}`);
+      const vegetables = await res.json();
+      renderVegetables(vegetables, month);
+    } catch (e) {
+      results.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Could not load vegetables.</p></div>';
+    }
+  }
+
+  function renderVegetables(vegetables, month) {
+    const results = document.getElementById('results');
+
+    if (vegetables.length === 0) {
+      results.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">🌨️</div>
+          <p>Nothing to seed in ${MONTHS[month - 1]}. Time to plan!</p>
+        </div>`;
+      return;
+    }
+
+    // Group by category
+    const grouped = {};
+    for (const v of vegetables) {
+      if (!grouped[v.category]) grouped[v.category] = [];
+      grouped[v.category].push(v);
+    }
+
+    const orderedCategories = CATEGORY_ORDER.filter(c => grouped[c]);
+
+    const html = `
+      <div class="results-header">
+        Seed in <span>${MONTHS[month - 1]}</span> — ${vegetables.length} crop${vegetables.length !== 1 ? 's' : ''}
+      </div>
+      ${orderedCategories.map(cat => `
+        <div class="category-section">
+          <div class="category-title">${cat}</div>
+          <div class="veg-grid">
+            ${grouped[cat].map(v => `
+              <div class="veg-card">
+                <span class="veg-emoji">${v.emoji ?? '🌱'}</span>
+                <span>${v.name}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}`;
+
+    results.innerHTML = html;
+  }
+
+  // Boot
+  loadCounts();
+  loadVegetables(selectedMonth);
+</script>
+
+</body>
+</html>
