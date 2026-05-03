@@ -5,6 +5,14 @@ export default {
   seedIn: 'Zaaien in {month}',
   noCrops: 'Niets te zaaien in {month}. Tijd om te plannen!',
   loading: 'Laden…',
+  logout: 'Uitloggen',
+  login: {
+    title: 'Inloggen',
+    username: 'Gebruikersnaam',
+    password: 'Wachtwoord',
+    submit: 'Inloggen',
+    error: 'Ongeldige gebruikersnaam of wachtwoord',
+  },
   categories: {
     Fruiting: 'Vruchtgroenten',
     Leafy: 'Bladgroenten',

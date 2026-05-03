@@ -3,15 +3,18 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MonthSelector from './components/MonthSelector.vue'
 import VegetableList from './components/VegetableList.vue'
+import LoginForm from './components/LoginForm.vue'
+import { user, checkAuth, logout } from './stores/auth.js'
 
 const CATEGORY_ORDER = ['Fruiting', 'Leafy', 'Brassica', 'Root', 'Legume', 'Herb']
 
 const { t, tm, locale } = useI18n()
 
 const selectedMonth = ref(new Date().getMonth() + 1)
-const counts = ref({})
-const vegetables = ref([])
-const loading = ref(false)
+const counts        = ref({})
+const vegetables    = ref([])
+const loading       = ref(false)
+const authChecked   = ref(false)
 
 const months = computed(() => tm('months'))
 
@@ -43,37 +46,58 @@ async function fetchVegetables(month) {
 
 watch(selectedMonth, month => fetchVegetables(month))
 
-onMounted(() => {
-  fetchCounts()
-  fetchVegetables(selectedMonth.value)
+watch(user, (u) => {
+  if (u) {
+    fetchCounts()
+    fetchVegetables(selectedMonth.value)
+  }
+})
+
+onMounted(async () => {
+  await checkAuth()
+  authChecked.value = true
+  if (user.value) {
+    fetchCounts()
+    fetchVegetables(selectedMonth.value)
+  }
 })
 </script>
 
 <template>
-  <header>
-    <div class="header-top">
-      <h1>🌱 Kitchen Garden</h1>
-      <div class="lang-switcher">
-        <button :class="{ active: locale === 'en' }" @click="switchLocale('en')">EN</button>
-        <button :class="{ active: locale === 'nl' }" @click="switchLocale('nl')">NL</button>
+  <template v-if="!authChecked" />
+
+  <LoginForm v-else-if="!user" />
+
+  <template v-else>
+    <header>
+      <div class="header-top">
+        <h1>🌱 Kitchen Garden</h1>
+        <div class="header-controls">
+          <span class="display-name">{{ user.username }}</span>
+          <button class="logout-btn" @click="logout">{{ t('logout') }}</button>
+          <div class="lang-switcher">
+            <button :class="{ active: locale === 'en' }" @click="switchLocale('en')">EN</button>
+            <button :class="{ active: locale === 'nl' }" @click="switchLocale('nl')">NL</button>
+          </div>
+        </div>
       </div>
-    </div>
-    <p>{{ t('tagline') }}</p>
-  </header>
-  <main>
-    <MonthSelector
-      :months="months"
-      :counts="counts"
-      :selected="selectedMonth"
-      @select="selectedMonth = $event"
-    />
-    <VegetableList
-      :grouped="grouped"
-      :month-name="months[selectedMonth - 1]"
-      :total="vegetables.length"
-      :loading="loading"
-    />
-  </main>
+      <p>{{ t('tagline') }}</p>
+    </header>
+    <main>
+      <MonthSelector
+        :months="months"
+        :counts="counts"
+        :selected="selectedMonth"
+        @select="selectedMonth = $event"
+      />
+      <VegetableList
+        :grouped="grouped"
+        :month-name="months[selectedMonth - 1]"
+        :total="vegetables.length"
+        :loading="loading"
+      />
+    </main>
+  </template>
 </template>
 
 <style>
@@ -107,7 +131,6 @@ header {
 .header-top {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 1rem;
   margin-bottom: 0.4rem;
 }
@@ -115,10 +138,38 @@ header {
 header h1 { font-size: 2rem; font-weight: 700; }
 header p  { color: var(--green-light); text-align: center; }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.display-name {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.7);
+}
+
+.logout-btn {
+  padding: 0.25rem 0.7rem;
+  border: 1.5px solid rgba(255,255,255,0.3);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255,255,255,0.8);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.logout-btn:hover {
+  border-color: rgba(255,255,255,0.8);
+  color: #fff;
+}
+
 .lang-switcher {
   display: flex;
   gap: 0.25rem;
-  margin-left: auto;
 }
 
 .lang-switcher button {

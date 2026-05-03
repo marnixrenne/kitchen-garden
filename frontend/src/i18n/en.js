@@ -5,6 +5,14 @@ export default {
   seedIn: 'Seed in {month}',
   noCrops: 'Nothing to seed in {month}. Time to plan!',
   loading: 'Loading…',
+  logout: 'Sign out',
+  login: {
+    title: 'Sign in',
+    username: 'Username',
+    password: 'Password',
+    submit: 'Sign in',
+    error: 'Invalid username or password',
+  },
   categories: {
     Fruiting: 'Fruiting',
     Leafy: 'Leafy',
