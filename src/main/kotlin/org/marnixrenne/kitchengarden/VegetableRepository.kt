@@ -3,6 +3,7 @@ package org.marnixrenne.kitchengarden
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.stereotype.Repository
+import java.util.UUID
 
 @Repository
 class VegetableRepository {
@@ -22,7 +23,7 @@ class VegetableRepository {
             }
     }
 
-    fun findById(id: Long): VegetableDetail? = transaction {
+    fun findById(id: UUID): VegetableDetail? = transaction {
         Vegetables.selectAll()
             .where { Vegetables.id eq id }
             .map { row ->

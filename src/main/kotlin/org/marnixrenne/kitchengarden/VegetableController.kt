@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/vegetables")
@@ -20,7 +21,7 @@ class VegetableController(private val repository: VegetableRepository) {
     }
 
     @GetMapping("/{id}")
-    fun getById(@PathVariable id: Long): ResponseEntity<VegetableDetail> {
+    fun getById(@PathVariable id: UUID): ResponseEntity<VegetableDetail> {
         val vegetable = repository.findById(id) ?: return ResponseEntity.notFound().build()
         return ResponseEntity.ok(vegetable)
     }

@@ -1,92 +1,92 @@
 -- Fruiting vegetables
 INSERT INTO vegetables (id, name, category, emoji) VALUES
-  (1,  'Tomato',      'Fruiting', '🍅'),
-  (2,  'Cucumber',    'Fruiting', '🥒'),
-  (3,  'Bell Pepper', 'Fruiting', '🫑'),
-  (4,  'Zucchini',    'Fruiting', '🥬'),
-  (5,  'Pumpkin',     'Fruiting', '🎃'),
-  (6,  'Sweetcorn',   'Fruiting', '🌽');
+  ('00000000-0000-0000-0000-000000000001', 'Tomato',      'Fruiting', '🍅'),
+  ('00000000-0000-0000-0000-000000000002', 'Cucumber',    'Fruiting', '🥒'),
+  ('00000000-0000-0000-0000-000000000003', 'Bell Pepper', 'Fruiting', '🫑'),
+  ('00000000-0000-0000-0000-000000000004', 'Zucchini',    'Fruiting', '🥬'),
+  ('00000000-0000-0000-0000-000000000005', 'Pumpkin',     'Fruiting', '🎃'),
+  ('00000000-0000-0000-0000-000000000006', 'Sweetcorn',   'Fruiting', '🌽');
 
 -- Leafy vegetables
 INSERT INTO vegetables (id, name, category, emoji) VALUES
-  (7,  'Lettuce',  'Leafy', '🥗'),
-  (8,  'Spinach',  'Leafy', '🌿'),
-  (9,  'Rocket',   'Leafy', '🌱');
+  ('00000000-0000-0000-0000-000000000007', 'Lettuce', 'Leafy', '🥗'),
+  ('00000000-0000-0000-0000-000000000008', 'Spinach', 'Leafy', '🌿'),
+  ('00000000-0000-0000-0000-000000000009', 'Rocket',  'Leafy', '🌱');
 
 -- Brassicas
 INSERT INTO vegetables (id, name, category, emoji) VALUES
-  (10, 'Kale',        'Brassica', '🥦'),
-  (11, 'Cabbage',     'Brassica', '🥦'),
-  (12, 'Broccoli',    'Brassica', '🥦'),
-  (13, 'Cauliflower', 'Brassica', '🥦');
+  ('00000000-0000-0000-0000-000000000010', 'Kale',        'Brassica', '🥦'),
+  ('00000000-0000-0000-0000-000000000011', 'Cabbage',     'Brassica', '🥦'),
+  ('00000000-0000-0000-0000-000000000012', 'Broccoli',    'Brassica', '🥦'),
+  ('00000000-0000-0000-0000-000000000013', 'Cauliflower', 'Brassica', '🥦');
 
 -- Root vegetables
 INSERT INTO vegetables (id, name, category, emoji) VALUES
-  (14, 'Carrot',   'Root', '🥕'),
-  (15, 'Radish',   'Root', '🌰'),
-  (16, 'Beetroot', 'Root', '🍠'),
-  (17, 'Onion',    'Root', '🧅'),
-  (18, 'Leek',     'Root', '🥬');
+  ('00000000-0000-0000-0000-000000000014', 'Carrot',   'Root', '🥕'),
+  ('00000000-0000-0000-0000-000000000015', 'Radish',   'Root', '🌰'),
+  ('00000000-0000-0000-0000-000000000016', 'Beetroot', 'Root', '🍠'),
+  ('00000000-0000-0000-0000-000000000017', 'Onion',    'Root', '🧅'),
+  ('00000000-0000-0000-0000-000000000018', 'Leek',     'Root', '🥬');
 
 -- Legumes
 INSERT INTO vegetables (id, name, category, emoji) VALUES
-  (19, 'Pea',  'Legume', '🫛'),
-  (20, 'Bean', 'Legume', '🫘');
+  ('00000000-0000-0000-0000-000000000019', 'Pea',  'Legume', '🫛'),
+  ('00000000-0000-0000-0000-000000000020', 'Bean', 'Legume', '🫘');
 
 -- Herbs
 INSERT INTO vegetables (id, name, category, emoji) VALUES
-  (21, 'Parsley', 'Herb', '🌿'),
-  (22, 'Basil',   'Herb', '🌿'),
-  (23, 'Dill',    'Herb', '🌿'),
-  (24, 'Fennel',  'Herb', '🌿');
+  ('00000000-0000-0000-0000-000000000021', 'Parsley', 'Herb', '🌿'),
+  ('00000000-0000-0000-0000-000000000022', 'Basil',   'Herb', '🌿'),
+  ('00000000-0000-0000-0000-000000000023', 'Dill',    'Herb', '🌿'),
+  ('00000000-0000-0000-0000-000000000024', 'Fennel',  'Herb', '🌿');
 
 
 -- Seeding months (temperate European climate, ~Netherlands)
 -- Tomato: Feb–Apr (start indoors)
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (1,2),(1,3),(1,4);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000001',2),('00000000-0000-0000-0000-000000000001',3),('00000000-0000-0000-0000-000000000001',4);
 -- Cucumber: Mar–May (Mar/Apr indoors, May direct)
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (2,3),(2,4),(2,5);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000002',3),('00000000-0000-0000-0000-000000000002',4),('00000000-0000-0000-0000-000000000002',5);
 -- Bell Pepper: Feb–Mar (start indoors)
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (3,2),(3,3);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000003',2),('00000000-0000-0000-0000-000000000003',3);
 -- Zucchini: Apr–May
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (4,4),(4,5);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000004',4),('00000000-0000-0000-0000-000000000004',5);
 -- Pumpkin: Apr–May
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (5,4),(5,5);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000005',4),('00000000-0000-0000-0000-000000000005',5);
 -- Sweetcorn: May
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (6,5);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000006',5);
 -- Lettuce: Mar–Sep
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (7,3),(7,4),(7,5),(7,6),(7,7),(7,8),(7,9);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000007',3),('00000000-0000-0000-0000-000000000007',4),('00000000-0000-0000-0000-000000000007',5),('00000000-0000-0000-0000-000000000007',6),('00000000-0000-0000-0000-000000000007',7),('00000000-0000-0000-0000-000000000007',8),('00000000-0000-0000-0000-000000000007',9);
 -- Spinach: Feb–Apr, Aug–Sep
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (8,2),(8,3),(8,4),(8,8),(8,9);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000008',2),('00000000-0000-0000-0000-000000000008',3),('00000000-0000-0000-0000-000000000008',4),('00000000-0000-0000-0000-000000000008',8),('00000000-0000-0000-0000-000000000008',9);
 -- Rocket: Apr–Sep
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (9,4),(9,5),(9,6),(9,7),(9,8),(9,9);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000009',4),('00000000-0000-0000-0000-000000000009',5),('00000000-0000-0000-0000-000000000009',6),('00000000-0000-0000-0000-000000000009',7),('00000000-0000-0000-0000-000000000009',8),('00000000-0000-0000-0000-000000000009',9);
 -- Kale: Apr–Jul
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (10,4),(10,5),(10,6),(10,7);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000010',4),('00000000-0000-0000-0000-000000000010',5),('00000000-0000-0000-0000-000000000010',6),('00000000-0000-0000-0000-000000000010',7);
 -- Cabbage: Mar–May
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (11,3),(11,4),(11,5);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000011',3),('00000000-0000-0000-0000-000000000011',4),('00000000-0000-0000-0000-000000000011',5);
 -- Broccoli: Mar–Jul
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (12,3),(12,4),(12,5),(12,6),(12,7);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000012',3),('00000000-0000-0000-0000-000000000012',4),('00000000-0000-0000-0000-000000000012',5),('00000000-0000-0000-0000-000000000012',6),('00000000-0000-0000-0000-000000000012',7);
 -- Cauliflower: Apr–Jun
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (13,4),(13,5),(13,6);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000013',4),('00000000-0000-0000-0000-000000000013',5),('00000000-0000-0000-0000-000000000013',6);
 -- Carrot: Mar–Jul
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (14,3),(14,4),(14,5),(14,6),(14,7);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000014',3),('00000000-0000-0000-0000-000000000014',4),('00000000-0000-0000-0000-000000000014',5),('00000000-0000-0000-0000-000000000014',6),('00000000-0000-0000-0000-000000000014',7);
 -- Radish: Mar–Sep
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (15,3),(15,4),(15,5),(15,6),(15,7),(15,8),(15,9);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000015',3),('00000000-0000-0000-0000-000000000015',4),('00000000-0000-0000-0000-000000000015',5),('00000000-0000-0000-0000-000000000015',6),('00000000-0000-0000-0000-000000000015',7),('00000000-0000-0000-0000-000000000015',8),('00000000-0000-0000-0000-000000000015',9);
 -- Beetroot: Apr–Jun
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (16,4),(16,5),(16,6);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000016',4),('00000000-0000-0000-0000-000000000016',5),('00000000-0000-0000-0000-000000000016',6);
 -- Onion: Mar–Apr
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (17,3),(17,4);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000017',3),('00000000-0000-0000-0000-000000000017',4);
 -- Leek: Feb–Apr
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (18,2),(18,3),(18,4);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000018',2),('00000000-0000-0000-0000-000000000018',3),('00000000-0000-0000-0000-000000000018',4);
 -- Pea: Mar–May
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (19,3),(19,4),(19,5);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000019',3),('00000000-0000-0000-0000-000000000019',4),('00000000-0000-0000-0000-000000000019',5);
 -- Bean: May–Jul
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (20,5),(20,6),(20,7);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000020',5),('00000000-0000-0000-0000-000000000020',6),('00000000-0000-0000-0000-000000000020',7);
 -- Parsley: Mar–Aug
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (21,3),(21,4),(21,5),(21,6),(21,7),(21,8);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000021',3),('00000000-0000-0000-0000-000000000021',4),('00000000-0000-0000-0000-000000000021',5),('00000000-0000-0000-0000-000000000021',6),('00000000-0000-0000-0000-000000000021',7),('00000000-0000-0000-0000-000000000021',8);
 -- Basil: Apr–May (start indoors)
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (22,4),(22,5);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000022',4),('00000000-0000-0000-0000-000000000022',5);
 -- Dill: Apr–Aug
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (23,4),(23,5),(23,6),(23,7),(23,8);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000023',4),('00000000-0000-0000-0000-000000000023',5),('00000000-0000-0000-0000-000000000023',6),('00000000-0000-0000-0000-000000000023',7),('00000000-0000-0000-0000-000000000023',8);
 -- Fennel: Apr–Jun
-INSERT INTO seeding_months (vegetable_id, month_num) VALUES (24,4),(24,5),(24,6);
+INSERT INTO seeding_months (vegetable_id, month_num) VALUES ('00000000-0000-0000-0000-000000000024',4),('00000000-0000-0000-0000-000000000024',5),('00000000-0000-0000-0000-000000000024',6);

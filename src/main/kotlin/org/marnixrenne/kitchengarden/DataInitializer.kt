@@ -8,6 +8,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.context.annotation.DependsOn
 import org.springframework.stereotype.Component
+import java.util.UUID
 
 @Component
 @DependsOn("flywayInitializer")
@@ -22,6 +23,7 @@ class DataInitializer(
             if (Users.selectAll().count() == 0L) {
                 val hash: String = passwordEncoder.encode("admin").toString()
                 Users.insert {
+                    it[Users.id]          = UUID.randomUUID()
                     it[Users.username]    = "admin"
                     it[Users.password]    = hash
                     it[Users.displayName] = "Admin"
