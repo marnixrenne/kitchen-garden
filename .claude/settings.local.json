@@ -8,7 +8,11 @@
       "Bash(curl *)",
       "Bash(./gradlew build *)",
       "Bash(pkill -f bootRun)",
-      "Bash(python3 -m json.tool)"
+      "Bash(python3 -m json.tool)",
+      "Bash(npm --version)",
+      "Bash(npm run *)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(gtimeout 5 npm run dev)"
     ]
   }
 }

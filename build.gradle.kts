@@ -44,3 +44,24 @@ kotlin {
 tasks.named<Test>("test") {
     useJUnitPlatform()
 }
+
+val npmInstall by tasks.registering(Exec::class) {
+    workingDir = file("frontend")
+    commandLine("npm", "install")
+    inputs.file("frontend/package.json")
+    outputs.dir("frontend/node_modules")
+}
+
+val npmBuild by tasks.registering(Exec::class) {
+    dependsOn(npmInstall)
+    workingDir = file("frontend")
+    commandLine("npm", "run", "build")
+    inputs.dir("frontend/src")
+    inputs.file("frontend/index.html")
+    inputs.file("frontend/vite.config.js")
+    outputs.dir("src/main/resources/static")
+}
+
+tasks.named("processResources") {
+    dependsOn(npmBuild)
+}
