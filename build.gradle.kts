@@ -1,7 +1,6 @@
 plugins {
     id("org.jetbrains.kotlin.jvm") version "2.2.21"
     id("org.jetbrains.kotlin.plugin.spring") version "2.2.21"
-    id("war")
     id("org.springframework.boot") version "4.0.6"
     id("io.spring.dependency-management") version "1.1.7"
 }
@@ -29,7 +28,6 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     runtimeOnly("com.h2database:h2")
-    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat-runtime")
     testImplementation("org.springframework.boot:spring-boot-starter-flyway-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -45,26 +43,3 @@ tasks.named<Test>("test") {
     useJUnitPlatform()
 }
 
-val npmInstall by tasks.registering(Exec::class) {
-    workingDir = file("frontend")
-    commandLine("npm", "install")
-    inputs.file("frontend/package.json")
-    outputs.dir("frontend/node_modules")
-}
-
-val npmBuild by tasks.registering(Exec::class) {
-    dependsOn(npmInstall)
-    workingDir = file("frontend")
-    commandLine("npm", "run", "build")
-    inputs.dir("frontend/src")
-    inputs.file("frontend/index.html")
-    inputs.file("frontend/vite.config.js")
-    outputs.dir("frontend/dist")
-}
-
-tasks.named<ProcessResources>("processResources") {
-    dependsOn(npmBuild)
-    from("frontend/dist") {
-        into("static")
-    }
-}
