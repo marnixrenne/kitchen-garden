@@ -1,7 +1,6 @@
 package org.marnixrenne.kitchengarden.security
 
 import jakarta.annotation.PostConstruct
-import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -11,10 +10,9 @@ import org.springframework.stereotype.Component
 import java.util.UUID
 
 @Component
-@DependsOn("flywayInitializer")
+@DependsOn("flywayInitializer", "springTransactionManager")
 class DataInitializer(
     private val passwordEncoder: PasswordEncoder,
-    @Suppress("unused") private val database: Database,
 ) {
 
     @PostConstruct
