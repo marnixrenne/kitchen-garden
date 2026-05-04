@@ -2,7 +2,6 @@ package org.marnixrenne.kitchengarden.security
 
 import jakarta.annotation.PostConstruct
 import org.jetbrains.exposed.sql.Database
-import org.marnixrenne.kitchengarden.*
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
