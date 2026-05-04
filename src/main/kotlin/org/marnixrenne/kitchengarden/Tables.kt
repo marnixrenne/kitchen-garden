@@ -24,3 +24,20 @@ object Users : Table("users") {
 
     override val primaryKey = PrimaryKey(id)
 }
+
+object Roles : Table("roles") {
+    val id   = uuid("id")
+    val name = varchar("name", 50)
+
+    override val primaryKey = PrimaryKey(id)
+}
+
+object RoleAuthorities : Table("role_authorities") {
+    val roleId    = uuid("role_id") references Roles.id
+    val authority = varchar("authority", 50)
+}
+
+object UserRoles : Table("user_roles") {
+    val userId = uuid("user_id") references Users.id
+    val roleId = uuid("role_id") references Roles.id
+}

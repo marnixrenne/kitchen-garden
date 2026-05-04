@@ -2,6 +2,7 @@ package org.marnixrenne.kitchengarden
 
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
@@ -13,15 +14,20 @@ class UserDetailsServiceImpl : UserDetailsService {
 
     override fun loadUserByUsername(username: String): UserDetails =
         transaction {
-            Users.selectAll()
+            val userRow = Users.selectAll()
                 .where { Users.username eq username }
-                .map { row ->
-                    User.builder()
-                        .username(row[Users.username])
-                        .password(row[Users.password])
-                        .roles("USER")
-                        .build()
-                }
                 .firstOrNull()
-        } ?: throw UsernameNotFoundException("User not found: $username")
+                ?: throw UsernameNotFoundException("User not found: $username")
+
+            val authorities = (UserRoles innerJoin RoleAuthorities)
+                .select(RoleAuthorities.authority)
+                .where { UserRoles.userId eq userRow[Users.id] }
+                .map { SimpleGrantedAuthority(it[RoleAuthorities.authority]) }
+
+            User.builder()
+                .username(userRow[Users.username])
+                .password(userRow[Users.password])
+                .authorities(authorities)
+                .build()
+        }
 }

@@ -21,12 +21,27 @@ class DataInitializer(
     fun init() {
         transaction {
             if (Users.selectAll().count() == 0L) {
+                val adminId = UUID.randomUUID()
                 val hash: String = passwordEncoder.encode("admin").toString()
                 Users.insert {
-                    it[Users.id]          = UUID.randomUUID()
+                    it[Users.id]          = adminId
                     it[Users.username]    = "admin"
                     it[Users.password]    = hash
                     it[Users.displayName] = "Admin"
+                }
+
+                val roleId = UUID.randomUUID()
+                Roles.insert {
+                    it[Roles.id]   = roleId
+                    it[Roles.name] = "Admins"
+                }
+                RoleAuthorities.insert {
+                    it[RoleAuthorities.roleId]    = roleId
+                    it[RoleAuthorities.authority] = "ROLE_ADMIN"
+                }
+                UserRoles.insert {
+                    it[UserRoles.userId] = adminId
+                    it[UserRoles.roleId] = roleId
                 }
             }
         }
