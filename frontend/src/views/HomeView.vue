@@ -12,6 +12,7 @@ const selectedMonth = ref(new Date().getMonth() + 1)
 const counts        = ref({})
 const vegetables    = ref([])
 const loading       = ref(false)
+const gardenIds     = ref(new Set())
 
 const months = computed(() => tm('months'))
 
@@ -29,6 +30,20 @@ async function fetchCounts() {
   counts.value = await res.json()
 }
 
+async function fetchGarden() {
+  const res = await fetch('/api/garden')
+  gardenIds.value = new Set(await res.json())
+}
+
+async function toggleGarden(vegetableId) {
+  const inGarden = gardenIds.value.has(vegetableId)
+  const method = inGarden ? 'DELETE' : 'PUT'
+  await fetch(`/api/garden/${vegetableId}`, { method })
+  const next = new Set(gardenIds.value)
+  inGarden ? next.delete(vegetableId) : next.add(vegetableId)
+  gardenIds.value = next
+}
+
 async function fetchVegetables(month) {
   loading.value = true
   const res = await fetch(`/api/vegetables?month=${month}`)
@@ -41,6 +56,7 @@ watch(selectedMonth, month => fetchVegetables(month))
 onMounted(() => {
   fetchCounts()
   fetchVegetables(selectedMonth.value)
+  fetchGarden()
 })
 </script>
 
@@ -60,6 +76,8 @@ onMounted(() => {
       :month-name="months[selectedMonth - 1]"
       :total="vegetables.length"
       :loading="loading"
+      :garden-ids="gardenIds"
+      @toggle-garden="toggleGarden"
     />
   </main>
 </template>

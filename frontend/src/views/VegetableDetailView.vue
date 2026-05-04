@@ -9,6 +9,7 @@ const { t, tm, te } = useI18n()
 
 const vegetable = ref(null)
 const loading   = ref(true)
+const inGarden  = ref(false)
 
 const months = computed(() => tm('months'))
 
@@ -23,9 +24,22 @@ const description = computed(() => {
   return t(`descriptions.${vegetable.value.name}`)
 })
 
+async function toggleGarden() {
+  const method = inGarden.value ? 'DELETE' : 'PUT'
+  await fetch(`/api/garden/${route.params.id}`, { method })
+  inGarden.value = !inGarden.value
+}
+
 onMounted(async () => {
-  const res = await fetch(`/api/vegetables/${route.params.id}`)
-  if (res.ok) vegetable.value = await res.json()
+  const [vegRes, gardenRes] = await Promise.all([
+    fetch(`/api/vegetables/${route.params.id}`),
+    fetch('/api/garden'),
+  ])
+  if (vegRes.ok) vegetable.value = await vegRes.json()
+  if (gardenRes.ok) {
+    const ids = await gardenRes.json()
+    inGarden.value = ids.includes(route.params.id)
+  }
   loading.value = false
 })
 </script>
@@ -40,10 +54,17 @@ onMounted(async () => {
       <div class="detail-card">
         <div class="detail-hero">
           <span class="detail-emoji">{{ vegetable.emoji ?? '🌱' }}</span>
-          <div>
+          <div class="detail-hero-text">
             <h2>{{ localName }}</h2>
             <span class="category-badge">{{ t(`categories.${vegetable.category}`) }}</span>
           </div>
+          <button
+            class="garden-btn"
+            :class="{ added: inGarden }"
+            @click="toggleGarden"
+          >
+            {{ inGarden ? '✓ In my garden' : '+ Add to my garden' }}
+          </button>
         </div>
 
         <p class="description">{{ description }}</p>
@@ -101,7 +122,10 @@ main {
   display: flex;
   align-items: center;
   gap: 1.25rem;
+  flex-wrap: wrap;
 }
+
+.detail-hero-text { flex: 1; }
 
 .detail-emoji { font-size: 3.5rem; line-height: 1; }
 
@@ -163,6 +187,30 @@ main {
 
 .month-chip.active {
   background: var(--green-mid);
+  color: #fff;
+}
+
+.garden-btn {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--green-pale);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.garden-btn:hover {
+  border-color: var(--green-mid);
+  color: var(--green-mid);
+}
+
+.garden-btn.added {
+  background: var(--green-mid);
+  border-color: var(--green-mid);
   color: #fff;
 }
 

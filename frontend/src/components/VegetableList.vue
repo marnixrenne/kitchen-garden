@@ -2,12 +2,15 @@
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-defineProps({
-  grouped: Array,
+const props = defineProps({
+  grouped:   Array,
   monthName: String,
-  total: Number,
-  loading: Boolean,
+  total:     Number,
+  loading:   Boolean,
+  gardenIds: Set,
 })
+
+const emit = defineEmits(['toggle-garden'])
 
 const router = useRouter()
 const { t, te } = useI18n()
@@ -43,7 +46,15 @@ const vegName = (veg) => {
           @click="router.push(`/vegetable/${veg.id}`)"
         >
           <span class="veg-emoji">{{ veg.emoji ?? '🌱' }}</span>
-          <span>{{ vegName(veg) }}</span>
+          <span class="veg-name">{{ vegName(veg) }}</span>
+          <button
+            class="garden-btn"
+            :class="{ added: gardenIds?.has(veg.id) }"
+            :title="gardenIds?.has(veg.id) ? 'Remove from my garden' : 'Add to my garden'"
+            @click.stop="emit('toggle-garden', veg.id)"
+          >
+            {{ gardenIds?.has(veg.id) ? '✓' : '+' }}
+          </button>
         </div>
       </div>
     </div>
@@ -96,6 +107,35 @@ const vegName = (veg) => {
 }
 
 .veg-emoji { font-size: 1.2rem; flex-shrink: 0; }
+.veg-name  { flex: 1; min-width: 0; }
+
+.garden-btn {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--green-pale);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.garden-btn:hover {
+  border-color: var(--green-mid);
+  color: var(--green-mid);
+}
+
+.garden-btn.added {
+  background: var(--green-mid);
+  border-color: var(--green-mid);
+  color: #fff;
+}
 
 .empty-state {
   text-align: center;
