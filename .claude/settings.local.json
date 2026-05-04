@@ -12,7 +12,9 @@
       "Bash(npm --version)",
       "Bash(npm run *)",
       "Bash(echo \"EXIT:$?\")",
-      "Bash(gtimeout 5 npm run dev)"
+      "Bash(gtimeout 5 npm run dev)",
+      "Bash(lsof -ti:8080)",
+      "Bash(xargs kill *)"
     ]
   }
 }

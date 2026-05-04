@@ -8,6 +8,7 @@ const router = useRouter()
   <div class="landing">
     <nav class="landing-nav">
       <button class="sign-in-btn" @click="router.push('/login')">Sign in</button>
+      <button class="sign-up-btn" @click="router.push('/signup')">Sign up</button>
     </nav>
 
     <main class="landing-main">
@@ -54,24 +55,38 @@ const router = useRouter()
   padding: 1.25rem 1.5rem;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
-.sign-in-btn {
+.sign-in-btn,
+.sign-up-btn {
   padding: 0.45rem 1.1rem;
-  background: transparent;
-  border: 1.5px solid var(--green-mid);
   border-radius: var(--radius);
-  color: var(--green-mid);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 
+.sign-in-btn {
+  background: transparent;
+  border: 1.5px solid var(--green-mid);
+  color: var(--green-mid);
+}
+
 .sign-in-btn:hover {
   background: var(--green-mid);
   color: #fff;
 }
+
+.sign-up-btn {
+  background: var(--green-mid);
+  border: 1.5px solid var(--green-mid);
+  color: #fff;
+}
+
+.sign-up-btn:hover { background: var(--green-dark); border-color: var(--green-dark); }
 
 .landing-main {
   flex: 1;

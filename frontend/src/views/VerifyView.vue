@@ -1,0 +1,229 @@
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+const route  = useRoute()
+const router = useRouter()
+
+const status   = ref('loading')   // 'loading' | 'valid' | 'invalid' | 'done'
+const email    = ref('')
+const password = ref('')
+const confirm  = ref('')
+const error    = ref('')
+const loading  = ref(false)
+
+onMounted(async () => {
+  const token = route.query.token
+  if (!token) { status.value = 'invalid'; return }
+
+  const res = await fetch(`/api/auth/verify/${token}`)
+  if (res.ok) {
+    const data = await res.json()
+    email.value  = data.email
+    status.value = 'valid'
+  } else {
+    status.value = 'invalid'
+  }
+})
+
+async function submit() {
+  error.value = ''
+  if (password.value !== confirm.value) {
+    error.value = 'Passwords do not match'
+    return
+  }
+  loading.value = true
+  try {
+    const res = await fetch('/api/auth/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token:    route.query.token,
+        password: password.value,
+      }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      status.value = 'done'
+    } else {
+      error.value = data.error ?? 'Something went wrong'
+    }
+  } finally {
+    loading.value = false
+  }
+}
+</script>
+
+<template>
+  <div class="page">
+    <div class="card">
+      <div class="icon">🌱</div>
+
+      <!-- Loading -->
+      <template v-if="status === 'loading'">
+        <p class="center muted">Verifying your link…</p>
+      </template>
+
+      <!-- Invalid / expired token -->
+      <template v-else-if="status === 'invalid'">
+        <h1>Link invalid or expired</h1>
+        <p class="subtitle">This verification link is no longer valid. Please request a new one.</p>
+        <button class="btn-outline" @click="router.push('/signup')">Back to sign up</button>
+      </template>
+
+      <!-- Account created -->
+      <template v-else-if="status === 'done'">
+        <h1>Account created!</h1>
+        <p class="success">Account created for <strong>{{ email }}</strong>. You can now sign in.</p>
+        <button class="btn-primary" @click="router.push('/login')">Go to sign in</button>
+      </template>
+
+      <!-- Set username + password -->
+      <template v-else>
+        <h1>Set your password</h1>
+        <p class="subtitle">Creating account for <strong>{{ email }}</strong></p>
+
+        <form @submit.prevent="submit">
+          <input type="email" :value="email" autocomplete="username" style="display:none" />
+          <div class="field">
+            <label for="password">Password</label>
+            <input
+              id="password"
+              v-model="password"
+              type="password"
+              autocomplete="new-password"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="confirm">Confirm password</label>
+            <input
+              id="confirm"
+              v-model="confirm"
+              type="password"
+              autocomplete="new-password"
+              required
+            />
+          </div>
+
+          <p v-if="error" class="error">{{ error }}</p>
+
+          <button type="submit" class="btn-primary" :disabled="loading">
+            {{ loading ? 'Creating account…' : 'Create account' }}
+          </button>
+        </form>
+      </template>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 1rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 380px;
+  padding: 2.5rem 2rem;
+  background: var(--card-bg);
+  border: 1.5px solid var(--green-pale);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.icon { font-size: 2.5rem; text-align: center; }
+
+h1 {
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--green-dark);
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.center { text-align: center; }
+.muted  { color: var(--text-muted); }
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+input {
+  padding: 0.6rem 0.8rem;
+  border: 1.5px solid var(--green-pale);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input:focus { border-color: var(--green-mid); }
+
+.error {
+  font-size: 0.85rem;
+  color: #c0392b;
+  text-align: center;
+}
+
+.success {
+  font-size: 0.95rem;
+  color: var(--green-mid);
+  text-align: center;
+  line-height: 1.55;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--green-mid);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover:not(:disabled) { background: var(--green-dark); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-outline {
+  width: 100%;
+  padding: 0.75rem;
+  background: none;
+  border: 1.5px solid var(--green-pale);
+  border-radius: var(--radius);
+  color: var(--green-mid);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.btn-outline:hover { border-color: var(--green-mid); }
+</style>

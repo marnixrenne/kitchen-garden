@@ -21,8 +21,17 @@ object Users : Table("users") {
     val username    = varchar("username", 50)
     val password    = varchar("password", 100)
     val displayName = varchar("display_name", 100)
+    val email       = varchar("email", 200).nullable()
 
     override val primaryKey = PrimaryKey(id)
+}
+
+object SignupTokens : Table("signup_tokens") {
+    val token     = uuid("token")
+    val email     = varchar("email", 200)
+    val expiresAt = long("expires_at")
+
+    override val primaryKey = PrimaryKey(token)
 }
 
 object Roles : Table("roles") {
@@ -43,9 +52,9 @@ object UserRoles : Table("user_roles") {
 }
 
 object UserPreferences : Table("user_preferences") {
-    val userId = uuid("user_id") references Users.id
-    val key    = varchar("key", 100)
-    val value  = varchar("value", 500)
+    val userId  = uuid("user_id") references Users.id
+    val prefKey   = varchar("pref_key", 100)
+    val prefValue = varchar("pref_value", 500)
 
-    override val primaryKey = PrimaryKey(userId, key)
+    override val primaryKey = PrimaryKey(userId, prefKey)
 }
