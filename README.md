@@ -1,35 +1,53 @@
 # Kitchen Garden
 
-A web application that shows which vegetables you can seed each month, based on a temperate European climate.
+A web application that shows which vegetables you can seed each month, based on a temperate European climate. Users can create an account, browse vegetables, and maintain their personal garden list.
 
 ## Features
 
-- Select a month to see all vegetables that can be seeded that month
+- Browse vegetables by seeding month
 - Vegetables grouped by category: Fruiting, Leafy, Brassica, Root, Legume, Herb
 - Month overview showing how many crops can be seeded per month
+- User accounts with email-based signup and email verification
+- Personal garden list — add or remove vegetables from your garden
+- User preferences (key-value store per user)
+- Role-based access control
 
 ## Tech stack
 
 **Backend**
 - **Kotlin** + **Spring Boot 4** — REST API
-- **Jetbrains Exposed** — Kotlin SQL framework
+- **Jetbrains Exposed** — Kotlin SQL framework (DSL mode)
 - **Flyway** — database migrations
-- **H2** — in-memory database
+- **PostgreSQL** — database (via Docker)
+- **Spring Security** — session-based authentication
+- **Spring Mail** — email verification (logs link to console when SMTP is not configured)
 
 **Frontend**
-- **Vue 3** — UI framework
+- **Vue 3** — UI framework (Composition API)
+- **vue-router v4** — client-side routing
+- **vue-i18n v11** — internationalisation (English + Dutch)
 - **Vite** — dev server and build tool
 
 ## Getting started
 
-Both the backend and frontend need to run simultaneously during development.
+### Prerequisites
 
-**Backend** (API on port 8080)
+Start the PostgreSQL database with Docker Compose:
+
+```bash
+docker compose up -d
+```
+
+### Backend (API on port 8080)
+
 ```bash
 ./gradlew bootRun
 ```
 
-**Frontend** (dev server on port 5173)
+Flyway runs all migrations automatically on startup and seeds the vegetable data.
+
+### Frontend (dev server on port 5173)
+
 ```bash
 cd frontend
 npm install
@@ -38,34 +56,116 @@ npm run dev
 
 Then open [http://localhost:5173](http://localhost:5173) in your browser.
 
+### Default credentials
+
+An admin user is created automatically on first startup:
+
+| Email | Password |
+|---|---|
+| `admin` | `admin` |
+
+## Configuration
+
+All settings can be overridden via environment variables:
+
+| Variable | Default | Description |
+|---|---|---|
+| `DATASOURCE_URL` | `jdbc:postgresql://localhost:5432/kitchengarden` | JDBC connection URL |
+| `DATASOURCE_USERNAME` | `kitchengarden` | Database username |
+| `DATASOURCE_PASSWORD` | `kitchengarden` | Database password |
+| `APP_BASE_URL` | `http://localhost:5173` | Base URL used in verification emails |
+| `MAIL_HOST` | `localhost` | SMTP host |
+| `MAIL_PORT` | `1025` | SMTP port |
+| `MAIL_FROM` | `noreply@kitchengarden.local` | From address for outgoing mail |
+
+When no SMTP server is reachable, the verification link is printed to the application log instead.
+
 ## API
 
-| Endpoint | Description |
-|---|---|
-| `GET /api/vegetables?month={1-12}` | Vegetables that can be seeded in the given month |
-| `GET /api/vegetables/counts` | Number of seedable crops per month |
+### Vegetables
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/vegetables?month={1-12}` | No | Vegetables seedable in the given month |
+| `GET` | `/api/vegetables/counts` | No | Number of seedable crops per month |
+| `GET` | `/api/vegetables/{id}` | No | Single vegetable detail |
+
+### Authentication
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/auth/login` | No | Log in (`email` + `password` form fields) |
+| `POST` | `/api/auth/logout` | Yes | Log out |
+| `GET` | `/api/auth/me` | Yes | Current user info |
+| `POST` | `/api/auth/signup` | No | Initiate signup — sends verification email |
+| `GET` | `/api/auth/verify/{token}` | No | Validate a signup token |
+| `POST` | `/api/auth/complete` | No | Complete signup — set password |
+
+### Garden
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/garden` | Yes | IDs of vegetables in the user's garden |
+| `PUT` | `/api/garden/{vegetableId}` | Yes | Add a vegetable to the garden |
+| `DELETE` | `/api/garden/{vegetableId}` | Yes | Remove a vegetable from the garden |
+
+### Preferences
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/preferences` | Yes | All preferences for the current user |
+| `PUT` | `/api/preferences/{key}` | Yes | Set a preference value |
+| `DELETE` | `/api/preferences/{key}` | Yes | Delete a preference |
 
 ## Project structure
 
 ```
-├── frontend/                         # Vue 3 + Vite
-│   ├── src/
-│   │   ├── App.vue                   # Root component
-│   │   ├── main.js                   # Entry point
-│   │   └── components/
-│   │       ├── MonthSelector.vue
-│   │       └── VegetableList.vue
-│   ├── index.html
-│   ├── vite.config.js                # Proxies /api to localhost:8080
-│   └── package.json
+├── docker-compose.yml                    # PostgreSQL 15
+├── frontend/                             # Vue 3 + Vite
+│   └── src/
+│       ├── App.vue                       # Root component, nav bar
+│       ├── main.js                       # Entry point
+│       ├── router/index.js               # Routes + auth guard
+│       ├── stores/auth.js                # Auth state (Pinia-style)
+│       ├── i18n/                         # en.js + nl.js translations
+│       ├── components/
+│       │   ├── MonthSelector.vue
+│       │   ├── VegetableList.vue         # Vegetable cards with garden toggle
+│       │   └── LoginForm.vue
+│       └── views/
+│           ├── LandingView.vue           # Public landing page
+│           ├── HomeView.vue              # Month selector + vegetable list
+│           ├── VegetableDetailView.vue   # Vegetable detail + garden button
+│           ├── SignupView.vue            # Email signup form
+│           └── VerifyView.vue           # Token verification + password form
 └── src/main/
     ├── kotlin/.../kitchengarden/
     │   ├── KitchenGardenApplication.kt
-    │   ├── Tables.kt                 # Exposed table definitions
-    │   ├── Vegetable.kt              # Data class
-    │   ├── VegetableRepository.kt    # Database queries
-    │   ├── VegetableController.kt    # REST endpoints
-    │   └── ExposedConfig.kt          # Exposed datasource wiring
+    │   ├── ExposedConfig.kt              # Exposed + transaction manager wiring
+    │   ├── Tables.kt                     # Vegetables, SeedingMonths, GardenVegetables, UserPreferences
+    │   ├── Vegetable.kt
+    │   ├── VegetableRepository.kt
+    │   ├── VegetableController.kt
+    │   ├── GardenRepository.kt
+    │   ├── GardenController.kt
+    │   ├── PreferenceRepository.kt
+    │   ├── PreferenceController.kt
+    │   └── security/
+    │       ├── Tables.kt                 # Users, Roles, RoleAuthorities, UserRoles, SignupTokens
+    │       ├── SecurityConfig.kt         # Spring Security configuration
+    │       ├── UserDetailsServiceImpl.kt
+    │       ├── AuthController.kt         # /api/auth/me, logout
+    │       ├── SignupController.kt       # /api/auth/signup, verify, complete
+    │       ├── SignupService.kt          # Token generation, email sending
+    │       └── DataInitializer.kt        # Seeds admin user on first startup
     └── resources/
-        └── db/migration/             # Flyway migrations
+        ├── application.yaml
+        └── db/migration/
+            ├── V1__create_schema.sql     # vegetables, seeding_months
+            ├── V2__seed_vegetables.sql   # 24 vegetables with seeding months
+            ├── V3__create_users.sql
+            ├── V4__create_roles.sql      # roles, role_authorities, user_roles
+            ├── V5__create_user_preferences.sql
+            ├── V6__add_email_and_signup_tokens.sql
+            └── V7__create_garden_vegetables.sql
 ```
