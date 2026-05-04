@@ -1,6 +1,7 @@
 package org.marnixrenne.kitchengarden
 
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.User
@@ -19,7 +20,8 @@ class UserDetailsServiceImpl : UserDetailsService {
                 .firstOrNull()
                 ?: throw UsernameNotFoundException("User not found: $username")
 
-            val authorities = (UserRoles innerJoin RoleAuthorities)
+            val authorities = UserRoles
+                .join(RoleAuthorities, JoinType.INNER, UserRoles.roleId, RoleAuthorities.roleId)
                 .select(RoleAuthorities.authority)
                 .where { UserRoles.userId eq userRow[Users.id] }
                 .map { SimpleGrantedAuthority(it[RoleAuthorities.authority]) }

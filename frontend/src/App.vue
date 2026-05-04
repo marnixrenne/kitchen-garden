@@ -1,45 +1,37 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterView } from 'vue-router'
-import LoginForm from './components/LoginForm.vue'
-import { user, checkAuth, logout } from './stores/auth.js'
+import { useRouter, RouterView } from 'vue-router'
+import { user, logout } from './stores/auth.js'
 
 const { t, locale } = useI18n()
-const authChecked = ref(false)
+const router = useRouter()
 
 function switchLocale(lang) {
   locale.value = lang
   localStorage.setItem('locale', lang)
 }
 
-onMounted(async () => {
-  await checkAuth()
-  authChecked.value = true
-})
+async function handleLogout() {
+  await logout()
+  router.push('/')
+}
 </script>
 
 <template>
-  <template v-if="!authChecked" />
-
-  <LoginForm v-else-if="!user" />
-
-  <template v-else>
-    <header>
-      <div class="header-top">
-        <h1>🌱 Kitchen Garden</h1>
-        <div class="header-controls">
-          <span class="display-name">{{ user.username }}</span>
-          <button class="logout-btn" @click="logout">{{ t('logout') }}</button>
-          <div class="lang-switcher">
-            <button :class="{ active: locale === 'en' }" @click="switchLocale('en')">EN</button>
-            <button :class="{ active: locale === 'nl' }" @click="switchLocale('nl')">NL</button>
-          </div>
+  <header v-if="user">
+    <div class="header-top">
+      <h1>🌱 Kitchen Garden</h1>
+      <div class="header-controls">
+        <span class="display-name">{{ user.username }}</span>
+        <button class="logout-btn" @click="handleLogout">{{ t('logout') }}</button>
+        <div class="lang-switcher">
+          <button :class="{ active: locale === 'en' }" @click="switchLocale('en')">EN</button>
+          <button :class="{ active: locale === 'nl' }" @click="switchLocale('nl')">NL</button>
         </div>
       </div>
-    </header>
-    <RouterView />
-  </template>
+    </div>
+  </header>
+  <RouterView />
 </template>
 
 <style>
