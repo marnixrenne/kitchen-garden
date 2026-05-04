@@ -41,3 +41,11 @@ object UserRoles : Table("user_roles") {
     val userId = uuid("user_id") references Users.id
     val roleId = uuid("role_id") references Roles.id
 }
+
+object UserPreferences : Table("user_preferences") {
+    val userId = uuid("user_id") references Users.id
+    val key    = varchar("key", 100)
+    val value  = varchar("value", 500)
+
+    override val primaryKey = PrimaryKey(userId, key)
+}
