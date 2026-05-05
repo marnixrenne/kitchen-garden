@@ -9,6 +9,12 @@ export default {
   back: '← Terug',
   seedingMonths: 'Zaaimaanden',
   harvestingMonths: 'Oogstmaanden',
+  garden: {
+    add: '+ Voeg toe aan mijn tuin',
+    added: '✓ In mijn tuin',
+    addTooltip: 'Voeg toe aan mijn tuin',
+    removeTooltip: 'Verwijder uit mijn tuin',
+  },
   login: {
     title: 'Inloggen',
     username: 'Gebruikersnaam',

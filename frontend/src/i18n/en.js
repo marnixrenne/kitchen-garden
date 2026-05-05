@@ -9,6 +9,12 @@ export default {
   back: '← Back',
   seedingMonths: 'Seeding months',
   harvestingMonths: 'Harvesting months',
+  garden: {
+    add: '+ Add to my garden',
+    added: '✓ In my garden',
+    addTooltip: 'Add to my garden',
+    removeTooltip: 'Remove from my garden',
+  },
   login: {
     title: 'Sign in',
     username: 'Username',

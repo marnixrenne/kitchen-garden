@@ -50,7 +50,7 @@ const vegName = (veg) => {
           <button
             class="garden-btn"
             :class="{ added: gardenIds?.has(veg.id) }"
-            :title="gardenIds?.has(veg.id) ? 'Remove from my garden' : 'Add to my garden'"
+            :title="gardenIds?.has(veg.id) ? t('garden.removeTooltip') : t('garden.addTooltip')"
             @click.stop="emit('toggle-garden', veg.id)"
           >
             {{ gardenIds?.has(veg.id) ? '✓' : '+' }}

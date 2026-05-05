@@ -63,7 +63,7 @@ onMounted(async () => {
             :class="{ added: inGarden }"
             @click="toggleGarden"
           >
-            {{ inGarden ? '✓ In my garden' : '+ Add to my garden' }}
+            {{ inGarden ? t('garden.added') : t('garden.add') }}
           </button>
         </div>
 
