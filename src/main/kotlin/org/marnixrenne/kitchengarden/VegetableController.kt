@@ -13,11 +13,11 @@ import java.util.UUID
 class VegetableController(private val repository: VegetableRepository) {
 
     @GetMapping
-    fun getByMonth(@RequestParam month: Int): ResponseEntity<List<Vegetable>> {
-        if (month < 1 || month > 12) {
+    fun getVegetables(@RequestParam(required = false) month: Int?): ResponseEntity<List<Vegetable>> {
+        if (month != null && (month < 1 || month > 12)) {
             return ResponseEntity.badRequest().build()
         }
-        return ResponseEntity.ok(repository.findByMonth(month))
+        return ResponseEntity.ok(if (month != null) repository.findByMonth(month) else repository.findAll())
     }
 
     @GetMapping("/{id}")

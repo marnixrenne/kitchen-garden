@@ -41,7 +41,7 @@ const vegName = (veg) => {
 
   <template v-else>
     <div class="results-header">
-      {{ t('seedIn', { month: monthName }) }} — {{ t('cropCount', { n: total }) }}
+      {{ monthName ? t('seedIn', { month: monthName }) : t('allVegetables') }} — {{ t('cropCount', { n: total }) }}
     </div>
 
     <div v-for="group in grouped" :key="group.category" class="category-section">

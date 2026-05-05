@@ -8,6 +8,19 @@ import java.util.UUID
 @Repository
 class VegetableRepository {
 
+    fun findAll(): List<Vegetable> = transaction {
+        Vegetables.selectAll()
+            .orderBy(Vegetables.category to SortOrder.ASC, Vegetables.name to SortOrder.ASC)
+            .map { row ->
+                Vegetable(
+                    id       = row[Vegetables.id],
+                    name     = row[Vegetables.name],
+                    category = row[Vegetables.category],
+                    emoji    = row[Vegetables.emoji]
+                )
+            }
+    }
+
     fun findByMonth(month: Int): List<Vegetable> = transaction {
         (Vegetables innerJoin SeedingMonths)
             .selectAll()

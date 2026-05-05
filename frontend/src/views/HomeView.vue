@@ -1,19 +1,22 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 import MonthSelector from '../components/MonthSelector.vue'
 import VegetableList from '../components/VegetableList.vue'
 
 const CATEGORY_ORDER = ['Fruiting', 'Leafy', 'Brassica', 'Root', 'Legume', 'Herb']
 
 const { t, tm, te } = useI18n()
+const route  = useRoute()
+const router = useRouter()
 
-const selectedMonth = ref(new Date().getMonth() + 1)
+const selectedMonth = ref(null)
 const counts        = ref({})
 const vegetables    = ref([])
 const loading       = ref(false)
 const gardenIds     = ref(new Set())
-const query         = ref('')
+const query         = ref(route.query.q ?? '')
 
 const months = computed(() => tm('months'))
 
@@ -58,12 +61,17 @@ async function toggleGarden(vegetableId) {
 
 async function fetchVegetables(month) {
   loading.value = true
-  const res = await fetch(`/api/vegetables?month=${month}`)
+  const url = month ? `/api/vegetables?month=${month}` : '/api/vegetables'
+  const res = await fetch(url)
   vegetables.value = await res.json()
   loading.value = false
 }
 
 watch(selectedMonth, month => fetchVegetables(month))
+
+watch(query, q => {
+  router.replace({ query: q ? { q } : {} })
+})
 
 onMounted(() => {
   fetchCounts()
@@ -93,7 +101,7 @@ onMounted(() => {
     </div>
     <VegetableList
       :grouped="grouped"
-      :month-name="months[selectedMonth - 1]"
+      :month-name="selectedMonth ? months[selectedMonth - 1] : null"
       :total="filteredTotal"
       :loading="loading"
       :garden-ids="gardenIds"

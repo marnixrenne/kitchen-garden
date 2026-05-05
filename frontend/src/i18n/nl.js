@@ -4,6 +4,7 @@ export default {
   cropCount: '{n} gewassen',
   seedIn: 'Zaaien in {month}',
   noCrops: 'Niets te zaaien in {month}. Tijd om te plannen!',
+  allVegetables: 'Alle groenten',
   search: 'Zoek groenten…',
   noSearchResults: 'Geen groenten gevonden voor "{query}" deze maand.',
   loading: 'Laden…',

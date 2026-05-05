@@ -19,7 +19,7 @@ const { t } = useI18n()
       :key="i"
       class="month-btn"
       :class="{ active: selected === i + 1 }"
-      @click="$emit('select', i + 1)"
+      @click="$emit('select', selected === i + 1 ? null : i + 1)"
     >
       {{ name }}
       <span class="count">
