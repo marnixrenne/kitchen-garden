@@ -20,6 +20,7 @@ export default {
     toSow: 'To sow',
     toHarvest: 'To harvest',
     nothingThisMonth: 'Nothing to do in your garden this month.',
+    both: 'Sow & harvest',
   },
   login: {
     title: 'Sign in',

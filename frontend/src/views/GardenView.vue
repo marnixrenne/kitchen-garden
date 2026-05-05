@@ -6,8 +6,8 @@ import { useI18n } from 'vue-i18n'
 const router = useRouter()
 const { t, tm, te } = useI18n()
 
-const vegetables = ref([])
-const loading     = ref(true)
+const vegetables   = ref([])
+const loading      = ref(true)
 const selectedMonth = ref(null)
 
 const months = computed(() => tm('months'))
@@ -17,9 +17,17 @@ function vegName(veg) {
   return te(key) ? t(key) : veg.name
 }
 
-function hasSowing(month)    { return vegetables.value.some(v => v.seedingMonths.includes(month)) }
+function cellType(veg, month) {
+  const sow     = veg.seedingMonths.includes(month)
+  const harvest = veg.harvestingMonths.includes(month)
+  if (sow && harvest) return 'both'
+  if (sow)            return 'sow'
+  if (harvest)        return 'harvest'
+  return null
+}
+
+function hasSowing(month)     { return vegetables.value.some(v => v.seedingMonths.includes(month)) }
 function hasHarvesting(month) { return vegetables.value.some(v => v.harvestingMonths.includes(month)) }
-function hasActivity(month)   { return hasSowing(month) || hasHarvesting(month) }
 
 const toSow     = computed(() => selectedMonth.value == null ? [] :
   vegetables.value.filter(v => v.seedingMonths.includes(selectedMonth.value)))
@@ -48,31 +56,65 @@ onMounted(async () => {
     </template>
 
     <template v-else>
-      <div class="months-grid">
-        <button
-          v-for="(name, i) in months"
-          :key="i"
-          class="month-btn"
-          :class="{
-            active:    selectedMonth === i + 1,
-            'has-sow': hasSowing(i + 1),
-            'has-harvest': hasHarvesting(i + 1),
-          }"
-          @click="selectMonth(i + 1)"
-        >
-          {{ name }}
-          <span class="dots">
-            <span v-if="hasSowing(i + 1)"    class="dot sow" />
-            <span v-if="hasHarvesting(i + 1)" class="dot harvest" />
-          </span>
-        </button>
+      <!-- Legend -->
+      <div class="legend">
+        <span class="legend-item"><span class="legend-swatch sow" />{{ t('garden.toSow') }}</span>
+        <span class="legend-item"><span class="legend-swatch harvest" />{{ t('garden.toHarvest') }}</span>
+        <span class="legend-item"><span class="legend-swatch both" />{{ t('garden.both') }}</span>
       </div>
 
+      <!-- Calendar -->
+      <div class="calendar-wrap">
+        <table class="calendar">
+          <thead>
+            <tr>
+              <th class="veg-col-header"></th>
+              <th
+                v-for="(name, i) in months"
+                :key="i"
+                class="month-header"
+                :class="{
+                  selected:     selectedMonth === i + 1,
+                  'has-sow':    hasSowing(i + 1),
+                  'has-harvest':hasHarvesting(i + 1),
+                }"
+                @click="selectMonth(i + 1)"
+              >
+                {{ name }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="veg in vegetables"
+              :key="veg.id"
+              class="veg-row"
+            >
+              <td class="veg-name" @click="router.push(`/vegetable/${veg.id}`)">
+                <span class="veg-emoji">{{ veg.emoji ?? '🌱' }}</span>
+                <span>{{ vegName(veg) }}</span>
+              </td>
+              <td
+                v-for="m in 12"
+                :key="m"
+                class="cal-cell"
+                :class="{
+                  selected: selectedMonth === m,
+                  [cellType(veg, m)]: cellType(veg, m) !== null,
+                }"
+              >
+                <span v-if="cellType(veg, m)" class="cell-bar" :class="cellType(veg, m)" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Activity panel -->
       <div v-if="selectedMonth !== null" class="activity">
         <div v-if="toSow.length === 0 && toHarvest.length === 0" class="nothing">
           {{ t('garden.nothingThisMonth') }}
         </div>
-
         <template v-else>
           <div v-if="toSow.length > 0" class="section">
             <h3 class="section-title sow">🌱 {{ t('garden.toSow') }}</h3>
@@ -88,7 +130,6 @@ onMounted(async () => {
               </div>
             </div>
           </div>
-
           <div v-if="toHarvest.length > 0" class="section">
             <h3 class="section-title harvest">🧺 {{ t('garden.toHarvest') }}</h3>
             <div class="veg-list">
@@ -111,7 +152,7 @@ onMounted(async () => {
 
 <style scoped>
 main {
-  max-width: 860px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 2rem 1rem 4rem;
 }
@@ -120,7 +161,7 @@ main {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--green-dark);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .loading, .empty {
@@ -129,66 +170,125 @@ main {
   color: var(--text-muted);
 }
 
-.months-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-}
-
-@media (max-width: 480px) {
-  .months-grid { grid-template-columns: repeat(4, 1fr); }
-}
-
-.month-btn {
+/* Legend */
+.legend {
   display: flex;
-  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.legend-item {
+  display: flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.6rem 0.25rem 0.4rem;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 20px;
+  height: 10px;
+  border-radius: 4px;
+}
+
+.legend-swatch.sow     { background: var(--green-mid); }
+.legend-swatch.harvest { background: #d97706; }
+.legend-swatch.both    { background: linear-gradient(90deg, var(--green-mid) 50%, #d97706 50%); }
+
+/* Calendar */
+.calendar-wrap {
+  overflow-x: auto;
   border: 1.5px solid var(--green-pale);
   border-radius: var(--radius);
   background: var(--card-bg);
+  margin-bottom: 1.5rem;
+}
+
+.calendar {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 640px;
+}
+
+.veg-col-header {
+  width: 160px;
+  min-width: 140px;
+}
+
+.month-header {
+  font-size: 0.75rem;
+  font-weight: 700;
   color: var(--text-muted);
+  text-align: center;
+  padding: 0.6rem 0.25rem;
+  cursor: pointer;
+  border-bottom: 2px solid var(--green-pale);
+  white-space: nowrap;
+  user-select: none;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+}
+
+.month-header::after {
+  content: '';
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+  margin-top: 4px;
+}
+
+.month-header.has-sow::after    { background: var(--green-mid); }
+.month-header.has-harvest::after { background: #d97706; }
+.month-header.has-sow.has-harvest::after {
+  background: linear-gradient(90deg, var(--green-mid) 50%, #d97706 50%);
+}
+
+.month-header:hover  { background: var(--bg); color: var(--green-dark); }
+.month-header.selected { background: var(--green-pale); color: var(--green-dark); }
+
+.veg-row:not(:last-child) td { border-bottom: 1px solid var(--green-pale); }
+
+.veg-name {
+  padding: 0.55rem 0.75rem;
   font-size: 0.85rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
-}
-
-.month-btn:hover {
-  border-color: var(--green-light);
   color: var(--green-dark);
-}
-
-.month-btn.has-sow   { border-color: var(--green-mid); }
-.month-btn.has-harvest { border-color: #d97706; }
-.month-btn.has-sow.has-harvest { border-color: var(--green-mid); }
-
-.month-btn.active {
-  background: var(--green-dark);
-  border-color: var(--green-dark);
-  color: #fff;
-}
-
-.dots {
+  white-space: nowrap;
+  cursor: pointer;
+  border-right: 1.5px solid var(--green-pale);
   display: flex;
-  gap: 3px;
-  height: 6px;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background 0.15s;
 }
 
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+.veg-name:hover { background: var(--bg); }
+
+.veg-emoji { font-size: 1rem; }
+
+.cal-cell {
+  padding: 0.3rem 0.2rem;
+  text-align: center;
+  vertical-align: middle;
+  transition: background 0.15s;
 }
 
-.dot.sow     { background: var(--green-mid); }
-.dot.harvest { background: #d97706; }
+.cal-cell.selected { background: rgba(216, 243, 220, 0.4); }
 
-.month-btn.active .dot.sow     { background: rgba(255,255,255,0.7); }
-.month-btn.active .dot.harvest { background: rgba(255,255,255,0.9); }
+.cell-bar {
+  display: block;
+  height: 10px;
+  border-radius: 5px;
+  margin: 0 2px;
+}
 
+.cell-bar.sow     { background: var(--green-mid); }
+.cell-bar.harvest { background: #d97706; }
+.cell-bar.both    { background: linear-gradient(90deg, var(--green-mid) 50%, #d97706 50%); }
+
+/* Activity panel */
 .activity {
   background: var(--card-bg);
   border: 1.5px solid var(--green-pale);
@@ -217,11 +317,7 @@ main {
 .section-title.sow     { color: var(--green-mid); }
 .section-title.harvest { color: #d97706; }
 
-.veg-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
+.veg-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
 .veg-chip {
   display: flex;

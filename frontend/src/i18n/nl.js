@@ -20,6 +20,7 @@ export default {
     toSow: 'Te zaaien',
     toHarvest: 'Te oogsten',
     nothingThisMonth: 'Niets te doen in je tuin deze maand.',
+    both: 'Zaaien & oogsten',
   },
   login: {
     title: 'Inloggen',
