@@ -46,6 +46,11 @@ class GardenRepository {
                         .where { HarvestingMonths.vegetableId eq id }
                         .map { it[HarvestingMonths.monthNum] }
                         .sorted()
+                    val countries = (VegetableCountries innerJoin Countries)
+                        .selectAll()
+                        .where { VegetableCountries.vegetableId eq id }
+                        .map { Country(it[Countries.code], it[Countries.name]) }
+                        .sortedBy { it.name }
                     VegetableDetail(
                         id               = row[Vegetables.id],
                         name             = row[Vegetables.name],
@@ -53,6 +58,7 @@ class GardenRepository {
                         emoji            = row[Vegetables.emoji],
                         seedingMonths    = seedingMonths,
                         harvestingMonths = harvestingMonths,
+                        countries        = countries,
                     )
                 }
                 .firstOrNull()

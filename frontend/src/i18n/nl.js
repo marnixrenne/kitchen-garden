@@ -10,6 +10,7 @@ export default {
   loading: 'Laden…',
   logout: 'Uitloggen',
   back: '← Terug',
+  countries: 'Landen',
   seedingMonths: 'Zaaimaanden',
   harvestingMonths: 'Oogstmaanden',
   home: 'Ontdekken',

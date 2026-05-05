@@ -96,6 +96,19 @@ onMounted(async () => {
             </div>
           </div>
         </div>
+
+        <div v-if="vegetable.countries.length > 0" class="countries-section">
+          <h3>{{ t('countries') }}</h3>
+          <div class="country-list">
+            <span
+              v-for="country in vegetable.countries"
+              :key="country.code"
+              class="country-chip"
+            >
+              {{ country.name }}
+            </span>
+          </div>
+        </div>
       </div>
     </template>
   </main>
@@ -207,6 +220,29 @@ main {
 .month-chip.harvest.active {
   background: #d97706;
   color: #fff;
+}
+
+.countries-section { border-top: 1px solid var(--green-pale); padding-top: 1.5rem; }
+
+.countries-section h3 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.country-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+.country-chip {
+  padding: 0.25rem 0.65rem;
+  background: var(--bg);
+  border: 1.5px solid var(--green-pale);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .garden-btn {

@@ -10,6 +10,7 @@ export default {
   loading: 'Loading…',
   logout: 'Sign out',
   back: '← Back',
+  countries: 'Countries',
   seedingMonths: 'Seeding months',
   harvestingMonths: 'Harvesting months',
   home: 'Explore',

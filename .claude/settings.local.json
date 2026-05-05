@@ -15,7 +15,8 @@
       "Bash(gtimeout 5 npm run dev)",
       "Bash(lsof -ti:8080)",
       "Bash(xargs kill *)",
-      "Bash(docker compose *)"
+      "Bash(docker compose *)",
+      "WebFetch(domain:en.wikipedia.org)"
     ]
   }
 }
