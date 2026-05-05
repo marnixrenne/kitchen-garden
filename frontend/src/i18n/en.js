@@ -24,6 +24,7 @@ export default {
     toHarvest: 'To harvest',
     nothingThisMonth: 'Nothing to do in your garden this month.',
     both: 'Sow & harvest',
+    addToCalendar: 'Add to calendar',
   },
   login: {
     title: 'Sign in',

@@ -17,6 +17,10 @@ function vegName(veg) {
   return te(key) ? t(key) : veg.name
 }
 
+const sortedVegetables = computed(() =>
+  [...vegetables.value].sort((a, b) => vegName(a).localeCompare(vegName(b)))
+)
+
 function cellType(veg, month) {
   const sow     = veg.seedingMonths.includes(month)
   const harvest = veg.harvestingMonths.includes(month)
@@ -26,16 +30,81 @@ function cellType(veg, month) {
   return null
 }
 
-function hasSowing(month)     { return vegetables.value.some(v => v.seedingMonths.includes(month)) }
-function hasHarvesting(month) { return vegetables.value.some(v => v.harvestingMonths.includes(month)) }
+function hasSowing(month)     { return sortedVegetables.value.some(v => v.seedingMonths.includes(month)) }
+function hasHarvesting(month) { return sortedVegetables.value.some(v => v.harvestingMonths.includes(month)) }
 
 const toSow     = computed(() => selectedMonth.value == null ? [] :
-  vegetables.value.filter(v => v.seedingMonths.includes(selectedMonth.value)))
+  sortedVegetables.value.filter(v => v.seedingMonths.includes(selectedMonth.value)))
 const toHarvest = computed(() => selectedMonth.value == null ? [] :
-  vegetables.value.filter(v => v.harvestingMonths.includes(selectedMonth.value)))
+  sortedVegetables.value.filter(v => v.harvestingMonths.includes(selectedMonth.value)))
 
 function selectMonth(month) {
   selectedMonth.value = selectedMonth.value === month ? null : month
+}
+
+function icalDate(year, month) {
+  const next = month === 12 ? `${year + 1}0101` : `${year}${String(month + 1).padStart(2, '0')}01`
+  return {
+    start: `${year}${String(month).padStart(2, '0')}01`,
+    end: next,
+  }
+}
+
+function icalFold(line) {
+  // iCal spec: fold lines at 75 octets
+  const out = []
+  while (line.length > 75) {
+    out.push(line.slice(0, 75))
+    line = ' ' + line.slice(75)
+  }
+  out.push(line)
+  return out.join('\r\n')
+}
+
+function downloadIcal() {
+  const year = new Date().getFullYear()
+  const crlf = '\r\n'
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    `PRODID:-//Kitchen Garden//EN`,
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+  ]
+
+  for (let m = 1; m <= 12; m++) {
+    const { start, end } = icalDate(year, m)
+    const sowList     = sortedVegetables.value.filter(v => v.seedingMonths.includes(m)).map(vegName)
+    const harvestList = sortedVegetables.value.filter(v => v.harvestingMonths.includes(m)).map(vegName)
+
+    if (sowList.length > 0) {
+      lines.push('BEGIN:VEVENT')
+      lines.push(`UID:kg-sow-${year}-${m}@kitchengarden`)
+      lines.push(`DTSTART;VALUE=DATE:${start}`)
+      lines.push(`DTEND;VALUE=DATE:${end}`)
+      lines.push(icalFold(`SUMMARY:🌱 ${t('garden.toSow')}: ${sowList.join(', ')}`))
+      lines.push('END:VEVENT')
+    }
+
+    if (harvestList.length > 0) {
+      lines.push('BEGIN:VEVENT')
+      lines.push(`UID:kg-harvest-${year}-${m}@kitchengarden`)
+      lines.push(`DTSTART;VALUE=DATE:${start}`)
+      lines.push(`DTEND;VALUE=DATE:${end}`)
+      lines.push(icalFold(`SUMMARY:🧺 ${t('garden.toHarvest')}: ${harvestList.join(', ')}`))
+      lines.push('END:VEVENT')
+    }
+  }
+
+  lines.push('END:VCALENDAR')
+
+  const blob = new Blob([lines.join(crlf) + crlf], { type: 'text/calendar;charset=utf-8' })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href     = url
+  a.download = 'kitchen-garden.ics'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 onMounted(async () => {
@@ -47,11 +116,20 @@ onMounted(async () => {
 
 <template>
   <main>
-    <h2 class="page-title">{{ t('myGarden') }}</h2>
+    <div class="page-header">
+      <h2 class="page-title">{{ t('myGarden') }}</h2>
+      <button
+        v-if="sortedVegetables.length > 0"
+        class="ical-btn"
+        @click="downloadIcal"
+      >
+        📅 {{ t('garden.addToCalendar') }}
+      </button>
+    </div>
 
     <div v-if="loading" class="loading">{{ t('loading') }}</div>
 
-    <template v-else-if="vegetables.length === 0">
+    <template v-else-if="sortedVegetables.length === 0">
       <p class="empty">{{ t('garden.empty') }}</p>
     </template>
 
@@ -86,7 +164,7 @@ onMounted(async () => {
           </thead>
           <tbody>
             <tr
-              v-for="veg in vegetables"
+              v-for="veg in sortedVegetables"
               :key="veg.id"
               class="veg-row"
             >
@@ -157,11 +235,37 @@ main {
   padding: 2rem 1rem 4rem;
 }
 
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
 .page-title {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--green-dark);
-  margin-bottom: 1.25rem;
+  flex: 1;
+}
+
+.ical-btn {
+  padding: 0.4rem 0.9rem;
+  border: 1.5px solid var(--green-pale);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.ical-btn:hover {
+  border-color: var(--green-mid);
+  color: var(--green-dark);
 }
 
 .loading, .empty {
