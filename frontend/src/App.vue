@@ -1,6 +1,6 @@
 <script setup>
 import { useI18n } from 'vue-i18n'
-import { useRouter, RouterView } from 'vue-router'
+import { useRouter, RouterView, RouterLink } from 'vue-router'
 import { user, logout } from './stores/auth.js'
 
 const { t, locale } = useI18n()
@@ -21,6 +21,10 @@ async function handleLogout() {
   <header v-if="user">
     <div class="header-top">
       <h1>🌱 Kitchen Garden</h1>
+      <nav class="header-nav">
+        <RouterLink to="/home">{{ t('home') }}</RouterLink>
+        <RouterLink to="/garden">{{ t('myGarden') }}</RouterLink>
+      </nav>
       <div class="header-controls">
         <span class="display-name">{{ user.username }}</span>
         <button class="logout-btn" @click="handleLogout">{{ t('logout') }}</button>
@@ -71,6 +75,25 @@ header {
 }
 
 header h1 { font-size: 1.5rem; font-weight: 700; }
+
+.header-nav {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 1.5rem;
+}
+
+.header-nav a {
+  padding: 0.25rem 0.7rem;
+  border-radius: 6px;
+  color: rgba(255,255,255,0.7);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+}
+
+.header-nav a:hover { color: #fff; background: rgba(255,255,255,0.1); }
+.header-nav a.router-link-active { color: #fff; background: rgba(255,255,255,0.15); }
 
 .header-controls {
   display: flex;

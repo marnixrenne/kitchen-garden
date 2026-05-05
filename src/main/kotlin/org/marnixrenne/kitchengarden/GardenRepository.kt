@@ -28,4 +28,34 @@ class GardenRepository {
             (GardenVegetables.userId eq userId) and (GardenVegetables.vegetableId eq vegetableId)
         }
     }
+
+    fun findDetails(userId: UUID): List<VegetableDetail> = transaction {
+        val ids = GardenVegetables.selectAll()
+            .where { GardenVegetables.userId eq userId }
+            .map { it[GardenVegetables.vegetableId] }
+
+        ids.mapNotNull { id ->
+            Vegetables.selectAll()
+                .where { Vegetables.id eq id }
+                .map { row ->
+                    val seedingMonths = SeedingMonths.selectAll()
+                        .where { SeedingMonths.vegetableId eq id }
+                        .map { it[SeedingMonths.monthNum] }
+                        .sorted()
+                    val harvestingMonths = HarvestingMonths.selectAll()
+                        .where { HarvestingMonths.vegetableId eq id }
+                        .map { it[HarvestingMonths.monthNum] }
+                        .sorted()
+                    VegetableDetail(
+                        id               = row[Vegetables.id],
+                        name             = row[Vegetables.name],
+                        category         = row[Vegetables.category],
+                        emoji            = row[Vegetables.emoji],
+                        seedingMonths    = seedingMonths,
+                        harvestingMonths = harvestingMonths,
+                    )
+                }
+                .firstOrNull()
+        }.sortedBy { it.name }
+    }
 }

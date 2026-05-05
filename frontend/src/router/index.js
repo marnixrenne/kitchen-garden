@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LandingView         from '../views/LandingView.vue'
 import HomeView            from '../views/HomeView.vue'
+import GardenView          from '../views/GardenView.vue'
 import VegetableDetailView from '../views/VegetableDetailView.vue'
 import LoginForm           from '../components/LoginForm.vue'
 import SignupView          from '../views/SignupView.vue'
@@ -17,6 +18,7 @@ const router = createRouter({
     { path: '/signup',         component: SignupView,          meta: { public: true } },
     { path: '/verify',         component: VerifyView,          meta: { public: true } },
     { path: '/home',           component: HomeView,            meta: { requiresAuth: true } },
+    { path: '/garden',         component: GardenView,          meta: { requiresAuth: true } },
     { path: '/vegetable/:id',  component: VegetableDetailView, meta: { requiresAuth: true } },
   ],
 })

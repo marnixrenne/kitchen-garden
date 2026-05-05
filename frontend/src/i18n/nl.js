@@ -9,11 +9,17 @@ export default {
   back: '← Terug',
   seedingMonths: 'Zaaimaanden',
   harvestingMonths: 'Oogstmaanden',
+  home: 'Ontdekken',
+  myGarden: 'Mijn tuin',
   garden: {
     add: '+ Voeg toe aan mijn tuin',
     added: '✓ In mijn tuin',
     addTooltip: 'Voeg toe aan mijn tuin',
     removeTooltip: 'Verwijder uit mijn tuin',
+    empty: 'Je tuin is leeg. Blader door de groenten en voeg er een paar toe!',
+    toSow: 'Te zaaien',
+    toHarvest: 'Te oogsten',
+    nothingThisMonth: 'Niets te doen in je tuin deze maand.',
   },
   login: {
     title: 'Inloggen',

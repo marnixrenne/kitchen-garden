@@ -9,11 +9,17 @@ export default {
   back: '← Back',
   seedingMonths: 'Seeding months',
   harvestingMonths: 'Harvesting months',
+  home: 'Explore',
+  myGarden: 'My garden',
   garden: {
     add: '+ Add to my garden',
     added: '✓ In my garden',
     addTooltip: 'Add to my garden',
     removeTooltip: 'Remove from my garden',
+    empty: 'Your garden is empty. Browse vegetables and add some!',
+    toSow: 'To sow',
+    toHarvest: 'To harvest',
+    nothingThisMonth: 'Nothing to do in your garden this month.',
   },
   login: {
     title: 'Sign in',

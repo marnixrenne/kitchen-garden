@@ -23,6 +23,10 @@ class GardenController(private val repository: GardenRepository) {
     fun getGarden(authentication: Authentication): Set<UUID> =
         repository.findVegetableIds(resolveUserId(authentication))
 
+    @GetMapping("/details")
+    fun getGardenDetails(authentication: Authentication): List<VegetableDetail> =
+        repository.findDetails(resolveUserId(authentication))
+
     @PutMapping("/{vegetableId}")
     fun addToGarden(
         @PathVariable vegetableId: UUID,
