@@ -33,6 +33,10 @@ class DataInitializer(
                     it[Roles.id]   = roleId
                     it[Roles.name] = "Admins"
                 }
+                Authorities.insert {
+                    it[Authorities.name]        = "ROLE_ADMIN"
+                    it[Authorities.description] = "Full administrative access"
+                }
                 RoleAuthorities.insert {
                     it[RoleAuthorities.roleId]    = roleId
                     it[RoleAuthorities.authority] = "ROLE_ADMIN"
