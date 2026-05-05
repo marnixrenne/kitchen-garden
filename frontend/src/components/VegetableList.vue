@@ -8,6 +8,7 @@ const props = defineProps({
   total:     Number,
   loading:   Boolean,
   gardenIds: Set,
+  query:     { type: String, default: '' },
 })
 
 const emit = defineEmits(['toggle-garden'])
@@ -23,6 +24,13 @@ const vegName = (veg) => {
 
 <template>
   <div v-if="loading" class="loading">{{ t('loading') }}</div>
+
+  <template v-else-if="total === 0 && query">
+    <div class="empty-state">
+      <div class="icon">🔍</div>
+      <p>{{ t('noSearchResults', { query }) }}</p>
+    </div>
+  </template>
 
   <template v-else-if="total === 0">
     <div class="empty-state">

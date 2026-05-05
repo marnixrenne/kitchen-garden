@@ -6,24 +6,36 @@ import VegetableList from '../components/VegetableList.vue'
 
 const CATEGORY_ORDER = ['Fruiting', 'Leafy', 'Brassica', 'Root', 'Legume', 'Herb']
 
-const { t, tm } = useI18n()
+const { t, tm, te } = useI18n()
 
 const selectedMonth = ref(new Date().getMonth() + 1)
 const counts        = ref({})
 const vegetables    = ref([])
 const loading       = ref(false)
 const gardenIds     = ref(new Set())
+const query         = ref('')
 
 const months = computed(() => tm('months'))
 
 const grouped = computed(() => {
+  const q = query.value.trim().toLowerCase()
+  const filtered = q
+    ? vegetables.value.filter(v => {
+        const key = `vegetables.${v.name}`
+        const localised = te(key) ? t(key) : v.name
+        return localised.toLowerCase().includes(q) || v.name.toLowerCase().includes(q)
+      })
+    : vegetables.value
+
   const g = {}
-  for (const v of vegetables.value) {
+  for (const v of filtered) {
     if (!g[v.category]) g[v.category] = []
     g[v.category].push(v)
   }
   return CATEGORY_ORDER.filter(c => g[c]).map(c => ({ category: c, items: g[c] }))
 })
+
+const filteredTotal = computed(() => grouped.value.reduce((sum, g) => sum + g.items.length, 0))
 
 async function fetchCounts() {
   const res = await fetch('/api/vegetables/counts')
@@ -71,12 +83,21 @@ onMounted(() => {
       :selected="selectedMonth"
       @select="selectedMonth = $event"
     />
+    <div class="search-bar">
+      <input
+        v-model="query"
+        type="search"
+        :placeholder="t('search')"
+        class="search-input"
+      />
+    </div>
     <VegetableList
       :grouped="grouped"
       :month-name="months[selectedMonth - 1]"
-      :total="vegetables.length"
+      :total="filteredTotal"
       :loading="loading"
       :garden-ids="gardenIds"
+      :query="query"
       @toggle-garden="toggleGarden"
     />
   </main>
@@ -92,4 +113,21 @@ onMounted(() => {
 .home-header p { color: var(--green-light); font-size: 0.95rem; }
 
 main { max-width: 860px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+
+.search-bar { margin-bottom: 1.5rem; }
+
+.search-input {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border: 1.5px solid var(--green-pale);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  font-size: 0.95rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.search-input::placeholder { color: var(--text-muted); }
+.search-input:focus { border-color: var(--green-mid); }
 </style>

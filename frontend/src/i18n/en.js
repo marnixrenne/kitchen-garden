@@ -4,6 +4,8 @@ export default {
   cropCount: '{n} crops',
   seedIn: 'Seed in {month}',
   noCrops: 'Nothing to seed in {month}. Time to plan!',
+  search: 'Search vegetables…',
+  noSearchResults: 'No vegetables matching "{query}" this month.',
   loading: 'Loading…',
   logout: 'Sign out',
   back: '← Back',
