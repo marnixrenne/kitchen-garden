@@ -82,6 +82,20 @@ onMounted(async () => {
             </div>
           </div>
         </div>
+
+        <div class="months-section">
+          <h3>{{ t('harvestingMonths') }}</h3>
+          <div class="months-grid">
+            <div
+              v-for="(name, i) in months"
+              :key="i"
+              class="month-chip harvest"
+              :class="{ active: vegetable.harvestingMonths.includes(i + 1) }"
+            >
+              {{ name }}
+            </div>
+          </div>
+        </div>
       </div>
     </template>
   </main>
@@ -187,6 +201,11 @@ main {
 
 .month-chip.active {
   background: var(--green-mid);
+  color: #fff;
+}
+
+.month-chip.harvest.active {
+  background: #d97706;
   color: #fff;
 }
 

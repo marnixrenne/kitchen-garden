@@ -27,16 +27,21 @@ class VegetableRepository {
         Vegetables.selectAll()
             .where { Vegetables.id eq id }
             .map { row ->
-                val months = SeedingMonths.selectAll()
+                val seedingMonths = SeedingMonths.selectAll()
                     .where { SeedingMonths.vegetableId eq id }
                     .map { it[SeedingMonths.monthNum] }
                     .sorted()
+                val harvestingMonths = HarvestingMonths.selectAll()
+                    .where { HarvestingMonths.vegetableId eq id }
+                    .map { it[HarvestingMonths.monthNum] }
+                    .sorted()
                 VegetableDetail(
-                    id           = row[Vegetables.id],
-                    name         = row[Vegetables.name],
-                    category     = row[Vegetables.category],
-                    emoji        = row[Vegetables.emoji],
-                    seedingMonths = months
+                    id               = row[Vegetables.id],
+                    name             = row[Vegetables.name],
+                    category         = row[Vegetables.category],
+                    emoji            = row[Vegetables.emoji],
+                    seedingMonths    = seedingMonths,
+                    harvestingMonths = harvestingMonths
                 )
             }
             .firstOrNull()

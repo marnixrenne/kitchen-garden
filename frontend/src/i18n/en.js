@@ -8,6 +8,7 @@ export default {
   logout: 'Sign out',
   back: '← Back',
   seedingMonths: 'Seeding months',
+  harvestingMonths: 'Harvesting months',
   login: {
     title: 'Sign in',
     username: 'Username',

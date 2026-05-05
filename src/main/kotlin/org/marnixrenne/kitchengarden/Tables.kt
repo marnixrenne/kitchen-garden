@@ -17,6 +17,11 @@ object SeedingMonths : Table("seeding_months") {
     val monthNum    = integer("month_num")
 }
 
+object HarvestingMonths : Table("harvesting_months") {
+    val vegetableId = uuid("vegetable_id") references Vegetables.id
+    val monthNum    = integer("month_num")
+}
+
 object GardenVegetables : Table("garden_vegetables") {
     val userId      = uuid("user_id")      references Users.id
     val vegetableId = uuid("vegetable_id") references Vegetables.id

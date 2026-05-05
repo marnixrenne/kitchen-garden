@@ -8,6 +8,7 @@ export default {
   logout: 'Uitloggen',
   back: '← Terug',
   seedingMonths: 'Zaaimaanden',
+  harvestingMonths: 'Oogstmaanden',
   login: {
     title: 'Inloggen',
     username: 'Gebruikersnaam',
