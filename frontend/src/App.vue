@@ -1,4 +1,5 @@
 <script setup>
+import { watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, RouterView, RouterLink } from 'vue-router'
 import { user, logout } from './stores/auth.js'
@@ -6,10 +7,28 @@ import { user, logout } from './stores/auth.js'
 const { t, locale } = useI18n()
 const router = useRouter()
 
-function switchLocale(lang) {
+async function switchLocale(lang) {
   locale.value = lang
   localStorage.setItem('locale', lang)
+  if (user.value) {
+    await fetch(`/api/preferences/locale`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: lang }),
+    })
+  }
 }
+
+watch(user, async (u) => {
+  if (!u) return
+  const res = await fetch('/api/preferences')
+  if (!res.ok) return
+  const prefs = await res.json()
+  if (prefs.locale) {
+    locale.value = prefs.locale
+    localStorage.setItem('locale', prefs.locale)
+  }
+}, { immediate: true })
 
 async function handleLogout() {
   await logout()

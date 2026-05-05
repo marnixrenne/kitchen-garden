@@ -1,4 +1,4 @@
-package org.marnixrenne.kitchengarden
+package org.marnixrenne.kitchengarden.preferences
 
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -17,9 +17,9 @@ class PreferenceRepository {
 
     fun set(userId: UUID, key: String, value: String): Unit = transaction {
         UserPreferences.upsert {
-            it[UserPreferences.userId] = userId
-            it[UserPreferences.prefKey]    = key
-            it[UserPreferences.prefValue]  = value
+            it[UserPreferences.userId]    = userId
+            it[UserPreferences.prefKey]   = key
+            it[UserPreferences.prefValue] = value
         }
     }
 

@@ -1,4 +1,4 @@
-package org.marnixrenne.kitchengarden
+package org.marnixrenne.kitchengarden.preferences
 
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
