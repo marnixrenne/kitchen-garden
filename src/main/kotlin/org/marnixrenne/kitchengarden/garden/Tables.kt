@@ -1,4 +1,4 @@
-package org.marnixrenne.kitchengarden
+package org.marnixrenne.kitchengarden.garden
 
 import org.jetbrains.exposed.sql.Table
 import org.marnixrenne.kitchengarden.security.Users

@@ -1,4 +1,4 @@
-package org.marnixrenne.kitchengarden
+package org.marnixrenne.kitchengarden.garden
 
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
