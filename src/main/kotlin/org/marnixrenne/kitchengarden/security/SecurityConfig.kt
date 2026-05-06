@@ -19,8 +19,10 @@ class SecurityConfig {
             .csrf { it.disable() }
             .authorizeHttpRequests { auth ->
                 auth.requestMatchers("/api/auth/**").permitAll()
+                auth.requestMatchers("/api/vegetables/**").permitAll()
                 auth.anyRequest().authenticated()
             }
+            .httpBasic { }
             .formLogin { form ->
                 form.loginProcessingUrl("/api/auth/login")
                 form.successHandler { _, response, authentication ->

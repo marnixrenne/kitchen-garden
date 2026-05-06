@@ -16,7 +16,11 @@
       "Bash(lsof -ti:8080)",
       "Bash(xargs kill *)",
       "Bash(docker compose *)",
-      "WebFetch(domain:en.wikipedia.org)"
+      "WebFetch(domain:en.wikipedia.org)",
+      "Bash(./gradlew dependencies *)",
+      "Bash(jar tf *)",
+      "Bash(xargs -I{} basename {})",
+      "Bash(grep -h \"tests=\\\\\"\\\\|failures=\\\\\"\\\\|errors=\\\\\"\\\\|testcase name=\" build/test-results/test/TEST-*.xml)"
     ]
   }
 }

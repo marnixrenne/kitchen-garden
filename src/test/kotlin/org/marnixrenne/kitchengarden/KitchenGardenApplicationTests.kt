@@ -1,13 +1,11 @@
 package org.marnixrenne.kitchengarden
 
 import org.junit.jupiter.api.Test
-import org.springframework.boot.test.context.SpringBootTest
 
-@SpringBootTest
-class KitchenGardenApplicationTests {
+class KitchenGardenApplicationTests : IntegrationTestBase() {
 
     @Test
-    fun contextLoads() {
+    fun `application context loads`() {
+        // Verifies Spring context starts, Flyway runs, and all beans wire up correctly
     }
-
 }
