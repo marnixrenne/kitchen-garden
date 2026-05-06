@@ -1,4 +1,4 @@
-package org.marnixrenne.kitchengarden
+package org.marnixrenne.kitchengarden.vegetables
 
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping

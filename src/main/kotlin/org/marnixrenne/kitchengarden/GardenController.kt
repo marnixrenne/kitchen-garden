@@ -3,6 +3,7 @@ package org.marnixrenne.kitchengarden
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.marnixrenne.kitchengarden.security.Users
+import org.marnixrenne.kitchengarden.vegetables.VegetableDetail
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*

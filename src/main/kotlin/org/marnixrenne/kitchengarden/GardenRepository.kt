@@ -3,6 +3,7 @@ package org.marnixrenne.kitchengarden
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.marnixrenne.kitchengarden.vegetables.*
 import org.springframework.stereotype.Repository
 import java.util.UUID
 
