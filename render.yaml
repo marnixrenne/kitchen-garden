@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: kitchen-garden
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/auth/me
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: kitchen-garden-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: kitchen-garden-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: kitchen-garden-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: kitchen-garden-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: kitchen-garden-db
+          property: password
+      - key: APP_BASE_URL
+        sync: false   # set manually in Render dashboard to your service URL
+
+databases:
+  - name: kitchen-garden-db
+    plan: free
+    databaseName: kitchengarden
+    user: kitchengarden

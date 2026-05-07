@@ -1,11 +1,14 @@
+server:
+  port: ${PORT:8080}
+
 spring:
   application:
     name: kitchen-garden
   datasource:
-    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/kitchengarden}
+    url: ${DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:kitchengarden}}
     driver-class-name: org.postgresql.Driver
-    username: ${DATASOURCE_USERNAME:kitchengarden}
-    password: ${DATASOURCE_PASSWORD:kitchengarden}
+    username: ${DB_USER:${DATASOURCE_USERNAME:kitchengarden}}
+    password: ${DB_PASSWORD:${DATASOURCE_PASSWORD:kitchengarden}}
   flyway:
     locations: classpath:db/migration
   mail:

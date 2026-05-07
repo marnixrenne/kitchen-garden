@@ -35,7 +35,7 @@ A web application that shows which vegetables you can seed each month, based on 
 Start the PostgreSQL database with Docker Compose:
 
 ```bash
-docker compose up -d
+docker compose -f docker/docker-compose.yml up -d
 ```
 
 ### Backend (API on port 8080)
@@ -70,15 +70,39 @@ All settings can be overridden via environment variables:
 
 | Variable | Default | Description |
 |---|---|---|
-| `DATASOURCE_URL` | `jdbc:postgresql://localhost:5432/kitchengarden` | JDBC connection URL |
-| `DATASOURCE_USERNAME` | `kitchengarden` | Database username |
-| `DATASOURCE_PASSWORD` | `kitchengarden` | Database password |
+| `PORT` | `8080` | HTTP port the server listens on |
+| `DB_HOST` | `localhost` | PostgreSQL host |
+| `DB_PORT` | `5432` | PostgreSQL port |
+| `DB_NAME` | `kitchengarden` | Database name |
+| `DB_USER` | `kitchengarden` | Database username |
+| `DB_PASSWORD` | `kitchengarden` | Database password |
+| `DATASOURCE_URL` | _(built from DB_* vars)_ | Override the full JDBC URL directly |
 | `APP_BASE_URL` | `http://localhost:5173` | Base URL used in verification emails |
 | `MAIL_HOST` | `localhost` | SMTP host |
 | `MAIL_PORT` | `1025` | SMTP port |
 | `MAIL_FROM` | `noreply@kitchengarden.local` | From address for outgoing mail |
 
 When no SMTP server is reachable, the verification link is printed to the application log instead.
+
+## Deployment
+
+### Render
+
+The project includes a `Dockerfile` (multi-stage: Node → JDK → JRE) and a `render.yaml` blueprint.
+
+**Deploy via Blueprint (recommended):**
+
+1. Push the repository to GitHub
+2. Go to the Render dashboard → **New → Blueprint**
+3. Connect the repository — Render reads `render.yaml` and creates both the web service and the managed PostgreSQL database automatically
+4. Once deployed, open the web service's **Environment** tab and set:
+   - `APP_BASE_URL` → your Render service URL (e.g. `https://kitchen-garden.onrender.com`)
+   - `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` → your SMTP provider credentials (e.g. Mailgun, Resend)
+
+**Free tier notes:**
+
+- The web service spins down after 15 minutes of inactivity; the first request after sleep is slow and in-memory sessions are lost
+- Render's free PostgreSQL plan expires after 90 days
 
 ## API
 
