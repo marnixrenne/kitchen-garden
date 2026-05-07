@@ -5,7 +5,7 @@ services:
     dockerfilePath: ./docker/Dockerfile
     dockerContext: .
     plan: free
-    healthCheckPath: /api/auth/me
+    healthCheckPath: /api/health
     envVars:
       - key: DB_HOST
         fromDatabase:

@@ -49,6 +49,7 @@ class SecurityConfig(
                 }
             }
             .authorizeHttpRequests { auth ->
+                auth.requestMatchers("/api/health").permitAll()
                 auth.requestMatchers("/api/auth/**").permitAll()
                 auth.requestMatchers("/api/vegetables/**").permitAll()
                 auth.anyRequest().authenticated()
