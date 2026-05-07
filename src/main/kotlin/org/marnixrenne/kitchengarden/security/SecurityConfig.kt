@@ -52,7 +52,8 @@ class SecurityConfig(
                 auth.requestMatchers("/api/health").permitAll()
                 auth.requestMatchers("/api/auth/**").permitAll()
                 auth.requestMatchers("/api/vegetables/**").permitAll()
-                auth.anyRequest().authenticated()
+                auth.requestMatchers("/api/**").authenticated()
+                auth.anyRequest().permitAll()  // frontend assets and SPA routes are public
             }
             // Eagerly load the deferred CSRF token so the XSRF-TOKEN cookie is written on every response
             .addFilterAfter(CsrfCookieFilter(), UsernamePasswordAuthenticationFilter::class.java)
