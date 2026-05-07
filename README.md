@@ -60,9 +60,9 @@ Then open [http://localhost:5173](http://localhost:5173) in your browser.
 
 An admin user is created automatically on first startup:
 
-| Email | Password |
+| Username | Password |
 |---|---|
-| `admin` | `admin` |
+| `admin` | value of `ADMIN_PASSWORD` (default: `admin`) |
 
 ## Configuration
 
