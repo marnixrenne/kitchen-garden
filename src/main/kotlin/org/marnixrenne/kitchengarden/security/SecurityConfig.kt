@@ -1,6 +1,9 @@
 package org.marnixrenne.kitchengarden.security
 
+import jakarta.servlet.FilterChain
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -8,21 +11,50 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository
+import org.springframework.security.web.csrf.CsrfToken
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler
+import java.util.function.Supplier
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.CorsConfigurationSource
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import org.springframework.web.filter.OncePerRequestFilter
 
 @Configuration
 @EnableWebSecurity
-class SecurityConfig {
+class SecurityConfig(
+    @Value("\${app.base-url}") private val baseUrl: String,
+) {
 
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
-            .csrf { it.disable() }
+            .csrf { csrf ->
+                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                // Use the non-XOR handler: the JS SPA reads the raw cookie value and sends
+                // it as X-XSRF-TOKEN, so we must not apply XOR-masking on the server side.
+                // (XorCsrfTokenRequestAttributeHandler is Spring Security 7's default but is
+                //  incompatible with the read-cookie-send-header SPA pattern.)
+                csrf.csrfTokenRequestHandler(CsrfTokenRequestAttributeHandler())
+            }
+            .cors { cors -> cors.configurationSource(corsConfigurationSource()) }
+            .headers { headers ->
+                headers.referrerPolicy {
+                    it.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
+                }
+                headers.contentSecurityPolicy {
+                    it.policyDirectives("default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:")
+                }
+            }
             .authorizeHttpRequests { auth ->
                 auth.requestMatchers("/api/auth/**").permitAll()
                 auth.requestMatchers("/api/vegetables/**").permitAll()
                 auth.anyRequest().authenticated()
             }
-            .httpBasic { }
+            // Eagerly load the deferred CSRF token so the XSRF-TOKEN cookie is written on every response
+            .addFilterAfter(CsrfCookieFilter(), UsernamePasswordAuthenticationFilter::class.java)
             .formLogin { form ->
                 form.loginProcessingUrl("/api/auth/login")
                 form.successHandler { _, response, authentication ->
@@ -38,6 +70,9 @@ class SecurityConfig {
             }
             .logout { logout ->
                 logout.logoutUrl("/api/auth/logout")
+                logout.invalidateHttpSession(true)
+                logout.deleteCookies("JSESSIONID")
+                logout.clearAuthentication(true)
                 logout.logoutSuccessHandler { _, response, _ ->
                     response.status = HttpServletResponse.SC_OK
                 }
@@ -54,5 +89,37 @@ class SecurityConfig {
     }
 
     @Bean
+    fun corsConfigurationSource(): CorsConfigurationSource {
+        val config = CorsConfiguration()
+        config.allowedOrigins = listOf(baseUrl)
+        config.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        config.allowedHeaders = listOf("Content-Type", "X-XSRF-TOKEN")
+        config.allowCredentials = true
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/api/**", config)
+        return source
+    }
+
+    @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
+
+    /**
+     * Forces the deferred CSRF token to be loaded so the XSRF-TOKEN cookie is written on every response.
+     *
+     * Spring Security 6 stores a Supplier<CsrfToken> (not a CsrfToken directly) in the request
+     * attribute. Calling get() on the supplier triggers CookieCsrfTokenRepository to write the cookie.
+     */
+    private class CsrfCookieFilter : OncePerRequestFilter() {
+        override fun doFilterInternal(
+            request: HttpServletRequest,
+            response: HttpServletResponse,
+            filterChain: FilterChain,
+        ) {
+            when (val attr = request.getAttribute(CsrfToken::class.java.name)) {
+                is CsrfToken      -> attr.token          // already loaded
+                is Supplier<*>    -> (attr.get() as? CsrfToken)?.token  // deferred — loading writes the cookie
+            }
+            filterChain.doFilter(request, response)
+        }
+    }
 }

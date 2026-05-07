@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { csrfHeaders } from '../stores/auth.js'
 
 const route  = useRoute()
 const router = useRouter()
@@ -36,7 +37,7 @@ async function submit() {
   try {
     const res = await fetch('/api/auth/complete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
       body: JSON.stringify({
         token:    route.query.token,
         password: password.value,

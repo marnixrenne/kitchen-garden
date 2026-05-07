@@ -4,7 +4,8 @@ import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.put
@@ -19,7 +20,7 @@ class GardenApiTest : IntegrationTestBase() {
     @Test
     fun `authenticated user starts with empty garden`() {
         mvc.get("/api/garden") {
-            with(httpBasic("admin", "admin"))
+            with(user("admin"))
         }.andExpect {
             status { isOk() }
             jsonPath("$") { value(empty<String>()) }
@@ -31,22 +32,24 @@ class GardenApiTest : IntegrationTestBase() {
         val id = tomatoId()
 
         mvc.put("/api/garden/$id") {
-            with(httpBasic("admin", "admin"))
+            with(user("admin"))
+            with(csrf())
         }.andExpect { status { isNoContent() } }
 
         mvc.get("/api/garden") {
-            with(httpBasic("admin", "admin"))
+            with(user("admin"))
         }.andExpect {
             status { isOk() }
             jsonPath("$") { value(hasItem(id)) }
         }
 
         mvc.delete("/api/garden/$id") {
-            with(httpBasic("admin", "admin"))
+            with(user("admin"))
+            with(csrf())
         }.andExpect { status { isNoContent() } }
 
         mvc.get("/api/garden") {
-            with(httpBasic("admin", "admin"))
+            with(user("admin"))
         }.andExpect {
             status { isOk() }
             jsonPath("$") { value(not(hasItem(id))) }
@@ -57,10 +60,10 @@ class GardenApiTest : IntegrationTestBase() {
     fun `garden details returns full vegetable info including countries`() {
         val id = tomatoId()
 
-        mvc.put("/api/garden/$id") { with(httpBasic("admin", "admin")) }
+        mvc.put("/api/garden/$id") { with(user("admin")); with(csrf()) }
 
         mvc.get("/api/garden/details") {
-            with(httpBasic("admin", "admin"))
+            with(user("admin"))
         }.andExpect {
             status { isOk() }
             jsonPath("$[*].name") { value(hasItem("Tomato")) }
@@ -68,6 +71,6 @@ class GardenApiTest : IntegrationTestBase() {
             jsonPath("$[?(@.name=='Tomato')].seedingMonths") { value(hasSize<Any>(greaterThan(0))) }
         }
 
-        mvc.delete("/api/garden/$id") { with(httpBasic("admin", "admin")) }
+        mvc.delete("/api/garden/$id") { with(user("admin")); with(csrf()) }
     }
 }

@@ -20,7 +20,10 @@
       "Bash(./gradlew dependencies *)",
       "Bash(jar tf *)",
       "Bash(xargs -I{} basename {})",
-      "Bash(grep -h \"tests=\\\\\"\\\\|failures=\\\\\"\\\\|errors=\\\\\"\\\\|testcase name=\" build/test-results/test/TEST-*.xml)"
+      "Bash(grep -h \"tests=\\\\\"\\\\|failures=\\\\\"\\\\|errors=\\\\\"\\\\|testcase name=\" build/test-results/test/TEST-*.xml)",
+      "Bash(./gradlew cleanTest test)",
+      "Bash(./gradlew bootRun --no-daemon)",
+      "Bash(echo \"Backend starting in background, PID=$!\")"
     ]
   }
 }

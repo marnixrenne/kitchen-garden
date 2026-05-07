@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/preferences")
 class PreferenceController(private val repository: PreferenceRepository) {
 
+    private val validKey = Regex("^[a-zA-Z0-9_.-]{1,100}$")
+
     private fun resolveUserId(authentication: Authentication) = transaction {
         Users.selectAll()
             .where { Users.username eq authentication.name }
@@ -27,15 +29,22 @@ class PreferenceController(private val repository: PreferenceRepository) {
         @PathVariable key: String,
         @RequestBody body: Map<String, String>,
         authentication: Authentication,
-    ): ResponseEntity<Unit> {
-        val value = body["value"] ?: return ResponseEntity.badRequest().build()
+    ): ResponseEntity<*> {
+        if (!validKey.matches(key))
+            return ResponseEntity.badRequest().body(mapOf("error" to "Invalid preference key"))
+        val value = body["value"]
+            ?: return ResponseEntity.badRequest().body(mapOf("error" to "Value is required"))
+        if (value.length > 1000)
+            return ResponseEntity.badRequest().body(mapOf("error" to "Value too long (max 1000 characters)"))
         repository.set(resolveUserId(authentication), key, value)
-        return ResponseEntity.noContent().build()
+        return ResponseEntity.noContent().build<Unit>()
     }
 
     @DeleteMapping("/{key}")
-    fun delete(@PathVariable key: String, authentication: Authentication): ResponseEntity<Unit> {
+    fun delete(@PathVariable key: String, authentication: Authentication): ResponseEntity<*> {
+        if (!validKey.matches(key))
+            return ResponseEntity.badRequest().body(mapOf("error" to "Invalid preference key"))
         repository.delete(resolveUserId(authentication), key)
-        return ResponseEntity.noContent().build()
+        return ResponseEntity.noContent().build<Unit>()
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 @Service
 class SignupService(
@@ -20,12 +21,26 @@ class SignupService(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
+    private val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+
+    // Simple in-memory rate limiter: max 3 signup attempts per email per hour
+    private val signupAttempts = ConcurrentHashMap<String, MutableList<Long>>()
+
     fun initiateSignup(email: String) {
+        if (!emailRegex.matches(email)) throw IllegalArgumentException("Invalid email address")
+
+        checkSignupRateLimit(email)
+
+        // If the email is already registered, silently succeed to avoid account enumeration
+        val alreadyRegistered = transaction {
+            Users.selectAll().where { Users.username eq email }.count() > 0
+        }
+        if (alreadyRegistered) return
+
         val token     = UUID.randomUUID()
         val expiresAt = System.currentTimeMillis() + 24 * 60 * 60 * 1_000L
 
         transaction {
-            // Remove any existing token for this email so re-requests work
             SignupTokens.deleteWhere { SignupTokens.email eq email }
             SignupTokens.insert {
                 it[SignupTokens.token]     = token
@@ -49,6 +64,8 @@ class SignupService(
     }
 
     fun completeSignup(tokenStr: String, password: String) {
+        validatePassword(password)
+
         val token = runCatching { UUID.fromString(tokenStr) }.getOrNull()
             ?: throw IllegalArgumentException("Invalid token")
 
@@ -60,7 +77,7 @@ class SignupService(
             val email = row[SignupTokens.email]
 
             if (Users.selectAll().where { Users.username eq email }.count() > 0)
-                throw IllegalArgumentException("An account for this email already exists")
+                throw IllegalArgumentException("Token expired or invalid")
 
             val hash: String = passwordEncoder.encode(password).toString()
             Users.insert {
@@ -75,9 +92,29 @@ class SignupService(
         }
     }
 
+    private fun validatePassword(password: String) {
+        require(password.length >= 8)          { "Password must be at least 8 characters" }
+        require(password.any { it.isUpperCase() }) { "Password must contain an uppercase letter" }
+        require(password.any { it.isLowerCase() }) { "Password must contain a lowercase letter" }
+        require(password.any { it.isDigit() })     { "Password must contain a digit" }
+    }
+
+    private fun checkSignupRateLimit(email: String) {
+        val now = System.currentTimeMillis()
+        val windowMs = 60 * 60 * 1_000L
+        val attempts = signupAttempts.getOrPut(email) { mutableListOf() }
+        synchronized(attempts) {
+            attempts.removeIf { it < now - windowMs }
+            if (attempts.size >= 3)
+                throw IllegalArgumentException("Too many signup requests. Please try again later.")
+            attempts.add(now)
+        }
+    }
+
     private fun sendVerificationEmail(to: String, link: String) {
         if (mailSender == null) {
-            log.info("Mail not configured — verification link for {}: {}", to, link)
+            log.info("Mail not configured — verification link sent to {}", to)
+            log.debug("Verification link: {}", link)
             return
         }
         try {
@@ -90,7 +127,7 @@ class SignupService(
             mailSender.send(msg)
             log.info("Verification email sent to {}", to)
         } catch (e: Exception) {
-            log.warn("Failed to send verification email to {} — link: {}", to, link, e)
+            log.warn("Failed to send verification email to {}", to, e)
         }
     }
 }

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import MonthSelector from '../components/MonthSelector.vue'
 import VegetableList from '../components/VegetableList.vue'
+import { csrfHeaders } from '../stores/auth.js'
 
 const CATEGORY_ORDER = ['Fruiting', 'Leafy', 'Brassica', 'Root', 'Legume', 'Herb']
 
@@ -53,7 +54,7 @@ async function fetchGarden() {
 async function toggleGarden(vegetableId) {
   const inGarden = gardenIds.value.has(vegetableId)
   const method = inGarden ? 'DELETE' : 'PUT'
-  await fetch(`/api/garden/${vegetableId}`, { method })
+  await fetch(`/api/garden/${vegetableId}`, { method, headers: csrfHeaders() })
   const next = new Set(gardenIds.value)
   inGarden ? next.delete(vegetableId) : next.add(vegetableId)
   gardenIds.value = next

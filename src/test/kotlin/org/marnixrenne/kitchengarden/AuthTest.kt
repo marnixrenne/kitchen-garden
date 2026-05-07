@@ -1,6 +1,7 @@
 package org.marnixrenne.kitchengarden
 
 import org.junit.jupiter.api.Test
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 
@@ -11,6 +12,7 @@ class AuthTest : IntegrationTestBase() {
         mvc.post("/api/auth/login") {
             param("username", "admin")
             param("password", "admin")
+            with(csrf())
         }.andExpect {
             status { isOk() }
             jsonPath("$.username") { value("admin") }
@@ -22,6 +24,7 @@ class AuthTest : IntegrationTestBase() {
         mvc.post("/api/auth/login") {
             param("username", "admin")
             param("password", "wrong")
+            with(csrf())
         }.andExpect {
             status { isUnauthorized() }
         }

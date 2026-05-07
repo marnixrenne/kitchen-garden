@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { csrfHeaders } from '../stores/auth.js'
 
 const route  = useRoute()
 const router = useRouter()
@@ -26,7 +27,7 @@ const description = computed(() => {
 
 async function toggleGarden() {
   const method = inGarden.value ? 'DELETE' : 'PUT'
-  await fetch(`/api/garden/${route.params.id}`, { method })
+  await fetch(`/api/garden/${route.params.id}`, { method, headers: csrfHeaders() })
   inGarden.value = !inGarden.value
 }
 

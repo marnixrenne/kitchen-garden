@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { csrfHeaders } from '../stores/auth.js'
 
 const router = useRouter()
 
@@ -15,7 +16,7 @@ async function submit() {
   try {
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
       body: JSON.stringify({ email: email.value }),
     })
     if (res.ok) {
