@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.context.annotation.DependsOn
 import org.springframework.stereotype.Component
@@ -13,6 +14,7 @@ import java.util.UUID
 @DependsOn("flywayInitializer", "springTransactionManager")
 class DataInitializer(
     private val passwordEncoder: PasswordEncoder,
+    @Value("\${app.admin.password:admin}") private val adminPassword: String,
 ) {
 
     @PostConstruct
@@ -20,7 +22,7 @@ class DataInitializer(
         transaction {
             if (Users.selectAll().count() == 0L) {
                 val adminId = UUID.randomUUID()
-                val hash: String = passwordEncoder.encode("admin").toString()
+                val hash: String = passwordEncoder.encode(adminPassword).toString()
                 Users.insert {
                     it[Users.id]          = adminId
                     it[Users.username]    = "admin"

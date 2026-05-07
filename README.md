@@ -77,6 +77,7 @@ All settings can be overridden via environment variables:
 | `DB_USER` | `kitchengarden` | Database username |
 | `DB_PASSWORD` | `kitchengarden` | Database password |
 | `DATASOURCE_URL` | _(built from DB_* vars)_ | Override the full JDBC URL directly |
+| `ADMIN_PASSWORD` | `admin` | Password for the auto-created admin user (only used on first startup) |
 | `APP_BASE_URL` | `http://localhost:5173` | Base URL used in verification emails |
 | `MAIL_HOST` | `localhost` | SMTP host |
 | `MAIL_PORT` | `1025` | SMTP port |

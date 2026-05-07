@@ -29,6 +29,8 @@ services:
           property: password
       - key: APP_BASE_URL
         sync: false   # set manually in Render dashboard to your service URL
+      - key: ADMIN_PASSWORD
+        sync: false   # set manually in Render dashboard
 
 databases:
   - name: kitchen-garden-db
