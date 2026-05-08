@@ -10,6 +10,7 @@ object Users : Table("sec_users") {
     val displayName = varchar("display_name", 100)
     val email       = varchar("email", 200).nullable()
     val lastLogin   = timestamp("last_login").nullable()
+    val disabled    = bool("disabled").default(false)
 
     override val primaryKey = PrimaryKey(id)
 }

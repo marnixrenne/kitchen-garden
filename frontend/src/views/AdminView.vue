@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { user, csrfHeaders } from '../stores/auth.js'
 
 function formatDate(ts) {
   if (!ts) return '—'
@@ -27,6 +28,16 @@ async function fetchUsers() {
   }
 }
 
+async function toggleDisabled(u) {
+  const disabled = !u.disabled
+  const res = await fetch(`/api/admin/users/${encodeURIComponent(u.username)}/disabled`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+    body: JSON.stringify({ disabled }),
+  })
+  if (res.ok) u.disabled = disabled
+}
+
 onMounted(fetchUsers)
 </script>
 
@@ -46,10 +57,11 @@ onMounted(fetchUsers)
           <th>Username</th>
           <th>Status</th>
           <th>Last login</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="u in users" :key="u.username">
+        <tr v-for="u in users" :key="u.username" :class="{ 'row-disabled': u.disabled }">
           <td class="username">{{ u.username }}</td>
           <td>
             <span :class="['status-badge', u.online ? 'online' : 'offline']">
@@ -57,6 +69,15 @@ onMounted(fetchUsers)
             </span>
           </td>
           <td class="last-login">{{ formatDate(u.lastLogin) }}</td>
+          <td class="actions">
+            <button
+              v-if="u.username !== user?.username"
+              :class="['toggle-btn', u.disabled ? 'enable' : 'disable']"
+              @click="toggleDisabled(u)"
+            >
+              {{ u.disabled ? 'Enable' : 'Disable' }}
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -136,8 +157,12 @@ main {
 
 .users-table tbody tr:last-child td { border-bottom: none; }
 
+.row-disabled .username,
+.row-disabled .last-login { opacity: 0.45; }
+
 .username   { font-size: 0.9rem; color: var(--text); }
 .last-login { font-size: 0.85rem; color: var(--text-muted); }
+.actions    { text-align: right; white-space: nowrap; }
 
 .status-badge {
   display: inline-block;
@@ -149,4 +174,30 @@ main {
 
 .status-badge.online  { background: #d1fae5; color: #065f46; }
 .status-badge.offline { background: #f3f4f6; color: #6b7280; }
+
+.toggle-btn {
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  border: 1.5px solid;
+}
+
+.toggle-btn.disable {
+  border-color: #e74c3c;
+  color: #e74c3c;
+  background: transparent;
+}
+
+.toggle-btn.disable:hover { background: #e74c3c; color: #fff; }
+
+.toggle-btn.enable {
+  border-color: var(--green-mid);
+  color: var(--green-mid);
+  background: transparent;
+}
+
+.toggle-btn.enable:hover { background: var(--green-mid); color: #fff; }
 </style>

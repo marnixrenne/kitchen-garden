@@ -30,6 +30,7 @@ class UserDetailsServiceImpl : UserDetailsService {
                 .username(userRow[Users.username])
                 .password(userRow[Users.password])
                 .authorities(authorities)
+                .disabled(userRow[Users.disabled])
                 .build()
         }
 }
