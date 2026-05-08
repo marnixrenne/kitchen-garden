@@ -134,6 +134,14 @@ const vegName = (veg) => {
   transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
 
+@media (pointer: coarse) {
+  .garden-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.1rem;
+  }
+}
+
 .garden-btn:hover {
   border-color: var(--green-mid);
   color: var(--green-mid);
