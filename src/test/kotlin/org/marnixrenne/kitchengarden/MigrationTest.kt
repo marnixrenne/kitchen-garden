@@ -16,8 +16,8 @@ class MigrationTest : IntegrationTestBase() {
             "SELECT COUNT(*) FROM flyway_schema_history WHERE success = true",
             Int::class.java
         )!!
-        // V1 through V18
-        assertEquals(18, count, "Expected 18 successful migrations")
+        // V1 through V20
+        assertEquals(20, count, "Expected 20 successful migrations")
     }
 
     @Test

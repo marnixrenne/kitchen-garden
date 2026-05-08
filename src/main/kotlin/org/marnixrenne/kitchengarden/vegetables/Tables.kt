@@ -7,6 +7,7 @@ object Vegetables : Table("vegetables") {
     val name     = varchar("name", 100)
     val category = varchar("category", 50)
     val emoji    = varchar("emoji", 10).nullable()
+    val imageUrl = varchar("image_url", 500).nullable()
 
     override val primaryKey = PrimaryKey(id)
 }

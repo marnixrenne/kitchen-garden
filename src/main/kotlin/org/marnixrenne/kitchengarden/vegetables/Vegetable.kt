@@ -6,5 +6,6 @@ data class Vegetable(
     val id: UUID,
     val name: String,
     val category: String,
-    val emoji: String?
+    val emoji: String?,
+    val imageUrl: String?
 )

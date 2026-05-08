@@ -68,6 +68,13 @@ onMounted(async () => {
           </button>
         </div>
 
+        <img
+          v-if="vegetable.imageUrl"
+          :src="vegetable.imageUrl"
+          :alt="localName"
+          class="detail-image"
+        />
+
         <p class="description">{{ description }}</p>
 
         <div class="months-section">
@@ -172,6 +179,14 @@ main {
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
+}
+
+.detail-image {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  border-radius: calc(var(--radius) - 4px);
+  border: 1px solid var(--green-pale);
 }
 
 .description {

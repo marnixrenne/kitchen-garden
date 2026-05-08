@@ -16,7 +16,8 @@ class VegetableRepository {
                     id       = row[Vegetables.id],
                     name     = row[Vegetables.name],
                     category = row[Vegetables.category],
-                    emoji    = row[Vegetables.emoji]
+                    emoji    = row[Vegetables.emoji],
+                    imageUrl = row[Vegetables.imageUrl]
                 )
             }
     }
@@ -31,7 +32,8 @@ class VegetableRepository {
                     id       = row[Vegetables.id],
                     name     = row[Vegetables.name],
                     category = row[Vegetables.category],
-                    emoji    = row[Vegetables.emoji]
+                    emoji    = row[Vegetables.emoji],
+                    imageUrl = row[Vegetables.imageUrl]
                 )
             }
     }
@@ -58,6 +60,7 @@ class VegetableRepository {
                     name             = row[Vegetables.name],
                     category         = row[Vegetables.category],
                     emoji            = row[Vegetables.emoji],
+                    imageUrl         = row[Vegetables.imageUrl],
                     seedingMonths    = seedingMonths,
                     harvestingMonths = harvestingMonths,
                     countries        = countries
