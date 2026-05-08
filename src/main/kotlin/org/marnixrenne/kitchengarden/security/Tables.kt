@@ -1,6 +1,7 @@
 package org.marnixrenne.kitchengarden.security
 
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.javatime.timestamp
 
 object Users : Table("sec_users") {
     val id          = uuid("id")
@@ -8,6 +9,7 @@ object Users : Table("sec_users") {
     val password    = varchar("password", 100)
     val displayName = varchar("display_name", 100)
     val email       = varchar("email", 200).nullable()
+    val lastLogin   = timestamp("last_login").nullable()
 
     override val primaryKey = PrimaryKey(id)
 }

@@ -27,7 +27,9 @@
       "Bash(./gradlew compileKotlin --no-daemon)",
       "Bash(grep -v \"^$\")",
       "Bash(grep -v \"^\\\\s*$\")",
-      "Bash(./gradlew compileKotlin)"
+      "Bash(./gradlew compileKotlin)",
+      "Bash(./gradlew compileKotlin --info)",
+      "Bash(./gradlew compileKotlin --stacktrace)"
     ]
   }
 }

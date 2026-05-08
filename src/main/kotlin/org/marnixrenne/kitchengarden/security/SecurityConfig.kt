@@ -15,6 +15,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.security.web.csrf.CsrfToken
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler
+import org.springframework.security.web.session.HttpSessionEventPublisher
+import org.springframework.security.core.session.SessionRegistry
+import org.springframework.security.core.session.SessionRegistryImpl
 import java.util.function.Supplier
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
 import org.springframework.web.cors.CorsConfiguration
@@ -26,10 +29,17 @@ import org.springframework.web.filter.OncePerRequestFilter
 @EnableWebSecurity
 class SecurityConfig(
     @Value("\${app.base-url}") private val baseUrl: String,
+    private val userLoginService: UserLoginService,
 ) {
 
     @Bean
-    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+    fun sessionRegistry(): SessionRegistry = SessionRegistryImpl()
+
+    @Bean
+    fun httpSessionEventPublisher() = HttpSessionEventPublisher()
+
+    @Bean
+    fun securityFilterChain(http: HttpSecurity, sessionRegistry: SessionRegistry): SecurityFilterChain {
         http
             .csrf { csrf ->
                 csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
@@ -52,10 +62,14 @@ class SecurityConfig(
                     it.policyDirectives("default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:")
                 }
             }
+            .sessionManagement { session ->
+                session.maximumSessions(-1).sessionRegistry(sessionRegistry)
+            }
             .authorizeHttpRequests { auth ->
                 auth.requestMatchers("/api/health").permitAll()
                 auth.requestMatchers("/api/auth/**").permitAll()
                 auth.requestMatchers("/api/vegetables/**").permitAll()
+                auth.requestMatchers("/api/admin/**").hasRole("ADMIN")
                 auth.requestMatchers("/api/**").authenticated()
                 auth.anyRequest().permitAll()  // frontend assets and SPA routes are public
             }
@@ -64,9 +78,11 @@ class SecurityConfig(
             .formLogin { form ->
                 form.loginProcessingUrl("/api/auth/login")
                 form.successHandler { _, response, authentication ->
+                    userLoginService.recordLogin(authentication.name)
+                    val roles = authentication.authorities.map { it.authority }
                     response.status = HttpServletResponse.SC_OK
                     response.contentType = "application/json"
-                    response.writer.write("""{"username":"${authentication.name}"}""")
+                    response.writer.write("""{"username":"${authentication.name}","roles":${roles.joinToString(",", "[", "]") { "\"$it\"" }}}""")
                 }
                 form.failureHandler { _, response, _ ->
                     response.status = HttpServletResponse.SC_UNAUTHORIZED

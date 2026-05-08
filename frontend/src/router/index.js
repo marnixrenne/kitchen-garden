@@ -6,6 +6,7 @@ import VegetableDetailView from '../views/VegetableDetailView.vue'
 import LoginForm           from '../components/LoginForm.vue'
 import SignupView          from '../views/SignupView.vue'
 import VerifyView          from '../views/VerifyView.vue'
+import AdminView           from '../views/AdminView.vue'
 import { user, checkAuth } from '../stores/auth.js'
 
 let authInitialized = false
@@ -20,6 +21,7 @@ const router = createRouter({
     { path: '/home',           component: HomeView,            meta: { requiresAuth: true } },
     { path: '/garden',         component: GardenView,          meta: { requiresAuth: true } },
     { path: '/vegetable/:id',  component: VegetableDetailView, meta: { requiresAuth: true } },
+    { path: '/admin',          component: AdminView,           meta: { requiresAuth: true, requiresAdmin: true } },
   ],
 })
 
@@ -31,6 +33,7 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresAuth && !user.value) return '/login'
   if (to.meta.guestOnly && user.value)     return '/home'
+  if (to.meta.requiresAdmin && !user.value?.roles?.includes('ROLE_ADMIN')) return '/home'
 })
 
 export default router

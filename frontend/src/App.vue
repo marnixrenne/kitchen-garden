@@ -43,6 +43,7 @@ async function handleLogout() {
       <nav class="header-nav">
         <RouterLink to="/home">{{ t('home') }}</RouterLink>
         <RouterLink to="/garden">{{ t('myGarden') }}</RouterLink>
+        <RouterLink v-if="user?.roles?.includes('ROLE_ADMIN')" to="/admin">Admin</RouterLink>
       </nav>
       <div class="header-controls">
         <span class="display-name">{{ user.username }}</span>

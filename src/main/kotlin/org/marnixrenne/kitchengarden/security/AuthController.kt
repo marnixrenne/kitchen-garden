@@ -19,6 +19,7 @@ class AuthController {
         ) {
             return ResponseEntity.status(401).body(mapOf("error" to "Not authenticated"))
         }
-        return ResponseEntity.ok(mapOf("username" to authentication.name))
+        val roles = authentication.authorities.map { it.authority }
+        return ResponseEntity.ok(mapOf("username" to authentication.name, "roles" to roles))
     }
 }

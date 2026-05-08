@@ -1,0 +1,1 @@
+ALTER TABLE sec_users ADD COLUMN last_login TIMESTAMPTZ;

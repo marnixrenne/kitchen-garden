@@ -17,7 +17,7 @@ class MigrationTest : IntegrationTestBase() {
             Int::class.java
         )!!
         // V1 through V20
-        assertEquals(20, count, "Expected 20 successful migrations")
+        assertEquals(21, count, "Expected 21 successful migrations")
     }
 
     @Test
