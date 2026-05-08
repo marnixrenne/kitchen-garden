@@ -102,7 +102,7 @@ const router = useRouter()
 }
 
 .hero-icon {
-  font-size: 4rem;
+  font-size: 3.5rem;
   margin-bottom: 1rem;
 }
 
@@ -111,6 +111,13 @@ const router = useRouter()
   font-weight: 800;
   color: var(--green-dark);
   margin-bottom: 1rem;
+}
+
+@media (max-width: 480px) {
+  .hero { padding: 1.5rem 0 3rem; }
+  .hero-icon { font-size: 2.75rem; }
+  .hero h1 { font-size: 2rem; }
+  .tagline { font-size: 1rem; }
 }
 
 .tagline {
@@ -137,7 +144,7 @@ const router = useRouter()
 
 .features {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 1.25rem;
 }
 

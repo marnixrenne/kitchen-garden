@@ -41,6 +41,10 @@ const { t } = useI18n()
   .month-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
+@media (max-width: 360px) {
+  .month-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
 .month-btn {
   display: flex;
   flex-direction: column;

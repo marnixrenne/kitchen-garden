@@ -232,7 +232,7 @@ onMounted(async () => {
 main {
   max-width: 960px;
   margin: 0 auto;
-  padding: 2rem 1rem 4rem;
+  padding: 1.5rem 1rem 4rem;
 }
 
 .page-header {
@@ -308,6 +308,19 @@ main {
   border-radius: var(--radius);
   background: var(--card-bg);
   margin-bottom: 1.5rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 700px) {
+  .calendar-wrap::after {
+    content: '← scroll →';
+    display: block;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding: 0.4rem;
+    border-top: 1px solid var(--green-pale);
+  }
 }
 
 .calendar {

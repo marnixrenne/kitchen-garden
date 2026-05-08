@@ -69,6 +69,7 @@ async function submit() {
   align-items: center;
   justify-content: center;
   background: var(--bg);
+  padding: 1rem;
 }
 
 .login-card {
@@ -81,6 +82,10 @@ async function submit() {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
+}
+
+@media (max-width: 480px) {
+  .login-card { padding: 1.75rem 1.25rem; }
 }
 
 .login-icon {

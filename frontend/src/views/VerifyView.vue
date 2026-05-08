@@ -123,10 +123,14 @@ async function submit() {
 .page {
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   background: var(--bg);
-  padding: 1rem;
+  padding: 2rem 1rem;
+}
+
+@media (min-height: 600px) {
+  .page { align-items: center; }
 }
 
 .card {
@@ -139,6 +143,10 @@ async function submit() {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
+}
+
+@media (max-width: 480px) {
+  .card { padding: 1.75rem 1.25rem; }
 }
 
 .icon { font-size: 2.5rem; text-align: center; }

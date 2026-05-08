@@ -82,7 +82,7 @@ body {
 header {
   background: var(--green-dark);
   color: #fff;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1.5rem;
 }
 
 .header-top {
@@ -91,9 +91,10 @@ header {
   gap: 1rem;
   max-width: 860px;
   margin: 0 auto;
+  flex-wrap: wrap;
 }
 
-header h1 { font-size: 1.5rem; font-weight: 700; }
+header h1 { font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
 
 .header-nav {
   display: flex;
@@ -102,7 +103,7 @@ header h1 { font-size: 1.5rem; font-weight: 700; }
 }
 
 .header-nav a {
-  padding: 0.25rem 0.7rem;
+  padding: 0.35rem 0.7rem;
   border-radius: 6px;
   color: rgba(255,255,255,0.7);
   text-decoration: none;
@@ -127,7 +128,7 @@ header h1 { font-size: 1.5rem; font-weight: 700; }
 }
 
 .logout-btn {
-  padding: 0.25rem 0.7rem;
+  padding: 0.35rem 0.7rem;
   border: 1.5px solid rgba(255,255,255,0.3);
   border-radius: 6px;
   background: transparent;
@@ -143,7 +144,7 @@ header h1 { font-size: 1.5rem; font-weight: 700; }
 .lang-switcher { display: flex; gap: 0.25rem; }
 
 .lang-switcher button {
-  padding: 0.25rem 0.6rem;
+  padding: 0.35rem 0.6rem;
   border: 1.5px solid rgba(255,255,255,0.3);
   border-radius: 6px;
   background: transparent;
@@ -156,4 +157,11 @@ header h1 { font-size: 1.5rem; font-weight: 700; }
 
 .lang-switcher button:hover { border-color: rgba(255,255,255,0.7); color: #fff; }
 .lang-switcher button.active { border-color: #fff; color: #fff; }
+
+@media (max-width: 540px) {
+  .header-top { gap: 0.5rem; padding-bottom: 0.25rem; }
+  .header-nav { margin-left: 0; width: 100%; order: 3; padding-bottom: 0.25rem; }
+  .header-controls { margin-left: auto; }
+  .display-name { display: none; }
+}
 </style>

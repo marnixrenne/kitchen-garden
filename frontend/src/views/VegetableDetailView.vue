@@ -126,7 +126,7 @@ onMounted(async () => {
 main {
   max-width: 860px;
   margin: 0 auto;
-  padding: 2rem 1rem 4rem;
+  padding: 1.5rem 1rem 4rem;
 }
 
 .back-btn {
@@ -151,6 +151,12 @@ main {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+@media (max-width: 480px) {
+  .detail-card { padding: 1.25rem; }
+  .detail-hero h2 { font-size: 1.4rem; }
+  .detail-emoji { font-size: 2.75rem; }
 }
 
 .detail-hero {
@@ -216,6 +222,10 @@ main {
 
 @media (max-width: 480px) {
   .months-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (max-width: 360px) {
+  .months-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 .month-chip {

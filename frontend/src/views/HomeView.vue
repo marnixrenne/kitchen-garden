@@ -128,7 +128,7 @@ onMounted(() => {
 
 .home-header p { color: var(--green-light); font-size: 0.95rem; }
 
-main { max-width: 860px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+main { max-width: 860px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
 
 .search-bar { margin-bottom: 1.5rem; }
 
