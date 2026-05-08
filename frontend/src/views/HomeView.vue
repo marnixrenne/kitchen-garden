@@ -6,7 +6,7 @@ import MonthSelector from '../components/MonthSelector.vue'
 import VegetableList from '../components/VegetableList.vue'
 import { csrfHeaders } from '../stores/auth.js'
 
-const CATEGORY_ORDER = ['Fruiting', 'Leafy', 'Brassica', 'Root', 'Legume', 'Herb']
+const CATEGORY_ORDER = ['Fruiting', 'Leafy', 'Brassica', 'Root', 'Legume', 'Herb', 'Flower', 'Sea']
 
 const { t, tm, te } = useI18n()
 const route  = useRoute()
@@ -36,7 +36,14 @@ const grouped = computed(() => {
     if (!g[v.category]) g[v.category] = []
     g[v.category].push(v)
   }
-  return CATEGORY_ORDER.filter(c => g[c]).map(c => ({ category: c, items: g[c] }))
+  return CATEGORY_ORDER.filter(c => g[c]).map(c => ({
+    category: c,
+    items: g[c].slice().sort((a, b) => {
+      const nameA = te(`vegetables.${a.name}`) ? t(`vegetables.${a.name}`) : a.name
+      const nameB = te(`vegetables.${b.name}`) ? t(`vegetables.${b.name}`) : b.name
+      return nameA.localeCompare(nameB)
+    }),
+  }))
 })
 
 const filteredTotal = computed(() => grouped.value.reduce((sum, g) => sum + g.items.length, 0))
