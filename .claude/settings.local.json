@@ -26,7 +26,8 @@
       "Bash(echo \"Backend starting in background, PID=$!\")",
       "Bash(./gradlew compileKotlin --no-daemon)",
       "Bash(grep -v \"^$\")",
-      "Bash(grep -v \"^\\\\s*$\")"
+      "Bash(grep -v \"^\\\\s*$\")",
+      "Bash(./gradlew compileKotlin)"
     ]
   }
 }

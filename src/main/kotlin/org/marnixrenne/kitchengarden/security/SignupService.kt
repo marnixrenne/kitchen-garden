@@ -3,23 +3,19 @@ package org.marnixrenne.kitchengarden.security
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.mail.SimpleMailMessage
-import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
+import org.marnixrenne.kitchengarden.mail.MailService
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 @Service
 class SignupService(
     private val passwordEncoder: PasswordEncoder,
-    private val mailSender: JavaMailSender?,
+    private val mailService: MailService,
     @Value("\${app.base-url}") private val baseUrl: String,
-    @Value("\${app.mail.from}") private val mailFrom: String,
 ) {
-    private val log = LoggerFactory.getLogger(javaClass)
 
     private val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
 
@@ -49,7 +45,11 @@ class SignupService(
             }
         }
 
-        sendVerificationEmail(email, "$baseUrl/verify?token=$token")
+        mailService.send(
+            to      = email,
+            subject = "Verify your Kitchen Garden account",
+            body    = "Click the link below to complete your registration:\n\n$baseUrl/verify?token=$token\n\nThe link expires in 24 hours.",
+        )
     }
 
     /** Returns the email address if the token is valid and unexpired, null otherwise. */
@@ -111,23 +111,4 @@ class SignupService(
         }
     }
 
-    private fun sendVerificationEmail(to: String, link: String) {
-        if (mailSender == null) {
-            log.info("Mail not configured — verification link sent to {}", to)
-            log.debug("Verification link: {}", link)
-            return
-        }
-        try {
-            val msg = SimpleMailMessage().apply {
-                setTo(to)
-                from    = mailFrom
-                subject = "Verify your Kitchen Garden account"
-                text    = "Click the link below to complete your registration:\n\n$link\n\nThe link expires in 24 hours."
-            }
-            mailSender.send(msg)
-            log.info("Verification email sent to {}", to)
-        } catch (e: Exception) {
-            log.warn("Failed to send verification email to {}", to, e)
-        }
-    }
 }
