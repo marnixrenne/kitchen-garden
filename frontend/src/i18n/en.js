@@ -7,6 +7,7 @@ export default {
   allVegetables: 'All vegetables',
   search: 'Search vegetables…',
   noSearchResults: 'No vegetables matching "{query}" this month.',
+  noSearchResultsAll: 'No vegetables matching "{query}".',
   loading: 'Loading…',
   logout: 'Sign out',
   back: '← Back',

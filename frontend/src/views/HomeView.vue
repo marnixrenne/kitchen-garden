@@ -27,7 +27,7 @@ const grouped = computed(() => {
     ? vegetables.value.filter(v => {
         const key = `vegetables.${v.name}`
         const localised = te(key) ? t(key) : v.name
-        return localised.toLowerCase().includes(q) || v.name.toLowerCase().includes(q)
+        return localised.toLowerCase().includes(q)
       })
     : vegetables.value
 

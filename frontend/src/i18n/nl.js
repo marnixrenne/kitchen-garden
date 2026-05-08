@@ -7,6 +7,7 @@ export default {
   allVegetables: 'Alle groenten',
   search: 'Zoek groenten…',
   noSearchResults: 'Geen groenten gevonden voor "{query}" deze maand.',
+  noSearchResultsAll: 'Geen groenten gevonden voor "{query}".',
   loading: 'Laden…',
   logout: 'Uitloggen',
   back: '← Terug',

@@ -28,7 +28,7 @@ const vegName = (veg) => {
   <template v-else-if="total === 0 && query">
     <div class="empty-state">
       <div class="icon">🔍</div>
-      <p>{{ t('noSearchResults', { query }) }}</p>
+      <p>{{ monthName ? t('noSearchResults', { query }) : t('noSearchResultsAll', { query }) }}</p>
     </div>
   </template>
 
