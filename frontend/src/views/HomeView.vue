@@ -12,7 +12,7 @@ const { t, tm, te } = useI18n()
 const route  = useRoute()
 const router = useRouter()
 
-const selectedMonth = ref(null)
+const selectedMonth = ref(route.query.month ? parseInt(route.query.month) : null)
 const counts        = ref({})
 const vegetables    = ref([])
 const loading       = ref(false)
@@ -75,10 +75,13 @@ async function fetchVegetables(month) {
   loading.value = false
 }
 
-watch(selectedMonth, month => fetchVegetables(month))
+watch(selectedMonth, month => {
+  fetchVegetables(month)
+  router.replace({ query: { ...(query.value ? { q: query.value } : {}), ...(month ? { month } : {}) } })
+})
 
 watch(query, q => {
-  router.replace({ query: q ? { q } : {} })
+  router.replace({ query: { ...(q ? { q } : {}), ...(selectedMonth.value ? { month: selectedMonth.value } : {}) } })
 })
 
 onMounted(() => {

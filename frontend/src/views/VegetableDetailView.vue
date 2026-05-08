@@ -113,7 +113,7 @@ onMounted(async () => {
               :key="country.code"
               class="country-chip"
             >
-              {{ country.name }}
+              {{ te(`countryNames.${country.code}`) ? t(`countryNames.${country.code}`) : country.name }}
             </span>
           </div>
         </div>

@@ -29,7 +29,9 @@
       "Bash(grep -v \"^\\\\s*$\")",
       "Bash(./gradlew compileKotlin)",
       "Bash(./gradlew compileKotlin --info)",
-      "Bash(./gradlew compileKotlin --stacktrace)"
+      "Bash(./gradlew compileKotlin --stacktrace)",
+      "Bash(psql *)",
+      "Bash(PGPASSWORD=kitchengarden /opt/homebrew/bin/psql *)"
     ]
   }
 }
