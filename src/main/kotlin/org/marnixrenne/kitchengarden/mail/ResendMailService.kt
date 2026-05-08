@@ -17,14 +17,15 @@ class ResendMailService(
 
     private val resend = Resend(apiKey)
 
-    override fun send(to: String, subject: String, body: String) {
+    override fun send(to: String, subject: String, text: String, html: String?) {
         try {
-            val params = CreateEmailOptions.builder()
+            val builder = CreateEmailOptions.builder()
                 .from(mailFrom)
                 .to(to)
                 .subject(subject)
-                .text(body)
-                .build()
+                .text(text)
+            if (html != null) builder.html(html)
+            val params = builder.build()
             resend.emails().send(params)
             log.info("Mail sent via Resend to {}", to)
         } catch (e: Exception) {

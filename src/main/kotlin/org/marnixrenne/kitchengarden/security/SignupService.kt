@@ -45,10 +45,29 @@ class SignupService(
             }
         }
 
+        val verifyUrl = "$baseUrl/verify?token=$token"
         mailService.send(
             to      = email,
             subject = "Verify your Kitchen Garden account",
-            body    = "Click the link below to complete your registration:\n\n$baseUrl/verify?token=$token\n\nThe link expires in 24 hours.",
+            text    = "Click the link below to complete your registration:\n\n$verifyUrl\n\nThe link expires in 24 hours.",
+            html    = """
+                <!DOCTYPE html>
+                <html>
+                <body style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:2rem;color:#1b4332">
+                  <h2 style="margin-bottom:0.5rem">🌱 Kitchen Garden</h2>
+                  <p style="color:#52796f;margin-bottom:1.5rem">Verify your email address to complete your registration.</p>
+                  <a href="$verifyUrl"
+                     style="display:inline-block;padding:0.75rem 1.5rem;background:#2d6a4f;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">
+                    Verify my email
+                  </a>
+                  <p style="margin-top:1.5rem;font-size:0.85rem;color:#52796f">
+                    Or copy this link into your browser:<br>
+                    <a href="$verifyUrl" style="color:#2d6a4f;word-break:break-all">$verifyUrl</a>
+                  </p>
+                  <p style="font-size:0.8rem;color:#52796f">This link expires in 24 hours.</p>
+                </body>
+                </html>
+            """.trimIndent(),
         )
     }
 
