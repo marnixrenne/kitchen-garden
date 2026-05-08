@@ -38,6 +38,10 @@ class SecurityConfig(
                 // (XorCsrfTokenRequestAttributeHandler is Spring Security 7's default but is
                 //  incompatible with the read-cookie-send-header SPA pattern.)
                 csrf.csrfTokenRequestHandler(CsrfTokenRequestAttributeHandler())
+                // Signup and complete-signup are genuinely public endpoints: no authenticated
+                // session is involved, so CSRF adds no meaningful protection here.
+                // (Signup only sends an email; complete requires possessing a UUID from that email.)
+                csrf.ignoringRequestMatchers("/api/auth/signup", "/api/auth/complete")
             }
             .cors { cors -> cors.configurationSource(corsConfigurationSource()) }
             .headers { headers ->
