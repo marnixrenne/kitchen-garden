@@ -2,7 +2,7 @@ package org.marnixrenne.kitchengarden.security
 
 import org.jetbrains.exposed.sql.Table
 
-object Users : Table("users") {
+object Users : Table("sec_users") {
     val id          = uuid("id")
     val username    = varchar("username", 50)
     val password    = varchar("password", 100)
@@ -12,7 +12,7 @@ object Users : Table("users") {
     override val primaryKey = PrimaryKey(id)
 }
 
-object SignupTokens : Table("signup_tokens") {
+object SignupTokens : Table("sec_signup_tokens") {
     val token     = uuid("token")
     val email     = varchar("email", 200)
     val expiresAt = long("expires_at")
@@ -20,26 +20,26 @@ object SignupTokens : Table("signup_tokens") {
     override val primaryKey = PrimaryKey(token)
 }
 
-object Roles : Table("roles") {
+object Roles : Table("sec_roles") {
     val id   = uuid("id")
     val name = varchar("name", 50)
 
     override val primaryKey = PrimaryKey(id)
 }
 
-object Authorities : Table("authorities") {
+object Authorities : Table("sec_authorities") {
     val name        = varchar("name", 50)
     val description = varchar("description", 200).nullable()
 
     override val primaryKey = PrimaryKey(name)
 }
 
-object RoleAuthorities : Table("role_authorities") {
+object RoleAuthorities : Table("sec_role_authorities") {
     val roleId    = uuid("role_id")    references Roles.id
     val authority = varchar("authority", 50) references Authorities.name
 }
 
-object UserRoles : Table("user_roles") {
+object UserRoles : Table("sec_user_roles") {
     val userId = uuid("user_id") references Users.id
     val roleId = uuid("role_id") references Roles.id
 }
