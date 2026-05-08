@@ -12,6 +12,11 @@ export default {
   logout: 'Sign out',
   back: '← Back',
   countries: 'Countries',
+  companions: {
+    title: 'Companion planting',
+    good: 'Grows well with',
+    bad: 'Avoid planting near',
+  },
   seedingMonths: 'Seeding months',
   harvestingMonths: 'Harvesting months',
   home: 'Explore',

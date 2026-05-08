@@ -35,3 +35,11 @@ object VegetableCountries : Table("vegetable_countries") {
 
     override val primaryKey = PrimaryKey(vegetableId, countryCode)
 }
+
+object CompanionPlants : Table("companion_plants") {
+    val vegetableId  = uuid("vegetable_id") references Vegetables.id
+    val companionId  = uuid("companion_id") references Vegetables.id
+    val relationship = varchar("relationship", 4)
+
+    override val primaryKey = PrimaryKey(vegetableId, companionId)
+}

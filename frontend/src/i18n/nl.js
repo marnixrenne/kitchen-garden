@@ -12,6 +12,11 @@ export default {
   logout: 'Uitloggen',
   back: '← Terug',
   countries: 'Landen',
+  companions: {
+    title: 'Combinatieteelt',
+    good: 'Groeit goed samen met',
+    bad: 'Niet planten naast',
+  },
   seedingMonths: 'Zaaimaanden',
   harvestingMonths: 'Oogstmaanden',
   home: 'Ontdekken',

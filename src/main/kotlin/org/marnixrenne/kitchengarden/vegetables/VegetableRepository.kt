@@ -55,6 +55,22 @@ class VegetableRepository {
                     .where { VegetableCountries.vegetableId eq id }
                     .map { Country(it[Countries.code], it[Countries.name]) }
                     .sortedBy { it.name }
+                val companions = run {
+                    val pairs = CompanionPlants.selectAll()
+                        .where { (CompanionPlants.vegetableId eq id) or (CompanionPlants.companionId eq id) }
+                        .map { r ->
+                            val companionId = if (r[CompanionPlants.vegetableId] == id)
+                                r[CompanionPlants.companionId] else r[CompanionPlants.vegetableId]
+                            companionId to r[CompanionPlants.relationship]
+                        }
+                    val vegMap = Vegetables.selectAll()
+                        .where { Vegetables.id inList pairs.map { it.first } }
+                        .associate { it[Vegetables.id] to it }
+                    pairs.mapNotNull { (companionId, relationship) ->
+                        val veg = vegMap[companionId] ?: return@mapNotNull null
+                        CompanionPlant(companionId, veg[Vegetables.name], veg[Vegetables.emoji], relationship)
+                    }.sortedWith(compareBy({ it.relationship }, { it.name }))
+                }
                 VegetableDetail(
                     id               = row[Vegetables.id],
                     name             = row[Vegetables.name],
@@ -63,7 +79,8 @@ class VegetableRepository {
                     imageUrl         = row[Vegetables.imageUrl],
                     seedingMonths    = seedingMonths,
                     harvestingMonths = harvestingMonths,
-                    countries        = countries
+                    countries        = countries,
+                    companions       = companions,
                 )
             }
             .firstOrNull()

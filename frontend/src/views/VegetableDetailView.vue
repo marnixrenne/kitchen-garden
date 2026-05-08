@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { csrfHeaders } from '../stores/auth.js'
 
@@ -8,9 +8,10 @@ const route  = useRoute()
 const router = useRouter()
 const { t, tm, te } = useI18n()
 
-const vegetable = ref(null)
-const loading   = ref(true)
-const inGarden  = ref(false)
+const vegetable   = ref(null)
+const loading     = ref(true)
+const inGarden    = ref(false)
+const gardenIds   = ref(new Set())
 
 const months = computed(() => tm('months'))
 
@@ -24,6 +25,9 @@ const description = computed(() => {
   if (!vegetable.value) return ''
   return t(`descriptions.${vegetable.value.name}`)
 })
+
+const goodCompanions = computed(() => vegetable.value?.companions.filter(c => c.relationship === 'good') ?? [])
+const badCompanions  = computed(() => vegetable.value?.companions.filter(c => c.relationship === 'bad')  ?? [])
 
 async function toggleGarden() {
   const method = inGarden.value ? 'DELETE' : 'PUT'
@@ -115,6 +119,36 @@ onMounted(async () => {
             >
               {{ te(`countryNames.${country.code}`) ? t(`countryNames.${country.code}`) : country.name }}
             </span>
+          </div>
+        </div>
+
+        <div v-if="vegetable.companions.length > 0" class="companions-section">
+          <h3>{{ t('companions.title') }}</h3>
+          <div v-if="goodCompanions.length > 0" class="companion-group">
+            <p class="companion-label good">{{ t('companions.good') }}</p>
+            <div class="companion-list">
+              <RouterLink
+                v-for="c in goodCompanions"
+                :key="c.id"
+                :to="`/vegetable/${c.id}`"
+                class="companion-chip good"
+              >
+                {{ c.emoji ?? '🌱' }} {{ te(`vegetables.${c.name}`) ? t(`vegetables.${c.name}`) : c.name }}
+              </RouterLink>
+            </div>
+          </div>
+          <div v-if="badCompanions.length > 0" class="companion-group">
+            <p class="companion-label bad">{{ t('companions.bad') }}</p>
+            <div class="companion-list">
+              <RouterLink
+                v-for="c in badCompanions"
+                :key="c.id"
+                :to="`/vegetable/${c.id}`"
+                class="companion-chip bad"
+              >
+                {{ c.emoji ?? '🌱' }} {{ te(`vegetables.${c.name}`) ? t(`vegetables.${c.name}`) : c.name }}
+              </RouterLink>
+            </div>
           </div>
         </div>
       </div>
@@ -296,4 +330,55 @@ main {
 }
 
 .loading { text-align: center; padding: 3rem; color: var(--text-muted); }
+
+.companions-section { border-top: 1px solid var(--green-pale); padding-top: 1.5rem; }
+
+.companions-section h3 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.companion-group { margin-bottom: 1rem; }
+.companion-group:last-child { margin-bottom: 0; }
+
+.companion-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.companion-label.good { color: #065f46; }
+.companion-label.bad  { color: #991b1b; }
+
+.companion-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+.companion-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.companion-chip:hover { opacity: 0.75; }
+
+.companion-chip.good {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1.5px solid #6ee7b7;
+}
+
+.companion-chip.bad {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1.5px solid #fca5a5;
+}
 </style>
