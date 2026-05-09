@@ -35,6 +35,14 @@ async function toggleGarden() {
   inGarden.value = !inGarden.value
 }
 
+async function toggleCompanionGarden(id) {
+  const inG = gardenIds.value.has(id)
+  await fetch(`/api/garden/${id}`, { method: inG ? 'DELETE' : 'PUT', headers: csrfHeaders() })
+  const next = new Set(gardenIds.value)
+  inG ? next.delete(id) : next.add(id)
+  gardenIds.value = next
+}
+
 onMounted(async () => {
   const [vegRes, gardenRes] = await Promise.all([
     fetch(`/api/vegetables/${route.params.id}`),
@@ -44,6 +52,7 @@ onMounted(async () => {
   if (gardenRes.ok) {
     const ids = await gardenRes.json()
     inGarden.value = ids.includes(route.params.id)
+    gardenIds.value = new Set(ids)
   }
   loading.value = false
 })
@@ -127,14 +136,22 @@ onMounted(async () => {
           <div v-if="goodCompanions.length > 0" class="companion-group">
             <p class="companion-label good">{{ t('companions.good') }}</p>
             <div class="companion-list">
-              <RouterLink
+              <div
                 v-for="c in goodCompanions"
                 :key="c.id"
-                :to="`/vegetable/${c.id}`"
                 class="companion-chip good"
+                @click="router.push(`/vegetable/${c.id}`)"
               >
                 {{ c.emoji ?? '🌱' }} {{ te(`vegetables.${c.name}`) ? t(`vegetables.${c.name}`) : c.name }}
-              </RouterLink>
+                <button
+                  class="companion-garden-btn"
+                  :class="{ added: gardenIds.has(c.id) }"
+                  :title="gardenIds.has(c.id) ? t('garden.removeTooltip') : t('garden.addTooltip')"
+                  @click.stop="toggleCompanionGarden(c.id)"
+                >
+                  {{ gardenIds.has(c.id) ? '✓' : '+' }}
+                </button>
+              </div>
             </div>
           </div>
           <div v-if="badCompanions.length > 0" class="companion-group">
@@ -356,19 +373,52 @@ main {
 
 .companion-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 
+.companion-garden-btn {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--green-pale);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.companion-garden-btn:hover {
+  border-color: var(--green-mid);
+  color: var(--green-mid);
+}
+
+.companion-garden-btn.added {
+  background: var(--green-mid);
+  border-color: var(--green-mid);
+  color: #fff;
+}
+
+@media (pointer: coarse) {
+  .companion-garden-btn { width: 2.5rem; height: 2.5rem; font-size: 1.1rem; }
+}
+
 .companion-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.25rem 0.65rem;
+  gap: 0.4rem;
+  padding: 0.25rem 0.4rem 0.25rem 0.65rem;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 500;
   text-decoration: none;
+  cursor: pointer;
   transition: opacity 0.15s;
 }
 
-.companion-chip:hover { opacity: 0.75; }
+.companion-chip:hover { opacity: 0.8; }
 
 .companion-chip.good {
   background: #d1fae5;
