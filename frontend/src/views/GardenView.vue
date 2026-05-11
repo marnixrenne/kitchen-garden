@@ -6,16 +6,12 @@ import { useI18n } from 'vue-i18n'
 const router = useRouter()
 const { t, tm, te } = useI18n()
 
-const vegetables   = ref([])
-const loading      = ref(true)
+const vegetables    = ref([])
+const suggestions   = ref(null)
+const loading       = ref(true)
 const selectedMonth = ref(null)
 
 const months = computed(() => tm('months'))
-
-function vegName(veg) {
-  const key = `vegetables.${veg.name}`
-  return te(key) ? t(key) : veg.name
-}
 
 const sortedVegetables = computed(() =>
   [...vegetables.value].sort((a, b) => vegName(a).localeCompare(vegName(b)))
@@ -107,9 +103,18 @@ function downloadIcal() {
   URL.revokeObjectURL(url)
 }
 
+function vegName(veg) {
+  const key = `vegetables.${veg.name}`
+  return te(key) ? t(key) : veg.name
+}
+
 onMounted(async () => {
-  const res = await fetch('/api/garden/details')
-  if (res.ok) vegetables.value = await res.json()
+  const [detailsRes, suggestionsRes] = await Promise.all([
+    fetch('/api/garden/details'),
+    fetch('/api/garden/suggestions'),
+  ])
+  if (detailsRes.ok)     vegetables.value  = await detailsRes.json()
+  if (suggestionsRes.ok) suggestions.value = await suggestionsRes.json()
   loading.value = false
 })
 </script>
@@ -223,6 +228,42 @@ onMounted(async () => {
             </div>
           </div>
         </template>
+      </div>
+      <!-- Planting suggestions -->
+      <div v-if="suggestions && (suggestions.sunGroups.length > 0 || suggestions.conflicts.length > 0)" class="suggestions">
+        <h3 class="suggestions-title">{{ t('garden.suggestions') }}</h3>
+        <p class="suggestions-hint">{{ t('garden.suggestionsHint') }}</p>
+
+        <div class="sun-groups">
+          <div v-for="group in suggestions.sunGroups" :key="group.sunRequirement" class="sun-group">
+            <div class="sun-group-header">
+              <span class="sun-label">{{ t(`sunRequirement.${group.sunRequirement}`) }}</span>
+            </div>
+            <div class="sun-group-vegs">
+              <div
+                v-for="v in group.vegetables"
+                :key="v.id"
+                class="sg-chip"
+                @click="router.push(`/vegetable/${v.id}`)"
+              >
+                {{ v.emoji ?? '🌱' }} {{ vegName(v) }}
+              </div>
+            </div>
+            <div v-if="group.goodPairs.length > 0" class="good-pairs">
+              <span class="pairs-label">{{ t('garden.goodTogether') }}:</span>
+              <span v-for="pair in group.goodPairs" :key="pair.a.id + pair.b.id" class="pair">
+                {{ pair.a.emoji ?? '🌱' }} {{ vegName(pair.a) }} + {{ pair.b.emoji ?? '🌱' }} {{ vegName(pair.b) }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="suggestions.conflicts.length > 0" class="conflicts">
+          <span class="conflicts-label">⚠️ {{ t('garden.keepApart') }}:</span>
+          <span v-for="pair in suggestions.conflicts" :key="pair.a.id + pair.b.id" class="conflict-pair">
+            {{ pair.a.emoji ?? '🌱' }} {{ vegName(pair.a) }} ↔ {{ pair.b.emoji ?? '🌱' }} {{ vegName(pair.b) }}
+          </span>
+        </div>
       </div>
     </template>
   </main>
@@ -453,5 +494,125 @@ main {
 .veg-chip:hover {
   border-color: var(--green-light);
   background: var(--green-pale);
+}
+
+/* Suggestions */
+.suggestions {
+  margin-top: 1.5rem;
+  background: var(--card-bg);
+  border: 1.5px solid var(--green-pale);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+
+.suggestions-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--green-dark);
+  margin-bottom: 0.4rem;
+}
+
+.suggestions-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+.sun-groups { display: flex; flex-direction: column; gap: 1rem; }
+
+.sun-group {
+  border: 1.5px solid var(--green-pale);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.sun-group-header {
+  background: var(--bg);
+  padding: 0.5rem 0.9rem;
+  border-bottom: 1.5px solid var(--green-pale);
+}
+
+.sun-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.sun-group-vegs {
+  padding: 0.75rem 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.sg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  background: var(--green-pale);
+  color: var(--green-dark);
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.sg-chip:hover { opacity: 0.75; }
+
+.good-pairs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border-top: 1px solid var(--green-pale);
+  background: #f0fdf4;
+}
+
+.pairs-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #166534;
+  white-space: nowrap;
+}
+
+.pair {
+  font-size: 0.78rem;
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  border-radius: 20px;
+  padding: 0.15rem 0.55rem;
+}
+
+.conflicts {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  background: #fff7ed;
+  border: 1.5px solid #fed7aa;
+  border-radius: var(--radius);
+}
+
+.conflicts-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #9a3412;
+  white-space: nowrap;
+}
+
+.conflict-pair {
+  font-size: 0.78rem;
+  color: #9a3412;
+  background: #ffedd5;
+  border: 1px solid #fed7aa;
+  border-radius: 20px;
+  padding: 0.15rem 0.55rem;
 }
 </style>

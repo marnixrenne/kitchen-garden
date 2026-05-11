@@ -37,6 +37,10 @@ export default {
     nothingThisMonth: 'Nothing to do in your garden this month.',
     both: 'Sow & harvest',
     addToCalendar: 'Add to calendar',
+    suggestions: 'Planting suggestions',
+    goodTogether: 'Good together',
+    keepApart: 'Keep apart',
+    suggestionsHint: 'Group vegetables with the same light requirement and plant good companions next to each other.',
   },
   login: {
     title: 'Sign in',

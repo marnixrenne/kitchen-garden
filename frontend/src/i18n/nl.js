@@ -37,6 +37,10 @@ export default {
     nothingThisMonth: 'Niets te doen in je tuin deze maand.',
     both: 'Zaaien & oogsten',
     addToCalendar: 'Exporteer naar kalender',
+    suggestions: 'Plantgroepen',
+    goodTogether: 'Goede combinaties',
+    keepApart: 'Houd gescheiden',
+    suggestionsHint: 'Groepeer groenten met dezelfde lichtbehoefte en plant goede buurplanten naast elkaar.',
   },
   login: {
     title: 'Inloggen',
