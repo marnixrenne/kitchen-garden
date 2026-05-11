@@ -12,6 +12,11 @@ export default {
   logout: 'Sign out',
   back: '← Back',
   countries: 'Countries',
+  sunRequirement: {
+    full_sun:      '☀️ Full sun',
+    partial_shade: '🌤️ Partial shade',
+    shade:         '🌥️ Shade',
+  },
   companions: {
     title: 'Companion planting',
     good: 'Grows well with',

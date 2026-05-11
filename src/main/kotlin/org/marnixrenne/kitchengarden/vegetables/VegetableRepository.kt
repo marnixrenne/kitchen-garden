@@ -77,6 +77,7 @@ class VegetableRepository {
                     category         = row[Vegetables.category],
                     emoji            = row[Vegetables.emoji],
                     imageUrl         = row[Vegetables.imageUrl],
+                    sunRequirement   = row[Vegetables.sunRequirement],
                     seedingMonths    = seedingMonths,
                     harvestingMonths = harvestingMonths,
                     countries        = countries,

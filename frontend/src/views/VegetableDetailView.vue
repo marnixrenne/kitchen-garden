@@ -70,7 +70,12 @@ onMounted(async () => {
           <span class="detail-emoji">{{ vegetable.emoji ?? '🌱' }}</span>
           <div class="detail-hero-text">
             <h2>{{ localName }}</h2>
-            <span class="category-badge">{{ t(`categories.${vegetable.category}`) }}</span>
+            <div class="badges">
+              <span class="category-badge">{{ t(`categories.${vegetable.category}`) }}</span>
+              <span v-if="vegetable.sunRequirement" class="sun-badge">
+                {{ t(`sunRequirement.${vegetable.sunRequirement}`) }}
+              </span>
+            </div>
           </div>
           <button
             class="garden-btn"
@@ -228,14 +233,24 @@ main {
   margin-bottom: 0.35rem;
 }
 
-.category-badge {
+.badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.35rem; }
+
+.category-badge, .sun-badge {
   display: inline-block;
   padding: 0.2rem 0.65rem;
-  background: var(--green-pale);
-  color: var(--green-mid);
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
+}
+
+.category-badge {
+  background: var(--green-pale);
+  color: var(--green-mid);
+}
+
+.sun-badge {
+  background: #fef9c3;
+  color: #854d0e;
 }
 
 .detail-image {

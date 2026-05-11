@@ -12,6 +12,7 @@ data class VegetableDetail(
     val category: String,
     val emoji: String?,
     val imageUrl: String?,
+    val sunRequirement: String?,
     val seedingMonths: List<Int>,
     val harvestingMonths: List<Int>,
     val countries: List<Country>,

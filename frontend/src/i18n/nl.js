@@ -12,6 +12,11 @@ export default {
   logout: 'Uitloggen',
   back: '← Terug',
   countries: 'Landen',
+  sunRequirement: {
+    full_sun:      '☀️ Volle zon',
+    partial_shade: '🌤️ Halfschaduw',
+    shade:         '🌥️ Schaduw',
+  },
   companions: {
     title: 'Combinatieteelt',
     good: 'Groeit goed samen met',
