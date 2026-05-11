@@ -1,8 +1,5 @@
 package org.marnixrenne.kitchengarden.garden
 
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
-import org.marnixrenne.kitchengarden.security.Users
 import org.marnixrenne.kitchengarden.vegetables.VegetableDetail
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
@@ -11,37 +8,30 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/api/garden")
-class GardenController(private val repository: GardenRepository) {
-
-    private fun resolveUserId(authentication: Authentication) = transaction {
-        Users.selectAll()
-            .where { Users.username eq authentication.name }
-            .map { it[Users.id] }
-            .firstOrNull()
-    } ?: error("Authenticated user not found in database")
+class GardenController(private val gardenService: GardenService) {
 
     @GetMapping
     fun getGarden(authentication: Authentication): Set<UUID> =
-        repository.findVegetableIds(resolveUserId(authentication))
+        gardenService.getVegetableIds(authentication)
 
     @GetMapping("/details")
     fun getGardenDetails(authentication: Authentication): List<VegetableDetail> =
-        repository.findDetails(resolveUserId(authentication))
+        gardenService.getDetails(authentication)
 
     @GetMapping("/week")
     fun getWeekSummary(authentication: Authentication): WeekSummary =
-        repository.findWeekSummary(resolveUserId(authentication))
+        gardenService.getWeekSummary(authentication)
 
     @GetMapping("/suggestions")
     fun getSuggestions(authentication: Authentication): PlantingSuggestions =
-        repository.findSuggestions(resolveUserId(authentication))
+        gardenService.getSuggestions(authentication)
 
     @PutMapping("/{vegetableId}")
     fun addToGarden(
         @PathVariable vegetableId: UUID,
         authentication: Authentication,
     ): ResponseEntity<Unit> {
-        repository.add(resolveUserId(authentication), vegetableId)
+        gardenService.add(authentication, vegetableId)
         return ResponseEntity.noContent().build()
     }
 
@@ -50,7 +40,7 @@ class GardenController(private val repository: GardenRepository) {
         @PathVariable vegetableId: UUID,
         authentication: Authentication,
     ): ResponseEntity<Unit> {
-        repository.remove(resolveUserId(authentication), vegetableId)
+        gardenService.remove(authentication, vegetableId)
         return ResponseEntity.noContent().build()
     }
 }
