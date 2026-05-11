@@ -82,6 +82,20 @@ export default {
       Broccoli:             'Breek vergelende onderbladeren af naarmate het seizoen vordert om de luchtcirculatie te verbeteren, wat schimmelziekten in het dichte bladerdak helpt voorkomen.',
       'Sweet Potato':       'Knip krachtig uitgroeiende ranken halverwege het seizoen in om de groei beheersbaar te houden en meer energie in het zwellen van de knollen ondergronds te sturen.',
       Luffa:                'Verwijder de eerste 5–6 zijscheuten om een sterke, krachtige hoofdstengel op te bouwen voor vruchtkringen zich kunnen ontwikkelen. Leid de hoofdstengel langs een verticale steun omhoog.',
+      // Herbs & Brassica (V34)
+      Tarragon:             'Knip halverwege de zomer terug tot de helft na de eerste groeipuls om verse, struikachtige nieuwe scheuten te stimuleren. Knip de hele plant in de herfst terug tot 10 cm boven de basis. Deel de pol elke 3–4 jaar om de plant krachtig te houden.',
+      Lovage:               'Knip halverwege de zomer hard terug tot op de grond na het bloeien om een tweede puls van verse jonge bladeren te stimuleren. Deel de pol elke 2–3 jaar in het voorjaar want de plant groeit zeer krachtig en kan erg dicht worden.',
+      'Lacinato Kale':      'Oogst regelmatig de buitenste bladeren vanaf de basis — dit werkt als natuurlijk snoeien. Verwijder vergelende of beschadigde bladeren onmiddellijk om ziekte te voorkomen. Het groeipunt aan de top blijft intact, wat maanden dooroogsten mogelijk maakt.',
+      // Flowers (V33)
+      Nasturtium:           'Verwijder regelmatig uitgebloeide bloemen om de bloei de hele zomer te stimuleren. Oostindische kers zaait zichzelf royaal — laat een paar bloemen zaad zetten als u wilt dat de plant elk jaar terugkeert.',
+      Calendula:            'Verwijder regelmatig uitgebloeide bloemen inclusief de groene kelk eronder, om zaadvorming te voorkomen en de bloeitijd ver in de herfst te verlengen.',
+      Lavender:             'Knip licht bij na het bloeien, verwijder uitgebloeide stelen en circa 3 cm blad. Knip in het voorjaar terug tot vers groen — snijd nooit in oud houtachtig materiaal want lavendel herstelt niet van kale stengels.',
+      Viola:                'Pluk bloemen en verwijder uitgebloeide bloempjes om de dag of om de twee dagen om de plant in bloei te houden. Knip halverwege de zomer de helft af als de plant uitgegroeid raakt — hij produceert dan een tweede groeipuls.',
+      Sunflower:            'Verwijder uitgebloeide bloemen bij vertakkende variëteiten om verdere bloei te bevorderen. Bij eenstengelige variëteiten voor snijbloemen oogst u de bloem wanneer de buitenste bloemblaadjes net opengaan — verder uitbloemen is dan niet nodig.',
+      Cornflower:           'Verwijder uitgebloeide bloemen regelmatig terug tot een zijknop om een lange reeks bloei door de zomer te bevorderen. Dit beperkt ook overmatige zelfzaai als u de plant wilt beheersen.',
+      Chamomile:            'Oogst bloemen zodra ze volledig opengaan door ze zachtjes van de stelen te wrijven. Regelmatig plukken om de paar dagen houdt de plant in volle bloei en voorkomt zaadvorming als u zelfzaai wilt beperken.',
+      Elderflower:          'Knip in de late winter een derde van de oudste stelen tot op de grond om de struik productief en goed in vorm te houden. Knip de overige stelen licht bij na het bloeien. Hard renovatiesnoeien om de paar jaar verjongt een oude of te grote plant.',
+      Rose:                 'Verwijder uitgebloeide bloemen door de stengel terug te knippen tot het eerste naar buiten gerichte blad met vijf blaadjes, om herhaalde bloei te bevorderen. Snoei in de late winter alle stengels een derde in naar een naar buiten gericht oog, en verwijder dood of kruisend hout volledig.',
     },
   },
   sowing: {
@@ -295,6 +309,21 @@ export default {
     Caper: 'Kappertje',
     Daylily: 'Daglelie',
     Loroco: 'Loroco',
+    // Herb (V34)
+    Tarragon:        'Dragon',
+    Lovage:          'Lavas',
+    // Brassica (V34)
+    'Lacinato Kale': 'Palmkool',
+    // Flower (V33)
+    Nasturtium:  'Oostindische Kers',
+    Calendula:   'Goudsbloem',
+    Lavender:    'Lavendel',
+    Viola:       'Viooltje',
+    Sunflower:   'Zonnebloem',
+    Cornflower:  'Korenbloem',
+    Chamomile:   'Kamille',
+    Elderflower: 'Vlierbloesom',
+    Rose:        'Roos',
     // Legume (V14)
     'Asparagus Bean': 'Kouseband',
     'Adzuki Bean': 'Adzukiboon',
@@ -460,6 +489,21 @@ export default {
     Caper:                'De ongeopende bloemknoppen van een Mediterrane struik, gepekeld vanwege hun intense hartige smaak.',
     Daylily:              'Prachtige bloemen die ook volledig eetbaar zijn — gebruik verse knoppen, open bloemen en gedroogde bloemen.',
     Loroco:               'Een Midden-Amerikaanse klimplant waarvan de geurige bloemknoppen een geliefde vulling zijn voor pupusas en stoofschotels.',
+    // Herb (V34)
+    Tarragon:             'Een intens anijsachtig kruid onmisbaar in de Franse keuken en het klassieke fines herbes mengsel. Franse dragon moet vegetatief worden vermeerderd — hij zet zelden goed zaad. Groeit krachtig eenmaal gevestigd.',
+    Lovage:               'Een imposant vaste-plantenkruid met een krachtige selderij-en-peterseliesmaak. Elk deel is eetbaar — bladeren, zaden, stengels en wortels. Eén plant is doorgaans meer dan genoeg voor een huishouden.',
+    // Brassica (V34)
+    'Lacinato Kale':      'Donkere, rietvormige bladeren met een zachtere structuur en mildere, nootachtigere smaak dan gekrulde boerenkool. Een Toscaans basisingrediënt voor ribollita en minestrone. Smaakt veel beter na een vorstperiode.',
+    // Flower (V33)
+    Nasturtium:           'Een overvloedige zelfzaaier met heldere, pittige bloemen en eetbare bladeren. Bloemen en jonge blaadjes geven kleur en smaak aan salades en gerechten.',
+    Calendula:            'Stralend oranje en gele bloemblaadjes met een licht kruidig aroma. Een onmisbare eetbare bloem — lang bloeiend, gezond en eenvoudig te kweken.',
+    Lavender:             'Geurige paarse bloempieken voor zoet gebak, siropen en kruidenthee. Gebruik spaarzaam — te veel lavendel geeft een zeepachtige smaak.',
+    Viola:                'Delicate, fluwelige bloempjes met een milde, grassige zoetheid. Ideaal om te confijten, drijven op dranken of als eetbare garnering op desserts.',
+    Sunflower:            'Jonge bloemblaadjes zijn eetbaar met een licht bittere, nootachtige smaak. De zaden worden in de herfst geoogst en ongeopende knoppen kunnen als artisjok worden bereid.',
+    Cornflower:           'Levendige blauwe bloemblaadjes met een subtiele kruidnagelsmaak. Een van de meest opvallende eetbare bloemgarneringen voor salades, cocktails en kruidenboter.',
+    Chamomile:            'Appel-geurende bloemen gedroogd voor kalmerende thee of vers gebruikt in siropen en infusies. Duitse kamille is de meest geteelde eetbare variëteit.',
+    Elderflower:          'Roomwitte bloemschermen met een zwoel, honingachtig aroma. Gebruikt voor vlierbloesemsiroop, wijn en sprankelende limonade. Pluk als ze volledig open zijn en gebruik snel.',
+    Rose:                 'Geurige bloemblaadjes voor jam, siropen, Turks fruit en rozenwater. Kies geurige oude variëteiten voor de beste smaak — moderne rozen hebben vaak weinig geur.',
     // Legume (V14)
     'Asparagus Bean':     'Ook wel de metersboon — een krachtige tropische klimmer met zeer lange, slanke peulen.',
     'Adzuki Bean':        'Kleine rode boontjes met een zoete smaak, veel gebruikt in Oost-Aziatische zoetigheden en desserts.',

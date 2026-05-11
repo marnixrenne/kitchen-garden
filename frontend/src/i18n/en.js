@@ -82,6 +82,20 @@ export default {
       Broccoli:             'Snap off lower yellowing leaves as the season progresses to improve airflow, which helps prevent fungal diseases in the dense canopy.',
       'Sweet Potato':       'Trim back vigorous vines mid-season to keep growth contained and direct more energy into swelling the tubers underground.',
       Luffa:                'Remove the first 5–6 side shoots to build a strong, vigorous main stem before allowing fruiting laterals to develop. Train the main stem up a vertical support.',
+      // Herbs & Brassica (V34)
+      Tarragon:             'Cut back by half in midsummer after the first flush of growth to encourage fresh, bushy new shoots. In autumn, cut the whole plant back to 10 cm above the base. Divide clumps every 3–4 years to keep the plant vigorous.',
+      Lovage:               'Cut back hard to ground level in midsummer after flowering to encourage a second flush of fresh young leaves. Divide the clump every 2–3 years in spring as it grows very vigorously and can become crowded.',
+      'Lacinato Kale':      'Harvest outer leaves from the base of the plant regularly — this acts as natural pruning. Remove yellowing or damaged leaves promptly to prevent disease. The growing point at the top remains intact, giving months of continuous harvest.',
+      // Flowers (V33)
+      Nasturtium:           'Pick spent flowers regularly to encourage continuous blooming throughout summer. Nasturtiums self-seed freely — leave a few flowers to set seed if you want plants to return naturally next year.',
+      Calendula:            'Remove spent flower heads regularly, including the green calyx beneath, to prevent seed formation and extend the flowering season well into autumn.',
+      Lavender:             'Trim lightly after flowering each year, removing spent flower stems and about 3 cm of foliage growth. In spring, cut back to fresh green growth — never into old woody stems as lavender will not regrow from bare wood.',
+      Viola:                'Pick flowers and remove spent blooms every day or two to keep the plant flowering. Cut plants back by half in midsummer if they become leggy and they will put on a second flush of growth and flowers.',
+      Sunflower:            'Remove spent blooms on branching varieties to encourage further flower production. For single-stem varieties grown for cut flowers, harvest the bloom when outer petals are just opening — no further deadheading is needed.',
+      Cornflower:           'Deadhead regularly by removing spent flowers back to a side bud to encourage a long succession of blooms through summer. This also prevents excessive self-seeding if you want to control the plant.',
+      Chamomile:            'Harvest flowers as soon as they fully open by gently rubbing them off the stems. Picking every few days keeps the plant in full bloom and prevents seed set if you want to limit self-seeding.',
+      Elderflower:          'In late winter cut back one third of the oldest stems to ground level to keep the shrub productive and well-shaped. Lightly trim the remaining stems after flowering. Hard renovation pruning every few years will rejuvenate an old or overgrown plant.',
+      Rose:                 'Remove spent blooms by cutting the stem back to the first outward-facing leaf with five leaflets to encourage repeat flowering. In late winter, prune all stems back by a third, cutting to an outward-facing bud, and remove dead or crossing wood entirely.',
     },
   },
   sowing: {
@@ -295,6 +309,21 @@ export default {
     Caper: 'Caper',
     Daylily: 'Daylily',
     Loroco: 'Loroco',
+    // Herb (V34)
+    Tarragon:      'Tarragon',
+    Lovage:        'Lovage',
+    // Brassica (V34)
+    'Lacinato Kale': 'Lacinato Kale',
+    // Flower (V33)
+    Nasturtium:  'Nasturtium',
+    Calendula:   'Calendula',
+    Lavender:    'Lavender',
+    Viola:       'Viola',
+    Sunflower:   'Sunflower',
+    Cornflower:  'Cornflower',
+    Chamomile:   'Chamomile',
+    Elderflower: 'Elderflower',
+    Rose:        'Rose',
     // Legume (V14)
     'Asparagus Bean': 'Asparagus Bean',
     'Adzuki Bean': 'Adzuki Bean',
@@ -497,6 +526,21 @@ export default {
     Caper:                'The unopened flower buds of a Mediterranean shrub, pickled for their intense savory flavor.',
     Daylily:              'Beautiful flowers that are also fully edible — use fresh buds, open blooms, and dried flowers in cooking.',
     Loroco:               'A Central American vine whose fragrant flower buds are a beloved ingredient in pupusas and stews.',
+    // Herb (V34)
+    Tarragon:             'Intensely anise-flavored herb essential in French cooking and the classic fines herbes blend. French tarragon must be propagated vegetatively — it rarely sets viable seed. Grows vigorously once established.',
+    Lovage:               'A towering perennial herb with a powerful celery-and-parsley flavor. Every part is edible — leaves, seeds, stems, and roots. One plant is usually more than enough for a household.',
+    // Brassica (V34)
+    'Lacinato Kale':      'Dark, strap-like leaves with a more tender texture and milder, nuttier flavor than curly kale. A Tuscan staple used in ribollita and minestrone. Flavor improves dramatically after a frost.',
+    // Flower (V33)
+    Nasturtium:           'A prolific self-seeder with bright, peppery flowers and edible leaves. Both flowers and young leaves add color and flavor to salads and garnishes.',
+    Calendula:            'Brilliant orange and yellow petals with a subtly spiced, herbal flavor. A workhorse of the edible garden — anti-inflammatory, long-flowering, and easy to grow.',
+    Lavender:             'Fragrant purple flower spikes used in sweet bakes, syrups, and herbal teas. A little goes a long way — use sparingly to avoid a soapy taste.',
+    Viola:                'Delicate, velvety flowers with a mild grassy sweetness. Perfect for crystallizing, floating on drinks, or pressing as edible garnishes on desserts.',
+    Sunflower:            'Young petals are edible with a slightly bitter, nutty taste. The seeds are harvested in autumn and the unopened buds can be cooked like artichoke hearts.',
+    Cornflower:           'Vivid blue petals with a faint clove-like flavor. One of the most striking edible flower garnishes for salads, cocktails, and herb butters.',
+    Chamomile:            'Apple-scented flowers dried for soothing tea or used fresh in syrups and infusions. German chamomile is the most commonly grown culinary variety.',
+    Elderflower:          'Creamy white flower clusters with a heady, honeyed fragrance. Used to make elderflower cordial, wine, and sparkling lemonade. Pick when fully open and use quickly.',
+    Rose:                 'Fragrant petals used in jams, syrups, Turkish delight, and rose water. Choose fragrant old varieties for the best flavor — modern roses often have little scent.',
     // Legume (V14)
     'Asparagus Bean':     'Also called the yard-long bean — a vigorous tropical climber producing very long, slender pods.',
     'Adzuki Bean':        'Small red beans with a sweet flavor, used extensively in East Asian sweet dishes and desserts.',
