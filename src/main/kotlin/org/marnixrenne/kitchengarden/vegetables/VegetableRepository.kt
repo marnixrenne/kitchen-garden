@@ -71,6 +71,16 @@ class VegetableRepository {
                         CompanionPlant(companionId, veg[Vegetables.name], veg[Vegetables.emoji], relationship)
                     }.sortedWith(compareBy({ it.relationship }, { it.name }))
                 }
+                val sowingGuide = SowingGuide(
+                    method             = row[Vegetables.sowingMethod],
+                    seedDepthMm        = row[Vegetables.seedDepthMm],
+                    spacingCm          = row[Vegetables.spacingCm],
+                    germinationDaysMin = row[Vegetables.germinationDaysMin],
+                    germinationDaysMax = row[Vegetables.germinationDaysMax],
+                    daysToMaturityMin  = row[Vegetables.daysToMaturityMin],
+                    daysToMaturityMax  = row[Vegetables.daysToMaturityMax],
+                    frostTolerance     = row[Vegetables.frostTolerance],
+                ).takeIf { it.method != null }
                 VegetableDetail(
                     id               = row[Vegetables.id],
                     name             = row[Vegetables.name],
@@ -78,6 +88,7 @@ class VegetableRepository {
                     emoji            = row[Vegetables.emoji],
                     imageUrl         = row[Vegetables.imageUrl],
                     sunRequirement   = row[Vegetables.sunRequirement],
+                    sowingGuide      = sowingGuide,
                     seedingMonths    = seedingMonths,
                     harvestingMonths = harvestingMonths,
                     countries        = countries,

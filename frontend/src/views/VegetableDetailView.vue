@@ -95,6 +95,44 @@ onMounted(async () => {
 
         <p class="description">{{ description }}</p>
 
+        <div v-if="vegetable.sowingGuide" class="sowing-section">
+          <h3>{{ t('sowing.title') }}</h3>
+          <div class="sowing-grid">
+            <div v-if="vegetable.sowingGuide.method" class="sowing-stat">
+              <span class="sowing-label">{{ t('sowing.method.label') }}</span>
+              <span class="sowing-value">{{ t(`sowing.method.${vegetable.sowingGuide.method}`) }}</span>
+            </div>
+            <div v-if="vegetable.sowingGuide.frostTolerance" class="sowing-stat">
+              <span class="sowing-label">{{ t('sowing.frost.label') }}</span>
+              <span class="sowing-value" :class="`frost-${vegetable.sowingGuide.frostTolerance}`">
+                {{ t(`sowing.frost.${vegetable.sowingGuide.frostTolerance}`) }}
+              </span>
+            </div>
+            <div v-if="vegetable.sowingGuide.seedDepthMm" class="sowing-stat">
+              <span class="sowing-label">{{ t('sowing.depth') }}</span>
+              <span class="sowing-value">{{ vegetable.sowingGuide.seedDepthMm }} mm</span>
+            </div>
+            <div v-if="vegetable.sowingGuide.spacingCm" class="sowing-stat">
+              <span class="sowing-label">{{ t('sowing.spacing') }}</span>
+              <span class="sowing-value">{{ vegetable.sowingGuide.spacingCm }} cm</span>
+            </div>
+            <div v-if="vegetable.sowingGuide.germinationDaysMin" class="sowing-stat">
+              <span class="sowing-label">{{ t('sowing.germination') }}</span>
+              <span class="sowing-value">
+                {{ vegetable.sowingGuide.germinationDaysMin }}–{{ vegetable.sowingGuide.germinationDaysMax }}
+                {{ t('sowing.days') }}
+              </span>
+            </div>
+            <div v-if="vegetable.sowingGuide.daysToMaturityMin" class="sowing-stat">
+              <span class="sowing-label">{{ t('sowing.maturity') }}</span>
+              <span class="sowing-value">
+                {{ vegetable.sowingGuide.daysToMaturityMin }}–{{ vegetable.sowingGuide.daysToMaturityMax }}
+                {{ t('sowing.days') }}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div class="months-section">
           <h3>{{ t('seedingMonths') }}</h3>
           <div class="months-grid">
@@ -268,6 +306,52 @@ main {
   border-top: 1px solid var(--green-pale);
   padding-top: 1.5rem;
 }
+
+.sowing-section { border-top: 1px solid var(--green-pale); padding-top: 1.5rem; }
+
+.sowing-section h3 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.sowing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem 1rem;
+}
+
+@media (max-width: 480px) {
+  .sowing-grid { grid-template-columns: 1fr; }
+}
+
+.sowing-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.sowing-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.sowing-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--green-dark);
+}
+
+.frost-tender      { color: #b45309; }
+.frost-half_hardy  { color: #0369a1; }
+.frost-hardy       { color: #0369a1; }
+.frost-very_hardy  { color: #1d4ed8; }
 
 .months-section { border-top: 1px solid var(--green-pale); padding-top: 1.5rem; }
 

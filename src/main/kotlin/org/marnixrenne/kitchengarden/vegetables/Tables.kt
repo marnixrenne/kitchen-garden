@@ -7,8 +7,16 @@ object Vegetables : Table("vegetables") {
     val name     = varchar("name", 100)
     val category = varchar("category", 50)
     val emoji    = varchar("emoji", 10).nullable()
-    val imageUrl        = varchar("image_url", 500).nullable()
-    val sunRequirement  = varchar("sun_requirement", 15).nullable()
+    val imageUrl           = varchar("image_url", 500).nullable()
+    val sunRequirement     = varchar("sun_requirement", 15).nullable()
+    val sowingMethod       = varchar("sowing_method", 10).nullable()
+    val seedDepthMm        = integer("seed_depth_mm").nullable()
+    val spacingCm          = integer("spacing_cm").nullable()
+    val germinationDaysMin = integer("germination_days_min").nullable()
+    val germinationDaysMax = integer("germination_days_max").nullable()
+    val daysToMaturityMin  = integer("days_to_maturity_min").nullable()
+    val daysToMaturityMax  = integer("days_to_maturity_max").nullable()
+    val frostTolerance     = varchar("frost_tolerance", 12).nullable()
 
     override val primaryKey = PrimaryKey(id)
 }

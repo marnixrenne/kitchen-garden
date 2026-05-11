@@ -115,6 +115,7 @@ class GardenRepository {
                         emoji            = row[Vegetables.emoji],
                         imageUrl         = row[Vegetables.imageUrl],
                         sunRequirement   = null,
+                        sowingGuide      = null,
                         seedingMonths    = seedingMonths,
                         harvestingMonths = harvestingMonths,
                         countries        = countries,
