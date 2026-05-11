@@ -28,6 +28,10 @@ class GardenController(private val repository: GardenRepository) {
     fun getGardenDetails(authentication: Authentication): List<VegetableDetail> =
         repository.findDetails(resolveUserId(authentication))
 
+    @GetMapping("/week")
+    fun getWeekSummary(authentication: Authentication): WeekSummary =
+        repository.findWeekSummary(resolveUserId(authentication))
+
     @GetMapping("/suggestions")
     fun getSuggestions(authentication: Authentication): PlantingSuggestions =
         repository.findSuggestions(resolveUserId(authentication))

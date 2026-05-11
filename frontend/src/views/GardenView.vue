@@ -8,11 +8,11 @@ const { t, tm, te } = useI18n()
 
 const vegetables    = ref([])
 const suggestions   = ref(null)
+const weekSummary   = ref(null)
 const loading       = ref(true)
 const selectedMonth = ref(null)
 
 const months = computed(() => tm('months'))
-
 const sortedVegetables = computed(() =>
   [...vegetables.value].sort((a, b) => vegName(a).localeCompare(vegName(b)))
 )
@@ -108,13 +108,40 @@ function vegName(veg) {
   return te(key) ? t(key) : veg.name
 }
 
+function weekRangeLabel(s) {
+  const startMonth = months.value[s.weekStartMonth - 1]
+  const endMonth   = months.value[s.weekEndMonth - 1]
+  const range = s.weekStartMonth === s.weekEndMonth
+    ? `${s.weekStartDay}–${s.weekEndDay} ${endMonth}`
+    : `${s.weekStartDay} ${startMonth}–${s.weekEndDay} ${endMonth}`
+  return `${t('garden.week')} ${s.week} · ${range}`
+}
+
+function weekActionHints(action) {
+  const hints = []
+  if (action.type !== 'harvest') {
+    if (action.sowingMethod === 'indoor') hints.push(t('garden.hintIndoor'))
+    else if (action.sowingMethod === 'direct') hints.push(t('garden.hintDirect'))
+    else if (action.sowingMethod === 'both')   hints.push(t('garden.hintBoth'))
+    if (action.germinationDaysMin) {
+      hints.push(t('garden.hintGermination', { min: action.germinationDaysMin, max: action.germinationDaysMax }))
+    }
+  }
+  if (action.type === 'harvest' || action.type === 'both') {
+    hints.push(t('garden.hintHarvest'))
+  }
+  return hints
+}
+
 onMounted(async () => {
-  const [detailsRes, suggestionsRes] = await Promise.all([
+  const [detailsRes, suggestionsRes, weekRes] = await Promise.all([
     fetch('/api/garden/details'),
     fetch('/api/garden/suggestions'),
+    fetch('/api/garden/week'),
   ])
   if (detailsRes.ok)     vegetables.value  = await detailsRes.json()
   if (suggestionsRes.ok) suggestions.value = await suggestionsRes.json()
+  if (weekRes.ok)        weekSummary.value = await weekRes.json()
   loading.value = false
 })
 </script>
@@ -229,6 +256,38 @@ onMounted(async () => {
           </div>
         </template>
       </div>
+      <!-- This week -->
+      <div v-if="weekSummary" class="this-week">
+        <div class="this-week-header">
+          <span class="this-week-title">{{ t('garden.thisWeek') }}</span>
+          <span class="this-week-label">{{ weekRangeLabel(weekSummary) }}</span>
+        </div>
+        <div v-if="weekSummary.actions.length === 0" class="this-week-empty">
+          {{ t('garden.nothingThisWeek') }}
+        </div>
+        <div v-else class="week-actions">
+          <div
+            v-for="action in weekSummary.actions"
+            :key="action.vegetable.id"
+            class="week-action"
+            @click="router.push(`/vegetable/${action.vegetable.id}`)"
+          >
+            <span class="week-action-emoji">{{ action.vegetable.emoji ?? '🌱' }}</span>
+            <div class="week-action-body">
+              <div class="week-action-top">
+                <span class="week-action-name">{{ vegName(action.vegetable) }}</span>
+                <span class="week-action-badge" :class="action.type">
+                  {{ action.type === 'sow' ? t('garden.actionSow') : action.type === 'harvest' ? t('garden.actionHarvest') : t('garden.actionBoth') }}
+                </span>
+              </div>
+              <div v-if="weekActionHints(action).length" class="week-action-hints">
+                {{ weekActionHints(action).join(' · ') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Planting suggestions -->
       <div v-if="suggestions && (suggestions.sunGroups.length > 0 || suggestions.conflicts.length > 0)" class="suggestions">
         <h3 class="suggestions-title">{{ t('garden.suggestions') }}</h3>
@@ -313,6 +372,108 @@ main {
   text-align: center;
   padding: 3rem;
   color: var(--text-muted);
+}
+
+/* This week */
+.this-week {
+  background: var(--card-bg);
+  border: 1.5px solid var(--green-pale);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.this-week-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: var(--green-pale);
+  gap: 0.75rem;
+}
+
+.this-week-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--green-dark);
+}
+
+.this-week-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--green-mid);
+  white-space: nowrap;
+}
+
+.this-week-empty {
+  padding: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.week-actions {
+  display: flex;
+  flex-direction: column;
+}
+
+.week-action {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.85rem 1.25rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-top: 1px solid var(--green-pale);
+}
+
+.week-action:first-child { border-top: none; }
+.week-action:hover { background: var(--bg); }
+
+.week-action-emoji {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+  padding-top: 0.1rem;
+}
+
+.week-action-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.week-action-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.week-action-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--green-dark);
+}
+
+.week-action-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.week-action-badge.sow     { background: #dcfce7; color: #166534; }
+.week-action-badge.harvest { background: #fef3c7; color: #92400e; }
+.week-action-badge.both    { background: #ede9fe; color: #4c1d95; }
+
+.week-action-hints {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 /* Legend */

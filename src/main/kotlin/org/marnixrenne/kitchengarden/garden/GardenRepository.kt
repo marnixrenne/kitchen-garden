@@ -6,6 +6,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.marnixrenne.kitchengarden.vegetables.*
 import org.marnixrenne.kitchengarden.vegetables.CompanionPlants
 import org.springframework.stereotype.Repository
+import java.time.LocalDate
+import java.time.temporal.WeekFields
 import java.util.UUID
 
 private val SUN_ORDER = listOf("full_sun", "partial_shade", "shade")
@@ -84,6 +86,54 @@ class GardenRepository {
         }
 
         PlantingSuggestions(sunGroups, conflicts)
+    }
+
+    fun findWeekSummary(userId: UUID): WeekSummary = transaction {
+        val today      = LocalDate.now()
+        val month      = today.monthValue
+        val week       = today.get(WeekFields.ISO.weekOfWeekBasedYear())
+        val weekStart  = today.with(WeekFields.ISO.dayOfWeek(), 1)
+        val weekEnd    = weekStart.plusDays(6)
+
+        val ids = GardenVegetables.selectAll()
+            .where { GardenVegetables.userId eq userId }
+            .map { it[GardenVegetables.vegetableId] }
+
+        if (ids.isEmpty()) return@transaction WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, emptyList())
+
+        val seedingIds   = SeedingMonths.selectAll()
+            .where { (SeedingMonths.vegetableId inList ids) and (SeedingMonths.monthNum eq month) }
+            .map { it[SeedingMonths.vegetableId] }.toSet()
+
+        val harvestingIds = HarvestingMonths.selectAll()
+            .where { (HarvestingMonths.vegetableId inList ids) and (HarvestingMonths.monthNum eq month) }
+            .map { it[HarvestingMonths.vegetableId] }.toSet()
+
+        val activeIds = seedingIds + harvestingIds
+        if (activeIds.isEmpty()) return@transaction WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, emptyList())
+
+        val actions = Vegetables.selectAll()
+            .where { Vegetables.id inList activeIds }
+            .map { row ->
+                val id       = row[Vegetables.id]
+                val sows     = id in seedingIds
+                val harvests = id in harvestingIds
+                val type     = when {
+                    sows && harvests -> "both"
+                    sows             -> "sow"
+                    else             -> "harvest"
+                }
+                WeekAction(
+                    type               = type,
+                    vegetable          = SimpleVeg(id, row[Vegetables.name], row[Vegetables.emoji]),
+                    sowingMethod       = row[Vegetables.sowingMethod],
+                    germinationDaysMin = row[Vegetables.germinationDaysMin],
+                    germinationDaysMax = row[Vegetables.germinationDaysMax],
+                )
+            }
+            .sortedWith(compareBy({ it.type }, { it.vegetable.name }))
+
+        WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, actions)
     }
 
     fun findDetails(userId: UUID): List<VegetableDetail> = transaction {
