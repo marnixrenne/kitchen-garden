@@ -161,19 +161,6 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div v-if="vegetable.countries.length > 0" class="countries-section">
-          <h3>{{ t('countries') }}</h3>
-          <div class="country-list">
-            <span
-              v-for="country in vegetable.countries"
-              :key="country.code"
-              class="country-chip"
-            >
-              {{ te(`countryNames.${country.code}`) ? t(`countryNames.${country.code}`) : country.name }}
-            </span>
-          </div>
-        </div>
-
         <div v-if="vegetable.companions.length > 0" class="companions-section">
           <h3>{{ t('companions.title') }}</h3>
           <div v-if="goodCompanions.length > 0" class="companion-group">
@@ -209,6 +196,19 @@ onMounted(async () => {
                 {{ c.emoji ?? '🌱' }} {{ te(`vegetables.${c.name}`) ? t(`vegetables.${c.name}`) : c.name }}
               </RouterLink>
             </div>
+          </div>
+        </div>
+
+        <div v-if="vegetable.countries.length > 0" class="countries-section">
+          <h3>{{ t('countries') }}</h3>
+          <div class="country-list">
+            <span
+              v-for="country in vegetable.countries"
+              :key="country.code"
+              class="country-chip"
+            >
+              {{ te(`countryNames.${country.code}`) ? t(`countryNames.${country.code}`) : country.name }}
+            </span>
           </div>
         </div>
       </div>
