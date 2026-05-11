@@ -136,6 +136,11 @@ export default {
     hintGermination: 'Kiemt na {min}–{max} dagen',
     hintHarvest: 'Klaar om te oogsten deze maand',
   },
+  settings: {
+    title: 'Instellingen',
+    username: 'Gebruikersnaam',
+    language: 'Taal',
+  },
   admin: {
     title: 'Gebruikers',
     refresh: 'Vernieuwen',

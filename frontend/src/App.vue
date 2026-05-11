@@ -48,7 +48,7 @@ async function handleLogout() {
         <RouterLink v-if="user?.roles?.includes('ROLE_ADMIN')" to="/admin">Admin</RouterLink>
       </nav>
       <div class="header-controls">
-        <span class="display-name">{{ user.username }}</span>
+        <RouterLink class="display-name" to="/settings">{{ user.username }}</RouterLink>
         <button class="logout-btn" @click="handleLogout">{{ t('logout') }}</button>
         <div class="lang-switcher">
           <button :class="{ active: locale === 'en' }" @click="switchLocale('en')">EN</button>
@@ -128,7 +128,11 @@ header h1 { font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
 .display-name {
   font-size: 0.85rem;
   color: rgba(255,255,255,0.7);
+  text-decoration: none;
+  transition: color 0.15s;
 }
+
+.display-name:hover { color: #fff; }
 
 .logout-btn {
   padding: 0.35rem 0.7rem;

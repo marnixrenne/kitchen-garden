@@ -136,6 +136,11 @@ export default {
     hintGermination: 'Germinates in {min}–{max} days',
     hintHarvest: 'Ready to harvest this month',
   },
+  settings: {
+    title: 'Settings',
+    username: 'Username',
+    language: 'Language',
+  },
   admin: {
     title: 'Users',
     refresh: 'Refresh',

@@ -10,6 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 @Controller
 class SpaController {
 
-    @RequestMapping(value = ["/", "/{path:[^.]*}", "/vegetable/{id:[^.]+}"])
+    @RequestMapping(value = ["/", "/{path:[^.]*}", "/vegetable/{id:[^.]+}", "/settings"])
     fun forward(): String = "forward:/index.html"
 }
