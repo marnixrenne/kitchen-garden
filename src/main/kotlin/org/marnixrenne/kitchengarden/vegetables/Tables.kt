@@ -26,11 +26,13 @@ object Vegetables : Table("vegetables") {
 object SeedingMonths : Table("seeding_months") {
     val vegetableId = uuid("vegetable_id") references Vegetables.id
     val monthNum    = integer("month_num")
+    val countryCode = char("country_code", 2).nullable()
 }
 
 object HarvestingMonths : Table("harvesting_months") {
     val vegetableId = uuid("vegetable_id") references Vegetables.id
     val monthNum    = integer("month_num")
+    val countryCode = char("country_code", 2).nullable()
 }
 
 object Countries : Table("countries") {

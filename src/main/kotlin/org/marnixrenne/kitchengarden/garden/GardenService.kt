@@ -2,6 +2,7 @@ package org.marnixrenne.kitchengarden.garden
 
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.marnixrenne.kitchengarden.preferences.PreferenceService
 import org.marnixrenne.kitchengarden.security.Users
 import org.marnixrenne.kitchengarden.vegetables.VegetableDetail
 import org.springframework.security.core.Authentication
@@ -9,7 +10,10 @@ import org.springframework.stereotype.Service
 import java.util.UUID
 
 @Service
-class GardenService(private val repository: GardenRepository) {
+class GardenService(
+    private val repository: GardenRepository,
+    private val preferenceService: PreferenceService,
+) {
 
     private fun resolveUserId(authentication: Authentication): UUID = transaction {
         Users.selectAll()
@@ -22,10 +26,10 @@ class GardenService(private val repository: GardenRepository) {
         repository.findVegetableIds(resolveUserId(authentication))
 
     fun getDetails(authentication: Authentication): List<VegetableDetail> =
-        repository.findDetails(resolveUserId(authentication))
+        repository.findDetails(resolveUserId(authentication), preferenceService.getCountry(authentication))
 
     fun getWeekSummary(authentication: Authentication): WeekSummary =
-        repository.findWeekSummary(resolveUserId(authentication))
+        repository.findWeekSummary(resolveUserId(authentication), preferenceService.getCountry(authentication))
 
     fun getSuggestions(authentication: Authentication): PlantingSuggestions =
         repository.findSuggestions(resolveUserId(authentication))

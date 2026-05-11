@@ -10,6 +10,53 @@ import java.time.LocalDate
 import java.time.temporal.WeekFields
 import java.util.UUID
 
+private fun resolvedMonthNums(
+    vegetableIdCol: Column<UUID>,
+    monthNumCol: Column<Int>,
+    countryCodeCol: Column<String?>,
+    vegetableId: UUID,
+    countryCode: String?,
+): List<Int> {
+    if (countryCode != null) {
+        val country = vegetableIdCol.table.selectAll()
+            .where { (vegetableIdCol eq vegetableId) and (countryCodeCol eq countryCode) }
+            .map { it[monthNumCol] }.sorted()
+        if (country.isNotEmpty()) return country
+    }
+    return vegetableIdCol.table.selectAll()
+        .where { (vegetableIdCol eq vegetableId) and countryCodeCol.isNull() }
+        .map { it[monthNumCol] }.sorted()
+}
+
+private fun resolvedMonthIds(
+    vegetableIdCol: Column<UUID>,
+    monthNumCol: Column<Int>,
+    countryCodeCol: Column<String?>,
+    ids: List<UUID>,
+    month: Int,
+    countryCode: String?,
+): Set<UUID> {
+    if (countryCode == null) {
+        return vegetableIdCol.table.selectAll()
+            .where { (vegetableIdCol inList ids) and (monthNumCol eq month) and countryCodeCol.isNull() }
+            .map { it[vegetableIdCol] }.toSet()
+    }
+    val vegsWithCountryData = vegetableIdCol.table.selectAll()
+        .where { (vegetableIdCol inList ids) and (countryCodeCol eq countryCode) }
+        .map { it[vegetableIdCol] }.toSet()
+
+    val fromCountry = vegetableIdCol.table.selectAll()
+        .where { (vegetableIdCol inList ids) and (monthNumCol eq month) and (countryCodeCol eq countryCode) }
+        .map { it[vegetableIdCol] }.toSet()
+
+    val remaining = ids - vegsWithCountryData
+    val fromGlobal = if (remaining.isEmpty()) emptySet() else vegetableIdCol.table.selectAll()
+        .where { (vegetableIdCol inList remaining) and (monthNumCol eq month) and countryCodeCol.isNull() }
+        .map { it[vegetableIdCol] }.toSet()
+
+    return fromCountry + fromGlobal
+}
+
 private val SUN_ORDER = listOf("full_sun", "partial_shade", "shade")
 
 @Repository
@@ -88,7 +135,7 @@ class GardenRepository {
         PlantingSuggestions(sunGroups, conflicts)
     }
 
-    fun findWeekSummary(userId: UUID): WeekSummary = transaction {
+    fun findWeekSummary(userId: UUID, countryCode: String?): WeekSummary = transaction {
         val today      = LocalDate.now()
         val month      = today.monthValue
         val week       = today.get(WeekFields.ISO.weekOfWeekBasedYear())
@@ -101,13 +148,8 @@ class GardenRepository {
 
         if (ids.isEmpty()) return@transaction WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, emptyList())
 
-        val seedingIds   = SeedingMonths.selectAll()
-            .where { (SeedingMonths.vegetableId inList ids) and (SeedingMonths.monthNum eq month) }
-            .map { it[SeedingMonths.vegetableId] }.toSet()
-
-        val harvestingIds = HarvestingMonths.selectAll()
-            .where { (HarvestingMonths.vegetableId inList ids) and (HarvestingMonths.monthNum eq month) }
-            .map { it[HarvestingMonths.vegetableId] }.toSet()
+        val seedingIds   = resolvedMonthIds(SeedingMonths.vegetableId,   SeedingMonths.monthNum,   SeedingMonths.countryCode,   ids, month, countryCode)
+        val harvestingIds = resolvedMonthIds(HarvestingMonths.vegetableId, HarvestingMonths.monthNum, HarvestingMonths.countryCode, ids, month, countryCode)
 
         val activeIds = seedingIds + harvestingIds
         if (activeIds.isEmpty()) return@transaction WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, emptyList())
@@ -136,7 +178,7 @@ class GardenRepository {
         WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, actions)
     }
 
-    fun findDetails(userId: UUID): List<VegetableDetail> = transaction {
+    fun findDetails(userId: UUID, countryCode: String?): List<VegetableDetail> = transaction {
         val ids = GardenVegetables.selectAll()
             .where { GardenVegetables.userId eq userId }
             .map { it[GardenVegetables.vegetableId] }
@@ -145,14 +187,8 @@ class GardenRepository {
             Vegetables.selectAll()
                 .where { Vegetables.id eq id }
                 .map { row ->
-                    val seedingMonths = SeedingMonths.selectAll()
-                        .where { SeedingMonths.vegetableId eq id }
-                        .map { it[SeedingMonths.monthNum] }
-                        .sorted()
-                    val harvestingMonths = HarvestingMonths.selectAll()
-                        .where { HarvestingMonths.vegetableId eq id }
-                        .map { it[HarvestingMonths.monthNum] }
-                        .sorted()
+                    val seedingMonths    = resolvedMonthNums(SeedingMonths.vegetableId,   SeedingMonths.monthNum,   SeedingMonths.countryCode,   id, countryCode)
+                    val harvestingMonths = resolvedMonthNums(HarvestingMonths.vegetableId, HarvestingMonths.monthNum, HarvestingMonths.countryCode, id, countryCode)
                     val countries = (VegetableCountries innerJoin Countries)
                         .selectAll()
                         .where { VegetableCountries.vegetableId eq id }
