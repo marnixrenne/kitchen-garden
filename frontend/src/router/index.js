@@ -18,8 +18,8 @@ const router = createRouter({
     { path: '/login',          component: LoginForm,           meta: { public: true, guestOnly: true } },
     { path: '/signup',         component: SignupView,          meta: { public: true } },
     { path: '/verify',         component: VerifyView,          meta: { public: true } },
-    { path: '/home',           component: HomeView,            meta: { requiresAuth: true } },
-    { path: '/garden',         component: GardenView,          meta: { requiresAuth: true } },
+    { path: '/home',           component: HomeView,            meta: { requiresAuth: true, noAdmin: true } },
+    { path: '/garden',         component: GardenView,          meta: { requiresAuth: true, noAdmin: true } },
     { path: '/vegetable/:id',  component: VegetableDetailView, meta: { requiresAuth: true } },
     { path: '/admin',          component: AdminView,           meta: { requiresAuth: true, requiresAdmin: true } },
   ],
@@ -31,9 +31,12 @@ router.beforeEach(async (to) => {
     authInitialized = true
   }
 
+  const isAdmin = user.value?.roles?.includes('ROLE_ADMIN')
+
   if (to.meta.requiresAuth && !user.value) return '/login'
-  if (to.meta.guestOnly && user.value)     return '/home'
-  if (to.meta.requiresAdmin && !user.value?.roles?.includes('ROLE_ADMIN')) return '/home'
+  if (to.meta.guestOnly && user.value)     return isAdmin ? '/admin' : '/home'
+  if (to.meta.requiresAdmin && !isAdmin)   return '/home'
+  if (to.meta.noAdmin && isAdmin)          return '/admin'
 })
 
 export default router

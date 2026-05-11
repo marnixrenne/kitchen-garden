@@ -41,8 +41,10 @@ async function handleLogout() {
     <div class="header-top">
       <h1>🌱 Kitchen Garden</h1>
       <nav class="header-nav">
-        <RouterLink to="/home">{{ t('home') }}</RouterLink>
-        <RouterLink to="/garden">{{ t('myGarden') }}</RouterLink>
+        <template v-if="!user?.roles?.includes('ROLE_ADMIN')">
+          <RouterLink to="/home">{{ t('home') }}</RouterLink>
+          <RouterLink to="/garden">{{ t('myGarden') }}</RouterLink>
+        </template>
         <RouterLink v-if="user?.roles?.includes('ROLE_ADMIN')" to="/admin">Admin</RouterLink>
       </nav>
       <div class="header-controls">
