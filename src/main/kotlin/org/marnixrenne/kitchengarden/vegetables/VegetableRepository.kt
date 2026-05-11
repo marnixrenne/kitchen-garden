@@ -88,6 +88,8 @@ class VegetableRepository {
                     emoji            = row[Vegetables.emoji],
                     imageUrl         = row[Vegetables.imageUrl],
                     sunRequirement   = row[Vegetables.sunRequirement],
+                    pruningType      = row[Vegetables.pruningType],
+                    pruningTip       = row[Vegetables.pruningTip],
                     sowingGuide      = sowingGuide,
                     seedingMonths    = seedingMonths,
                     harvestingMonths = harvestingMonths,

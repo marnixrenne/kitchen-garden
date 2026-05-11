@@ -9,6 +9,8 @@ object Vegetables : Table("vegetables") {
     val emoji    = varchar("emoji", 10).nullable()
     val imageUrl           = varchar("image_url", 500).nullable()
     val sunRequirement     = varchar("sun_requirement", 15).nullable()
+    val pruningType        = varchar("pruning_type", 20).nullable()
+    val pruningTip         = text("pruning_tip").nullable()
     val sowingMethod       = varchar("sowing_method", 10).nullable()
     val seedDepthMm        = integer("seed_depth_mm").nullable()
     val spacingCm          = integer("spacing_cm").nullable()

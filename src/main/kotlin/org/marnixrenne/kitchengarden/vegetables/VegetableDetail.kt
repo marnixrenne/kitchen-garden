@@ -24,6 +24,8 @@ data class VegetableDetail(
     val emoji: String?,
     val imageUrl: String?,
     val sunRequirement: String?,
+    val pruningType: String?,
+    val pruningTip: String?,
     val sowingGuide: SowingGuide?,
     val seedingMonths: List<Int>,
     val harvestingMonths: List<Int>,

@@ -29,6 +29,12 @@ const description = computed(() => {
 const goodCompanions = computed(() => vegetable.value?.companions.filter(c => c.relationship === 'good') ?? [])
 const badCompanions  = computed(() => vegetable.value?.companions.filter(c => c.relationship === 'bad')  ?? [])
 
+const pruningTipText = computed(() => {
+  if (!vegetable.value?.pruningType) return ''
+  const key = `pruning.tips.${vegetable.value.name}`
+  return te(key) ? t(key) : (vegetable.value.pruningTip ?? '')
+})
+
 async function toggleGarden() {
   const method = inGarden.value ? 'DELETE' : 'PUT'
   await fetch(`/api/garden/${route.params.id}`, { method, headers: csrfHeaders() })
@@ -131,6 +137,12 @@ onMounted(async () => {
               </span>
             </div>
           </div>
+        </div>
+
+        <div v-if="vegetable.pruningType" class="pruning-section">
+          <h3>{{ t('pruning.title') }}</h3>
+          <span class="pruning-badge">{{ t(`pruning.type.${vegetable.pruningType}`) }}</span>
+          <p class="pruning-tip">{{ pruningTipText }}</p>
         </div>
 
         <div class="months-section">
@@ -446,6 +458,35 @@ main {
 }
 
 .loading { text-align: center; padding: 3rem; color: var(--text-muted); }
+
+.pruning-section { border-top: 1px solid var(--green-pale); padding-top: 1.5rem; }
+
+.pruning-section h3 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.65rem;
+}
+
+.pruning-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #fef3c7;
+  color: #92400e;
+  margin-bottom: 0.65rem;
+}
+
+.pruning-tip {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin: 0;
+}
 
 .companions-section { border-top: 1px solid var(--green-pale); padding-top: 1.5rem; }
 
