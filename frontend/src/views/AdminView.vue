@@ -1,6 +1,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { user, csrfHeaders } from '../stores/auth.js'
+
+const { t } = useI18n()
 
 function formatDate(ts) {
   if (!ts) return '—'
@@ -44,19 +47,20 @@ onMounted(fetchUsers)
 <template>
   <main>
     <div class="admin-header">
-      <h2>Users</h2>
-      <button class="refresh-btn" @click="fetchUsers" :disabled="loading">Refresh</button>
+      <h2>{{ t('admin.title') }}</h2>
+      <button class="refresh-btn" @click="fetchUsers" :disabled="loading">{{ t('admin.refresh') }}</button>
     </div>
 
-    <div v-if="loading" class="state-msg">Loading…</div>
-    <div v-else-if="error" class="state-msg error">Failed to load users: {{ error }}</div>
-    <div v-else-if="users.length === 0" class="state-msg">No users found.</div>
+    <div v-if="loading" class="state-msg">{{ t('admin.loading') }}</div>
+    <div v-else-if="error" class="state-msg error">{{ t('admin.loadError', { error }) }}</div>
+    <div v-else-if="users.length === 0" class="state-msg">{{ t('admin.noUsers') }}</div>
     <table v-else class="users-table">
       <thead>
         <tr>
-          <th>Username</th>
-          <th>Status</th>
-          <th>Last login</th>
+          <th>{{ t('admin.colUsername') }}</th>
+          <th>{{ t('admin.colStatus') }}</th>
+          <th>{{ t('admin.colLastLogin') }}</th>
+          <th>{{ t('admin.colVegetables') }}</th>
           <th></th>
         </tr>
       </thead>
@@ -65,17 +69,18 @@ onMounted(fetchUsers)
           <td class="username">{{ u.username }}</td>
           <td>
             <span :class="['status-badge', u.online ? 'online' : 'offline']">
-              {{ u.online ? 'Online' : 'Offline' }}
+              {{ u.online ? t('admin.online') : t('admin.offline') }}
             </span>
           </td>
           <td class="last-login">{{ formatDate(u.lastLogin) }}</td>
+          <td class="garden-count">{{ u.gardenCount }}</td>
           <td class="actions">
             <button
               v-if="u.username !== user?.username"
               :class="['toggle-btn', u.disabled ? 'enable' : 'disable']"
               @click="toggleDisabled(u)"
             >
-              {{ u.disabled ? 'Enable' : 'Disable' }}
+              {{ u.disabled ? t('admin.enable') : t('admin.disable') }}
             </button>
           </td>
         </tr>
@@ -160,9 +165,10 @@ main {
 .row-disabled .username,
 .row-disabled .last-login { opacity: 0.45; }
 
-.username   { font-size: 0.9rem; color: var(--text); }
-.last-login { font-size: 0.85rem; color: var(--text-muted); }
-.actions    { text-align: right; white-space: nowrap; }
+.username      { font-size: 0.9rem; color: var(--text); }
+.last-login    { font-size: 0.85rem; color: var(--text-muted); }
+.garden-count  { font-size: 0.85rem; color: var(--text-muted); text-align: right; }
+.actions       { text-align: right; white-space: nowrap; }
 
 .status-badge {
   display: inline-block;
