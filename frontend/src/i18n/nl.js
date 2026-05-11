@@ -140,6 +140,8 @@ export default {
     title: 'Instellingen',
     username: 'Gebruikersnaam',
     language: 'Taal',
+    country: 'Land',
+    countryNone: 'Niet ingesteld',
   },
   admin: {
     title: 'Gebruikers',

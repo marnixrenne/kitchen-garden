@@ -1,19 +1,52 @@
 <script setup>
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { user } from '../stores/auth.js'
+import { user, csrfHeaders } from '../stores/auth.js'
 
-const { t, locale } = useI18n()
+const { t, tm, locale } = useI18n()
 const router = useRouter()
+
+const country = ref('')
+
+const countries = computed(() =>
+  Object.entries(tm('countryNames'))
+    .map(([code, name]) => ({ code, name }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+)
+
+onMounted(async () => {
+  const res = await fetch('/api/preferences')
+  if (res.ok) {
+    const prefs = await res.json()
+    country.value = prefs.country ?? ''
+  }
+})
 
 async function switchLocale(lang) {
   locale.value = lang
   localStorage.setItem('locale', lang)
   await fetch('/api/preferences/locale', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ value: lang }),
   })
+}
+
+async function setCountry(code) {
+  country.value = code
+  if (code) {
+    await fetch('/api/preferences/country', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+      body: JSON.stringify({ value: code }),
+    })
+  } else {
+    await fetch('/api/preferences/country', {
+      method: 'DELETE',
+      headers: csrfHeaders(),
+    })
+  }
 }
 </script>
 
@@ -45,6 +78,16 @@ async function switchLocale(lang) {
             🇳🇱 Nederlands
           </button>
         </div>
+      </div>
+
+      <div class="setting-row">
+        <span class="setting-label">{{ t('settings.country') }}</span>
+        <select class="country-select" :value="country" @change="setCountry($event.target.value)">
+          <option value="">{{ t('settings.countryNone') }}</option>
+          <option v-for="c in countries" :key="c.code" :value="c.code">
+            {{ c.name }}
+          </option>
+        </select>
       </div>
     </div>
   </main>
@@ -137,5 +180,23 @@ main {
   background: var(--green-mid);
   border-color: var(--green-mid);
   color: #fff;
+}
+
+.country-select {
+  padding: 0.4rem 0.65rem;
+  border: 1.5px solid var(--green-pale);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 180px;
+  transition: border-color 0.15s;
+}
+
+.country-select:focus {
+  outline: none;
+  border-color: var(--green-mid);
 }
 </style>

@@ -140,6 +140,8 @@ export default {
     title: 'Settings',
     username: 'Username',
     language: 'Language',
+    country: 'Country',
+    countryNone: 'Not set',
   },
   admin: {
     title: 'Users',
