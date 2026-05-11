@@ -31,7 +31,8 @@
       "Bash(./gradlew compileKotlin --info)",
       "Bash(./gradlew compileKotlin --stacktrace)",
       "Bash(psql *)",
-      "Bash(PGPASSWORD=kitchengarden /opt/homebrew/bin/psql *)"
+      "Bash(PGPASSWORD=kitchengarden /opt/homebrew/bin/psql *)",
+      "WebSearch"
     ]
   }
 }
