@@ -17,7 +17,7 @@ class PlantApiTest : IntegrationTestBase() {
             .andExpect {
                 status { isOk() }
                 content { contentTypeCompatibleWith(MediaType.APPLICATION_JSON) }
-                jsonPath("$.length()") { value(157) }
+                jsonPath("$.length()") { value(169) }
             }
     }
 

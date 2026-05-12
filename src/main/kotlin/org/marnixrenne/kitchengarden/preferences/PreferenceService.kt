@@ -20,8 +20,8 @@ class PreferenceService(private val repository: PreferenceRepository) {
     fun getAll(authentication: Authentication): Map<String, String> =
         repository.findAll(resolveUserId(authentication))
 
-    fun getCountry(authentication: Authentication): String? =
-        getAll(authentication)["country"]
+    fun getCountry(authentication: Authentication?): String? =
+        if (authentication == null) null else getAll(authentication)["country"]
 
     fun set(authentication: Authentication, key: String, value: String) =
         repository.set(resolveUserId(authentication), key, value)

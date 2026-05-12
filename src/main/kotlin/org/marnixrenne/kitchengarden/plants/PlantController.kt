@@ -12,7 +12,7 @@ class PlantController(private val plantService: PlantService) {
     @GetMapping
     fun getPlants(
         @RequestParam(required = false) month: Int?,
-        authentication: Authentication,
+        authentication: Authentication?,
     ): ResponseEntity<List<Plant>> {
         if (month != null && (month < 1 || month > 12)) {
             return ResponseEntity.badRequest().build()
@@ -24,12 +24,12 @@ class PlantController(private val plantService: PlantService) {
     }
 
     @GetMapping("/{id}")
-    fun getById(@PathVariable id: UUID, authentication: Authentication): ResponseEntity<PlantDetail> {
+    fun getById(@PathVariable id: UUID, authentication: Authentication?): ResponseEntity<PlantDetail> {
         val plant = plantService.findById(id, authentication) ?: return ResponseEntity.notFound().build()
         return ResponseEntity.ok(plant)
     }
 
     @GetMapping("/counts")
-    fun getCounts(authentication: Authentication): Map<Int, Int> =
+    fun getCounts(authentication: Authentication?): Map<Int, Int> =
         plantService.countPerMonth(authentication)
 }

@@ -13,12 +13,12 @@ class PlantService(
 
     fun findAll(): List<Plant> = plantRepository.findAll()
 
-    fun findByMonth(month: Int, authentication: Authentication): List<Plant> =
+    fun findByMonth(month: Int, authentication: Authentication?): List<Plant> =
         plantRepository.findByMonth(month, preferenceService.getCountry(authentication))
 
-    fun findById(id: UUID, authentication: Authentication): PlantDetail? =
+    fun findById(id: UUID, authentication: Authentication?): PlantDetail? =
         plantRepository.findById(id, preferenceService.getCountry(authentication))
 
-    fun countPerMonth(authentication: Authentication): Map<Int, Int> =
+    fun countPerMonth(authentication: Authentication?): Map<Int, Int> =
         plantRepository.countPerMonth(preferenceService.getCountry(authentication))
 }
