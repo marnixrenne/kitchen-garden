@@ -13,4 +13,8 @@ export default defineConfig({
       '/images': 'http://localhost:8080',
     },
   },
+  test: {
+    environment: 'happy-dom',
+    globals: true,
+  },
 })

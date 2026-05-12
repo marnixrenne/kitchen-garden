@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { csrfHeaders } from '../stores/auth.js'
@@ -49,19 +49,24 @@ async function toggleCompanionGarden(id) {
   gardenIds.value = next
 }
 
-onMounted(async () => {
+async function loadVegetable(id) {
+  loading.value = true
+  vegetable.value = null
   const [vegRes, gardenRes] = await Promise.all([
-    fetch(`/api/vegetables/${route.params.id}`),
+    fetch(`/api/vegetables/${id}`),
     fetch('/api/garden'),
   ])
   if (vegRes.ok) vegetable.value = await vegRes.json()
   if (gardenRes.ok) {
     const ids = await gardenRes.json()
-    inGarden.value = ids.includes(route.params.id)
+    inGarden.value = ids.includes(id)
     gardenIds.value = new Set(ids)
   }
   loading.value = false
-})
+}
+
+onMounted(() => loadVegetable(route.params.id))
+watch(() => route.params.id, (id) => { if (id) loadVegetable(id) })
 </script>
 
 <template>

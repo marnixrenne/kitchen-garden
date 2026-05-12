@@ -27,6 +27,7 @@ A web application that shows which vegetables you can seed each month, based on 
 - **vue-router v4** — client-side routing
 - **vue-i18n v11** — internationalisation (English + Dutch)
 - **Vite** — dev server and build tool
+- **Vitest** + **@vue/test-utils** — component unit tests
 
 ## Getting started
 
@@ -55,6 +56,15 @@ npm run dev
 ```
 
 Then open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### Frontend tests
+
+```bash
+cd frontend
+npm test
+```
+
+Tests run with [Vitest](https://vitest.dev/) + [@vue/test-utils](https://test-utils.vuejs.org/) in a happy-dom environment. The test suite lives in `frontend/src/views/__tests__/` and covers component behaviour such as data loading on mount, route-param-driven re-fetching, and the companion garden toggle button.
 
 ### Default credentials
 
@@ -158,6 +168,8 @@ The project includes a `Dockerfile` (multi-stage: Node → JDK → JRE) and a `r
 │       │   ├── VegetableList.vue         # Vegetable cards with garden toggle
 │       │   └── LoginForm.vue
 │       └── views/
+│           ├── __tests__/
+│           │   └── VegetableDetailView.spec.js
 │           ├── LandingView.vue           # Public landing page
 │           ├── HomeView.vue              # Month selector + vegetable list
 │           ├── VegetableDetailView.vue   # Vegetable detail + garden button

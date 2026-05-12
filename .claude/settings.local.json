@@ -35,7 +35,11 @@
       "WebSearch",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); pages=d['query']['pages']; [print\\(p.get\\('original',{}\\).get\\('source','NONE'\\)\\) for p in pages.values\\(\\)]\")",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); pages=d['query']['pages']; [print\\(p.get\\('thumbnail',{}\\).get\\('source','NONE'\\)\\) for p in pages.values\\(\\)]\")",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); pages=d['query']['pages']; [print\\(p.get\\('original',{}\\).get\\('source', p.get\\('thumbnail',{}\\).get\\('source','NONE'\\)\\)\\) for p in pages.values\\(\\)]\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); pages=d['query']['pages']; [print\\(p.get\\('original',{}\\).get\\('source', p.get\\('thumbnail',{}\\).get\\('source','NONE'\\)\\)\\) for p in pages.values\\(\\)]\")",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm install *)",
+      "Bash(npm ls *)",
+      "Bash(npm test *)"
     ]
   }
 }
