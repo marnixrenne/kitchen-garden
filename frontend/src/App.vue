@@ -7,17 +7,7 @@ import { user, logout } from './stores/auth.js'
 const { t, locale } = useI18n()
 const router = useRouter()
 
-async function switchLocale(lang) {
-  locale.value = lang
-  localStorage.setItem('locale', lang)
-  if (user.value) {
-    await fetch(`/api/preferences/locale`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ value: lang }),
-    })
-  }
-}
+const localeFlag = { en: '🇬🇧', nl: '🇳🇱' }
 
 watch(user, async (u) => {
   if (!u) return
@@ -48,12 +38,9 @@ async function handleLogout() {
         <RouterLink v-if="user?.roles?.includes('ROLE_ADMIN')" to="/admin">Admin</RouterLink>
       </nav>
       <div class="header-controls">
-        <RouterLink class="display-name" to="/settings">{{ user.username }}</RouterLink>
+        <span class="display-name">{{ user.username }}</span>
+        <RouterLink class="settings-btn" to="/settings" :title="t('settings.title')">⚙ {{ localeFlag[locale] }}</RouterLink>
         <button class="logout-btn" @click="handleLogout">{{ t('logout') }}</button>
-        <div class="lang-switcher">
-          <button :class="{ active: locale === 'en' }" @click="switchLocale('en')">EN</button>
-          <button :class="{ active: locale === 'nl' }" @click="switchLocale('nl')">NL</button>
-        </div>
       </div>
     </div>
   </header>
@@ -128,11 +115,7 @@ header h1 { font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
 .display-name {
   font-size: 0.85rem;
   color: rgba(255,255,255,0.7);
-  text-decoration: none;
-  transition: color 0.15s;
 }
-
-.display-name:hover { color: #fff; }
 
 .logout-btn {
   padding: 0.35rem 0.7rem;
@@ -148,22 +131,19 @@ header h1 { font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
 
 .logout-btn:hover { border-color: rgba(255,255,255,0.8); color: #fff; }
 
-.lang-switcher { display: flex; gap: 0.25rem; }
-
-.lang-switcher button {
-  padding: 0.35rem 0.6rem;
+.settings-btn {
+  padding: 0.35rem 0.7rem;
   border: 1.5px solid rgba(255,255,255,0.3);
   border-radius: 6px;
-  background: transparent;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.7);
+  text-decoration: none;
   font-size: 0.75rem;
-  font-weight: 700;
-  cursor: pointer;
+  font-weight: 600;
   transition: border-color 0.15s, color 0.15s;
 }
 
-.lang-switcher button:hover { border-color: rgba(255,255,255,0.7); color: #fff; }
-.lang-switcher button.active { border-color: #fff; color: #fff; }
+.settings-btn:hover { border-color: rgba(255,255,255,0.7); color: #fff; }
+.settings-btn.router-link-active { border-color: #fff; color: #fff; }
 
 @media (max-width: 540px) {
   .header-top { gap: 0.5rem; padding-bottom: 0.25rem; }
