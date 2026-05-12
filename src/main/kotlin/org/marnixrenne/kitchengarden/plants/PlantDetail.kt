@@ -1,4 +1,4 @@
-package org.marnixrenne.kitchengarden.vegetables
+package org.marnixrenne.kitchengarden.plants
 
 import java.util.UUID
 
@@ -17,7 +17,7 @@ data class SowingGuide(
     val frostTolerance: String?,
 )
 
-data class VegetableDetail(
+data class PlantDetail(
     val id: UUID,
     val name: String,
     val category: String,

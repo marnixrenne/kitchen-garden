@@ -43,8 +43,8 @@ class AuthTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `vegetables endpoint is publicly accessible`() {
-        mvc.get("/api/vegetables")
+    fun `plants endpoint is publicly accessible`() {
+        mvc.get("/api/plants")
             .andExpect { status { isOk() } }
     }
 }

@@ -15,7 +15,7 @@ class GardenApiTest : IntegrationTestBase() {
     @Autowired lateinit var jdbc: JdbcTemplate
 
     private fun tomatoId() =
-        jdbc.queryForObject("SELECT id FROM vegetables WHERE name = 'Tomato'", String::class.java)!!
+        jdbc.queryForObject("SELECT id FROM plants WHERE name = 'Tomato'", String::class.java)!!
 
     @Test
     fun `authenticated user starts with empty garden`() {
@@ -28,7 +28,7 @@ class GardenApiTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `user can add and remove a vegetable from garden`() {
+    fun `user can add and remove a plant from garden`() {
         val id = tomatoId()
 
         mvc.put("/api/garden/$id") {
@@ -57,7 +57,7 @@ class GardenApiTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `garden details returns full vegetable info including countries`() {
+    fun `garden details returns full plant info including countries`() {
         val id = tomatoId()
 
         mvc.put("/api/garden/$id") { with(user("admin")); with(csrf()) }

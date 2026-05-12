@@ -2,7 +2,7 @@ package org.marnixrenne.kitchengarden.garden
 
 data class WeekAction(
     val type: String,              // "sow", "harvest", "both"
-    val vegetable: SimpleVeg,
+    val plant: SimpleVeg,
     val sowingMethod: String?,     // "indoor", "direct", "both"
     val germinationDaysMin: Int?,
     val germinationDaysMax: Int?,

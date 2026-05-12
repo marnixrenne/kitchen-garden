@@ -1,6 +1,6 @@
 package org.marnixrenne.kitchengarden.garden
 
-import org.marnixrenne.kitchengarden.vegetables.VegetableDetail
+import org.marnixrenne.kitchengarden.plants.PlantDetail
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
@@ -12,10 +12,10 @@ class GardenController(private val gardenService: GardenService) {
 
     @GetMapping
     fun getGarden(authentication: Authentication): Set<UUID> =
-        gardenService.getVegetableIds(authentication)
+        gardenService.getPlantIds(authentication)
 
     @GetMapping("/details")
-    fun getGardenDetails(authentication: Authentication): List<VegetableDetail> =
+    fun getGardenDetails(authentication: Authentication): List<PlantDetail> =
         gardenService.getDetails(authentication)
 
     @GetMapping("/week")
@@ -26,21 +26,21 @@ class GardenController(private val gardenService: GardenService) {
     fun getSuggestions(authentication: Authentication): PlantingSuggestions =
         gardenService.getSuggestions(authentication)
 
-    @PutMapping("/{vegetableId}")
+    @PutMapping("/{plantId}")
     fun addToGarden(
-        @PathVariable vegetableId: UUID,
+        @PathVariable plantId: UUID,
         authentication: Authentication,
     ): ResponseEntity<Unit> {
-        gardenService.add(authentication, vegetableId)
+        gardenService.add(authentication, plantId)
         return ResponseEntity.noContent().build()
     }
 
-    @DeleteMapping("/{vegetableId}")
+    @DeleteMapping("/{plantId}")
     fun removeFromGarden(
-        @PathVariable vegetableId: UUID,
+        @PathVariable plantId: UUID,
         authentication: Authentication,
     ): ResponseEntity<Unit> {
-        gardenService.remove(authentication, vegetableId)
+        gardenService.remove(authentication, plantId)
         return ResponseEntity.noContent().build()
     }
 }

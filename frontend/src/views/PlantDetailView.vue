@@ -8,31 +8,31 @@ const route  = useRoute()
 const router = useRouter()
 const { t, tm, te } = useI18n()
 
-const vegetable   = ref(null)
-const loading     = ref(true)
-const inGarden    = ref(false)
-const gardenIds   = ref(new Set())
+const plant     = ref(null)
+const loading   = ref(true)
+const inGarden  = ref(false)
+const gardenIds = ref(new Set())
 
 const months = computed(() => tm('months'))
 
 const localName = computed(() => {
-  if (!vegetable.value) return ''
-  const key = `vegetables.${vegetable.value.name}`
-  return te(key) ? t(key) : vegetable.value.name
+  if (!plant.value) return ''
+  const key = `plants.${plant.value.name}`
+  return te(key) ? t(key) : plant.value.name
 })
 
 const description = computed(() => {
-  if (!vegetable.value) return ''
-  return t(`descriptions.${vegetable.value.name}`)
+  if (!plant.value) return ''
+  return t(`descriptions.${plant.value.name}`)
 })
 
-const goodCompanions = computed(() => vegetable.value?.companions.filter(c => c.relationship === 'good') ?? [])
-const badCompanions  = computed(() => vegetable.value?.companions.filter(c => c.relationship === 'bad')  ?? [])
+const goodCompanions = computed(() => plant.value?.companions.filter(c => c.relationship === 'good') ?? [])
+const badCompanions  = computed(() => plant.value?.companions.filter(c => c.relationship === 'bad')  ?? [])
 
 const pruningTipText = computed(() => {
-  if (!vegetable.value?.pruningType) return ''
-  const key = `pruning.tips.${vegetable.value.name}`
-  return te(key) ? t(key) : (vegetable.value.pruningTip ?? '')
+  if (!plant.value?.pruningType) return ''
+  const key = `pruning.tips.${plant.value.name}`
+  return te(key) ? t(key) : (plant.value.pruningTip ?? '')
 })
 
 async function toggleGarden() {
@@ -49,14 +49,14 @@ async function toggleCompanionGarden(id) {
   gardenIds.value = next
 }
 
-async function loadVegetable(id) {
+async function loadPlant(id) {
   loading.value = true
-  vegetable.value = null
-  const [vegRes, gardenRes] = await Promise.all([
-    fetch(`/api/vegetables/${id}`),
+  plant.value = null
+  const [plantRes, gardenRes] = await Promise.all([
+    fetch(`/api/plants/${id}`),
     fetch('/api/garden'),
   ])
-  if (vegRes.ok) vegetable.value = await vegRes.json()
+  if (plantRes.ok) plant.value = await plantRes.json()
   if (gardenRes.ok) {
     const ids = await gardenRes.json()
     inGarden.value = ids.includes(id)
@@ -65,8 +65,8 @@ async function loadVegetable(id) {
   loading.value = false
 }
 
-onMounted(() => loadVegetable(route.params.id))
-watch(() => route.params.id, (id) => { if (id) loadVegetable(id) })
+onMounted(() => loadPlant(route.params.id))
+watch(() => route.params.id, (id) => { if (id) loadPlant(id) })
 </script>
 
 <template>
@@ -75,16 +75,16 @@ watch(() => route.params.id, (id) => { if (id) loadVegetable(id) })
 
     <div v-if="loading" class="loading">{{ t('loading') }}</div>
 
-    <template v-else-if="vegetable">
+    <template v-else-if="plant">
       <div class="detail-card">
         <div class="detail-hero">
-          <span class="detail-emoji">{{ vegetable.emoji ?? '🌱' }}</span>
+          <span class="detail-emoji">{{ plant.emoji ?? '🌱' }}</span>
           <div class="detail-hero-text">
             <h2>{{ localName }}</h2>
             <div class="badges">
-              <span class="category-badge">{{ t(`categories.${vegetable.category}`) }}</span>
-              <span v-if="vegetable.sunRequirement" class="sun-badge">
-                {{ t(`sunRequirement.${vegetable.sunRequirement}`) }}
+              <span class="category-badge">{{ t(`categories.${plant.category}`) }}</span>
+              <span v-if="plant.sunRequirement" class="sun-badge">
+                {{ t(`sunRequirement.${plant.sunRequirement}`) }}
               </span>
             </div>
           </div>
@@ -98,55 +98,55 @@ watch(() => route.params.id, (id) => { if (id) loadVegetable(id) })
         </div>
 
         <img
-          v-if="vegetable.imageUrl"
-          :src="vegetable.imageUrl"
+          v-if="plant.imageUrl"
+          :src="plant.imageUrl"
           :alt="localName"
           class="detail-image"
         />
 
         <p class="description">{{ description }}</p>
 
-        <div v-if="vegetable.sowingGuide" class="sowing-section">
+        <div v-if="plant.sowingGuide" class="sowing-section">
           <h3>{{ t('sowing.title') }}</h3>
           <div class="sowing-grid">
-            <div v-if="vegetable.sowingGuide.method" class="sowing-stat">
+            <div v-if="plant.sowingGuide.method" class="sowing-stat">
               <span class="sowing-label">{{ t('sowing.method.label') }}</span>
-              <span class="sowing-value">{{ t(`sowing.method.${vegetable.sowingGuide.method}`) }}</span>
+              <span class="sowing-value">{{ t(`sowing.method.${plant.sowingGuide.method}`) }}</span>
             </div>
-            <div v-if="vegetable.sowingGuide.frostTolerance" class="sowing-stat">
+            <div v-if="plant.sowingGuide.frostTolerance" class="sowing-stat">
               <span class="sowing-label">{{ t('sowing.frost.label') }}</span>
-              <span class="sowing-value" :class="`frost-${vegetable.sowingGuide.frostTolerance}`">
-                {{ t(`sowing.frost.${vegetable.sowingGuide.frostTolerance}`) }}
+              <span class="sowing-value" :class="`frost-${plant.sowingGuide.frostTolerance}`">
+                {{ t(`sowing.frost.${plant.sowingGuide.frostTolerance}`) }}
               </span>
             </div>
-            <div v-if="vegetable.sowingGuide.seedDepthMm" class="sowing-stat">
+            <div v-if="plant.sowingGuide.seedDepthMm" class="sowing-stat">
               <span class="sowing-label">{{ t('sowing.depth') }}</span>
-              <span class="sowing-value">{{ vegetable.sowingGuide.seedDepthMm }} mm</span>
+              <span class="sowing-value">{{ plant.sowingGuide.seedDepthMm }} mm</span>
             </div>
-            <div v-if="vegetable.sowingGuide.spacingCm" class="sowing-stat">
+            <div v-if="plant.sowingGuide.spacingCm" class="sowing-stat">
               <span class="sowing-label">{{ t('sowing.spacing') }}</span>
-              <span class="sowing-value">{{ vegetable.sowingGuide.spacingCm }} cm</span>
+              <span class="sowing-value">{{ plant.sowingGuide.spacingCm }} cm</span>
             </div>
-            <div v-if="vegetable.sowingGuide.germinationDaysMin" class="sowing-stat">
+            <div v-if="plant.sowingGuide.germinationDaysMin" class="sowing-stat">
               <span class="sowing-label">{{ t('sowing.germination') }}</span>
               <span class="sowing-value">
-                {{ vegetable.sowingGuide.germinationDaysMin }}–{{ vegetable.sowingGuide.germinationDaysMax }}
+                {{ plant.sowingGuide.germinationDaysMin }}–{{ plant.sowingGuide.germinationDaysMax }}
                 {{ t('sowing.days') }}
               </span>
             </div>
-            <div v-if="vegetable.sowingGuide.daysToMaturityMin" class="sowing-stat">
+            <div v-if="plant.sowingGuide.daysToMaturityMin" class="sowing-stat">
               <span class="sowing-label">{{ t('sowing.maturity') }}</span>
               <span class="sowing-value">
-                {{ vegetable.sowingGuide.daysToMaturityMin }}–{{ vegetable.sowingGuide.daysToMaturityMax }}
+                {{ plant.sowingGuide.daysToMaturityMin }}–{{ plant.sowingGuide.daysToMaturityMax }}
                 {{ t('sowing.days') }}
               </span>
             </div>
           </div>
         </div>
 
-        <div v-if="vegetable.pruningType" class="pruning-section">
+        <div v-if="plant.pruningType" class="pruning-section">
           <h3>{{ t('pruning.title') }}</h3>
-          <span class="pruning-badge">{{ t(`pruning.type.${vegetable.pruningType}`) }}</span>
+          <span class="pruning-badge">{{ t(`pruning.type.${plant.pruningType}`) }}</span>
           <p class="pruning-tip">{{ pruningTipText }}</p>
         </div>
 
@@ -157,7 +157,7 @@ watch(() => route.params.id, (id) => { if (id) loadVegetable(id) })
               v-for="(name, i) in months"
               :key="i"
               class="month-chip"
-              :class="{ active: vegetable.seedingMonths.includes(i + 1) }"
+              :class="{ active: plant.seedingMonths.includes(i + 1) }"
             >
               {{ name }}
             </div>
@@ -171,14 +171,14 @@ watch(() => route.params.id, (id) => { if (id) loadVegetable(id) })
               v-for="(name, i) in months"
               :key="i"
               class="month-chip harvest"
-              :class="{ active: vegetable.harvestingMonths.includes(i + 1) }"
+              :class="{ active: plant.harvestingMonths.includes(i + 1) }"
             >
               {{ name }}
             </div>
           </div>
         </div>
 
-        <div v-if="vegetable.companions.length > 0" class="companions-section">
+        <div v-if="plant.companions.length > 0" class="companions-section">
           <h3>{{ t('companions.title') }}</h3>
           <div v-if="goodCompanions.length > 0" class="companion-group">
             <p class="companion-label good">{{ t('companions.good') }}</p>
@@ -187,9 +187,9 @@ watch(() => route.params.id, (id) => { if (id) loadVegetable(id) })
                 v-for="c in goodCompanions"
                 :key="c.id"
                 class="companion-chip good"
-                @click="router.push(`/vegetable/${c.id}`)"
+                @click="router.push(`/plant/${c.id}`)"
               >
-                {{ c.emoji ?? '🌱' }} {{ te(`vegetables.${c.name}`) ? t(`vegetables.${c.name}`) : c.name }}
+                {{ c.emoji ?? '🌱' }} {{ te(`plants.${c.name}`) ? t(`plants.${c.name}`) : c.name }}
                 <button
                   class="companion-garden-btn"
                   :class="{ added: gardenIds.has(c.id) }"
@@ -207,20 +207,20 @@ watch(() => route.params.id, (id) => { if (id) loadVegetable(id) })
               <RouterLink
                 v-for="c in badCompanions"
                 :key="c.id"
-                :to="`/vegetable/${c.id}`"
+                :to="`/plant/${c.id}`"
                 class="companion-chip bad"
               >
-                {{ c.emoji ?? '🌱' }} {{ te(`vegetables.${c.name}`) ? t(`vegetables.${c.name}`) : c.name }}
+                {{ c.emoji ?? '🌱' }} {{ te(`plants.${c.name}`) ? t(`plants.${c.name}`) : c.name }}
               </RouterLink>
             </div>
           </div>
         </div>
 
-        <div v-if="vegetable.countries.length > 0" class="countries-section">
+        <div v-if="plant.countries.length > 0" class="countries-section">
           <h3>{{ t('countries') }}</h3>
           <div class="country-list">
             <span
-              v-for="country in vegetable.countries"
+              v-for="country in plant.countries"
               :key="country.code"
               class="country-chip"
             >

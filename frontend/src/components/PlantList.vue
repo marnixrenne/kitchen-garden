@@ -16,9 +16,9 @@ const emit = defineEmits(['toggle-garden'])
 const router = useRouter()
 const { t, te } = useI18n()
 
-const vegName = (veg) => {
-  const key = `vegetables.${veg.name}`
-  return te(key) ? t(key) : veg.name
+const plantName = (plant) => {
+  const key = `plants.${plant.name}`
+  return te(key) ? t(key) : plant.name
 }
 </script>
 
@@ -41,27 +41,27 @@ const vegName = (veg) => {
 
   <template v-else>
     <div class="results-header">
-      {{ monthName ? t('seedIn', { month: monthName }) : t('allVegetables') }} — {{ t('cropCount', { n: total }) }}
+      {{ monthName ? t('seedIn', { month: monthName }) : t('allPlants') }} — {{ t('cropCount', { n: total }) }}
     </div>
 
     <div v-for="group in grouped" :key="group.category" class="category-section">
       <div class="category-title">{{ t(`categories.${group.category}`) }}</div>
-      <div class="veg-grid">
+      <div class="plant-grid">
         <div
-          v-for="veg in group.items"
-          :key="veg.id"
-          class="veg-card"
-          @click="router.push(`/vegetable/${veg.id}`)"
+          v-for="plant in group.items"
+          :key="plant.id"
+          class="plant-card"
+          @click="router.push(`/plant/${plant.id}`)"
         >
-          <span class="veg-emoji">{{ veg.emoji ?? '🌱' }}</span>
-          <span class="veg-name">{{ vegName(veg) }}</span>
+          <span class="plant-emoji">{{ plant.emoji ?? '🌱' }}</span>
+          <span class="plant-name">{{ plantName(plant) }}</span>
           <button
             class="garden-btn"
-            :class="{ added: gardenIds?.has(veg.id) }"
-            :title="gardenIds?.has(veg.id) ? t('garden.removeTooltip') : t('garden.addTooltip')"
-            @click.stop="emit('toggle-garden', veg.id)"
+            :class="{ added: gardenIds?.has(plant.id) }"
+            :title="gardenIds?.has(plant.id) ? t('garden.removeTooltip') : t('garden.addTooltip')"
+            @click.stop="emit('toggle-garden', plant.id)"
           >
-            {{ gardenIds?.has(veg.id) ? '✓' : '+' }}
+            {{ gardenIds?.has(plant.id) ? '✓' : '+' }}
           </button>
         </div>
       </div>
@@ -89,13 +89,13 @@ const vegName = (veg) => {
   padding-left: 0.25rem;
 }
 
-.veg-grid {
+.plant-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 0.6rem;
 }
 
-.veg-card {
+.plant-card {
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -109,13 +109,13 @@ const vegName = (veg) => {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.veg-card:hover {
+.plant-card:hover {
   border-color: var(--green-light);
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
-.veg-emoji { font-size: 1.2rem; flex-shrink: 0; }
-.veg-name  { flex: 1; min-width: 0; }
+.plant-emoji { font-size: 1.2rem; flex-shrink: 0; }
+.plant-name  { flex: 1; min-width: 0; }
 
 .garden-btn {
   flex-shrink: 0;

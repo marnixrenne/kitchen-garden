@@ -6,33 +6,33 @@ import { useI18n } from 'vue-i18n'
 const router = useRouter()
 const { t, tm, te } = useI18n()
 
-const vegetables    = ref([])
+const plants        = ref([])
 const suggestions   = ref(null)
 const weekSummary   = ref(null)
 const loading       = ref(true)
 const selectedMonth = ref(null)
 
 const months = computed(() => tm('months'))
-const sortedVegetables = computed(() =>
-  [...vegetables.value].sort((a, b) => vegName(a).localeCompare(vegName(b)))
+const sortedPlants = computed(() =>
+  [...plants.value].sort((a, b) => plantName(a).localeCompare(plantName(b)))
 )
 
-function cellType(veg, month) {
-  const sow     = veg.seedingMonths.includes(month)
-  const harvest = veg.harvestingMonths.includes(month)
+function cellType(plant, month) {
+  const sow     = plant.seedingMonths.includes(month)
+  const harvest = plant.harvestingMonths.includes(month)
   if (sow && harvest) return 'both'
   if (sow)            return 'sow'
   if (harvest)        return 'harvest'
   return null
 }
 
-function hasSowing(month)     { return sortedVegetables.value.some(v => v.seedingMonths.includes(month)) }
-function hasHarvesting(month) { return sortedVegetables.value.some(v => v.harvestingMonths.includes(month)) }
+function hasSowing(month)     { return sortedPlants.value.some(v => v.seedingMonths.includes(month)) }
+function hasHarvesting(month) { return sortedPlants.value.some(v => v.harvestingMonths.includes(month)) }
 
 const toSow     = computed(() => selectedMonth.value == null ? [] :
-  sortedVegetables.value.filter(v => v.seedingMonths.includes(selectedMonth.value)))
+  sortedPlants.value.filter(v => v.seedingMonths.includes(selectedMonth.value)))
 const toHarvest = computed(() => selectedMonth.value == null ? [] :
-  sortedVegetables.value.filter(v => v.harvestingMonths.includes(selectedMonth.value)))
+  sortedPlants.value.filter(v => v.harvestingMonths.includes(selectedMonth.value)))
 
 function selectMonth(month) {
   selectedMonth.value = selectedMonth.value === month ? null : month
@@ -70,8 +70,8 @@ function downloadIcal() {
 
   for (let m = 1; m <= 12; m++) {
     const { start, end } = icalDate(year, m)
-    const sowList     = sortedVegetables.value.filter(v => v.seedingMonths.includes(m)).map(vegName)
-    const harvestList = sortedVegetables.value.filter(v => v.harvestingMonths.includes(m)).map(vegName)
+    const sowList     = sortedPlants.value.filter(v => v.seedingMonths.includes(m)).map(plantName)
+    const harvestList = sortedPlants.value.filter(v => v.harvestingMonths.includes(m)).map(plantName)
 
     if (sowList.length > 0) {
       lines.push('BEGIN:VEVENT')
@@ -103,9 +103,9 @@ function downloadIcal() {
   URL.revokeObjectURL(url)
 }
 
-function vegName(veg) {
-  const key = `vegetables.${veg.name}`
-  return te(key) ? t(key) : veg.name
+function plantName(plant) {
+  const key = `plants.${plant.name}`
+  return te(key) ? t(key) : plant.name
 }
 
 function weekRangeLabel(s) {
@@ -139,7 +139,7 @@ onMounted(async () => {
     fetch('/api/garden/suggestions'),
     fetch('/api/garden/week'),
   ])
-  if (detailsRes.ok)     vegetables.value  = await detailsRes.json()
+  if (detailsRes.ok)     plants.value      = await detailsRes.json()
   if (suggestionsRes.ok) suggestions.value = await suggestionsRes.json()
   if (weekRes.ok)        weekSummary.value = await weekRes.json()
   loading.value = false
@@ -151,7 +151,7 @@ onMounted(async () => {
     <div class="page-header">
       <h2 class="page-title">{{ t('myGarden') }}</h2>
       <button
-        v-if="sortedVegetables.length > 0"
+        v-if="sortedPlants.length > 0"
         class="ical-btn"
         @click="downloadIcal"
       >
@@ -161,7 +161,7 @@ onMounted(async () => {
 
     <div v-if="loading" class="loading">{{ t('loading') }}</div>
 
-    <template v-else-if="sortedVegetables.length === 0">
+    <template v-else-if="sortedPlants.length === 0">
       <p class="empty">{{ t('garden.empty') }}</p>
     </template>
 
@@ -178,7 +178,7 @@ onMounted(async () => {
         <table class="calendar">
           <thead>
             <tr>
-              <th class="veg-col-header"></th>
+              <th class="plant-col-header"></th>
               <th
                 v-for="(name, i) in months"
                 :key="i"
@@ -196,13 +196,13 @@ onMounted(async () => {
           </thead>
           <tbody>
             <tr
-              v-for="veg in sortedVegetables"
-              :key="veg.id"
-              class="veg-row"
+              v-for="plant in sortedPlants"
+              :key="plant.id"
+              class="plant-row"
             >
-              <td class="veg-name" @click="router.push(`/vegetable/${veg.id}`)">
-                <span class="veg-emoji">{{ veg.emoji ?? '🌱' }}</span>
-                <span>{{ vegName(veg) }}</span>
+              <td class="plant-name" @click="router.push(`/plant/${plant.id}`)">
+                <span class="plant-emoji">{{ plant.emoji ?? '🌱' }}</span>
+                <span>{{ plantName(plant) }}</span>
               </td>
               <td
                 v-for="m in 12"
@@ -210,10 +210,10 @@ onMounted(async () => {
                 class="cal-cell"
                 :class="{
                   selected: selectedMonth === m,
-                  [cellType(veg, m)]: cellType(veg, m) !== null,
+                  [cellType(plant, m)]: cellType(plant, m) !== null,
                 }"
               >
-                <span v-if="cellType(veg, m)" class="cell-bar" :class="cellType(veg, m)" />
+                <span v-if="cellType(plant, m)" class="cell-bar" :class="cellType(plant, m)" />
               </td>
             </tr>
           </tbody>
@@ -228,29 +228,29 @@ onMounted(async () => {
         <template v-else>
           <div v-if="toSow.length > 0" class="section">
             <h3 class="section-title sow">🌱 {{ t('garden.toSow') }}</h3>
-            <div class="veg-list">
+            <div class="plant-list">
               <div
-                v-for="veg in toSow"
-                :key="veg.id"
-                class="veg-chip"
-                @click="router.push(`/vegetable/${veg.id}`)"
+                v-for="plant in toSow"
+                :key="plant.id"
+                class="plant-chip"
+                @click="router.push(`/plant/${plant.id}`)"
               >
-                <span>{{ veg.emoji ?? '🌱' }}</span>
-                <span>{{ vegName(veg) }}</span>
+                <span>{{ plant.emoji ?? '🌱' }}</span>
+                <span>{{ plantName(plant) }}</span>
               </div>
             </div>
           </div>
           <div v-if="toHarvest.length > 0" class="section">
             <h3 class="section-title harvest">🧺 {{ t('garden.toHarvest') }}</h3>
-            <div class="veg-list">
+            <div class="plant-list">
               <div
-                v-for="veg in toHarvest"
-                :key="veg.id"
-                class="veg-chip"
-                @click="router.push(`/vegetable/${veg.id}`)"
+                v-for="plant in toHarvest"
+                :key="plant.id"
+                class="plant-chip"
+                @click="router.push(`/plant/${plant.id}`)"
               >
-                <span>{{ veg.emoji ?? '🌱' }}</span>
-                <span>{{ vegName(veg) }}</span>
+                <span>{{ plant.emoji ?? '🌱' }}</span>
+                <span>{{ plantName(plant) }}</span>
               </div>
             </div>
           </div>
@@ -268,14 +268,14 @@ onMounted(async () => {
         <div v-else class="week-actions">
           <div
             v-for="action in weekSummary.actions"
-            :key="action.vegetable.id"
+            :key="action.plant.id"
             class="week-action"
-            @click="router.push(`/vegetable/${action.vegetable.id}`)"
+            @click="router.push(`/plant/${action.plant.id}`)"
           >
-            <span class="week-action-emoji">{{ action.vegetable.emoji ?? '🌱' }}</span>
+            <span class="week-action-emoji">{{ action.plant.emoji ?? '🌱' }}</span>
             <div class="week-action-body">
               <div class="week-action-top">
-                <span class="week-action-name">{{ vegName(action.vegetable) }}</span>
+                <span class="week-action-name">{{ plantName(action.plant) }}</span>
                 <span class="week-action-badge" :class="action.type">
                   {{ action.type === 'sow' ? t('garden.actionSow') : action.type === 'harvest' ? t('garden.actionHarvest') : t('garden.actionBoth') }}
                 </span>
@@ -298,20 +298,20 @@ onMounted(async () => {
             <div class="sun-group-header">
               <span class="sun-label">{{ t(`sunRequirement.${group.sunRequirement}`) }}</span>
             </div>
-            <div class="sun-group-vegs">
+            <div class="sun-group-plants">
               <div
-                v-for="v in group.vegetables"
+                v-for="v in group.plants"
                 :key="v.id"
                 class="sg-chip"
-                @click="router.push(`/vegetable/${v.id}`)"
+                @click="router.push(`/plant/${v.id}`)"
               >
-                {{ v.emoji ?? '🌱' }} {{ vegName(v) }}
+                {{ v.emoji ?? '🌱' }} {{ plantName(v) }}
               </div>
             </div>
             <div v-if="group.goodPairs.length > 0" class="good-pairs">
               <span class="pairs-label">{{ t('garden.goodTogether') }}:</span>
               <span v-for="pair in group.goodPairs" :key="pair.a.id + pair.b.id" class="pair">
-                {{ pair.a.emoji ?? '🌱' }} {{ vegName(pair.a) }} + {{ pair.b.emoji ?? '🌱' }} {{ vegName(pair.b) }}
+                {{ pair.a.emoji ?? '🌱' }} {{ plantName(pair.a) }} + {{ pair.b.emoji ?? '🌱' }} {{ plantName(pair.b) }}
               </span>
             </div>
           </div>
@@ -320,7 +320,7 @@ onMounted(async () => {
         <div v-if="suggestions.conflicts.length > 0" class="conflicts">
           <span class="conflicts-label">⚠️ {{ t('garden.keepApart') }}:</span>
           <span v-for="pair in suggestions.conflicts" :key="pair.a.id + pair.b.id" class="conflict-pair">
-            {{ pair.a.emoji ?? '🌱' }} {{ vegName(pair.a) }} ↔ {{ pair.b.emoji ?? '🌱' }} {{ vegName(pair.b) }}
+            {{ pair.a.emoji ?? '🌱' }} {{ plantName(pair.a) }} ↔ {{ pair.b.emoji ?? '🌱' }} {{ plantName(pair.b) }}
           </span>
         </div>
       </div>
@@ -531,7 +531,7 @@ main {
   min-width: 640px;
 }
 
-.veg-col-header {
+.plant-col-header {
   width: 160px;
   min-width: 140px;
 }
@@ -567,9 +567,9 @@ main {
 .month-header:hover  { background: var(--bg); color: var(--green-dark); }
 .month-header.selected { background: var(--green-pale); color: var(--green-dark); }
 
-.veg-row:not(:last-child) td { border-bottom: 1px solid var(--green-pale); }
+.plant-row:not(:last-child) td { border-bottom: 1px solid var(--green-pale); }
 
-.veg-name {
+.plant-name {
   padding: 0.55rem 0.75rem;
   font-size: 0.85rem;
   font-weight: 600;
@@ -583,9 +583,9 @@ main {
   transition: background 0.15s;
 }
 
-.veg-name:hover { background: var(--bg); }
+.plant-name:hover { background: var(--bg); }
 
-.veg-emoji { font-size: 1rem; }
+.plant-emoji { font-size: 1rem; }
 
 .cal-cell {
   padding: 0.3rem 0.2rem;
@@ -636,9 +636,9 @@ main {
 .section-title.sow     { color: var(--green-mid); }
 .section-title.harvest { color: #d97706; }
 
-.veg-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.plant-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
-.veg-chip {
+.plant-chip {
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -652,7 +652,7 @@ main {
   transition: border-color 0.15s, background 0.15s;
 }
 
-.veg-chip:hover {
+.plant-chip:hover {
   border-color: var(--green-light);
   background: var(--green-pale);
 }
@@ -700,7 +700,7 @@ main {
   color: var(--text-muted);
 }
 
-.sun-group-vegs {
+.sun-group-plants {
   padding: 0.75rem 0.9rem;
   display: flex;
   flex-wrap: wrap;

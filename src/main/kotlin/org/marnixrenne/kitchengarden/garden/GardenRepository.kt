@@ -3,33 +3,33 @@ package org.marnixrenne.kitchengarden.garden
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.marnixrenne.kitchengarden.vegetables.*
-import org.marnixrenne.kitchengarden.vegetables.CompanionPlants
+import org.marnixrenne.kitchengarden.plants.*
+import org.marnixrenne.kitchengarden.plants.CompanionPlants
 import org.springframework.stereotype.Repository
 import java.time.LocalDate
 import java.time.temporal.WeekFields
 import java.util.UUID
 
 private fun resolvedMonthNums(
-    vegetableIdCol: Column<UUID>,
+    plantIdCol: Column<UUID>,
     monthNumCol: Column<Int>,
     countryCodeCol: Column<String?>,
-    vegetableId: UUID,
+    plantId: UUID,
     countryCode: String?,
 ): List<Int> {
     if (countryCode != null) {
-        val country = vegetableIdCol.table.selectAll()
-            .where { (vegetableIdCol eq vegetableId) and (countryCodeCol eq countryCode) }
+        val country = plantIdCol.table.selectAll()
+            .where { (plantIdCol eq plantId) and (countryCodeCol eq countryCode) }
             .map { it[monthNumCol] }.sorted()
         if (country.isNotEmpty()) return country
     }
-    return vegetableIdCol.table.selectAll()
-        .where { (vegetableIdCol eq vegetableId) and countryCodeCol.isNull() }
+    return plantIdCol.table.selectAll()
+        .where { (plantIdCol eq plantId) and countryCodeCol.isNull() }
         .map { it[monthNumCol] }.sorted()
 }
 
 private fun resolvedMonthIds(
-    vegetableIdCol: Column<UUID>,
+    plantIdCol: Column<UUID>,
     monthNumCol: Column<Int>,
     countryCodeCol: Column<String?>,
     ids: List<UUID>,
@@ -37,22 +37,22 @@ private fun resolvedMonthIds(
     countryCode: String?,
 ): Set<UUID> {
     if (countryCode == null) {
-        return vegetableIdCol.table.selectAll()
-            .where { (vegetableIdCol inList ids) and (monthNumCol eq month) and countryCodeCol.isNull() }
-            .map { it[vegetableIdCol] }.toSet()
+        return plantIdCol.table.selectAll()
+            .where { (plantIdCol inList ids) and (monthNumCol eq month) and countryCodeCol.isNull() }
+            .map { it[plantIdCol] }.toSet()
     }
-    val vegsWithCountryData = vegetableIdCol.table.selectAll()
-        .where { (vegetableIdCol inList ids) and (countryCodeCol eq countryCode) }
-        .map { it[vegetableIdCol] }.toSet()
+    val plantsWithCountryData = plantIdCol.table.selectAll()
+        .where { (plantIdCol inList ids) and (countryCodeCol eq countryCode) }
+        .map { it[plantIdCol] }.toSet()
 
-    val fromCountry = vegetableIdCol.table.selectAll()
-        .where { (vegetableIdCol inList ids) and (monthNumCol eq month) and (countryCodeCol eq countryCode) }
-        .map { it[vegetableIdCol] }.toSet()
+    val fromCountry = plantIdCol.table.selectAll()
+        .where { (plantIdCol inList ids) and (monthNumCol eq month) and (countryCodeCol eq countryCode) }
+        .map { it[plantIdCol] }.toSet()
 
-    val remaining = ids - vegsWithCountryData
-    val fromGlobal = if (remaining.isEmpty()) emptySet() else vegetableIdCol.table.selectAll()
-        .where { (vegetableIdCol inList remaining) and (monthNumCol eq month) and countryCodeCol.isNull() }
-        .map { it[vegetableIdCol] }.toSet()
+    val remaining = ids - plantsWithCountryData
+    val fromGlobal = if (remaining.isEmpty()) emptySet() else plantIdCol.table.selectAll()
+        .where { (plantIdCol inList remaining) and (monthNumCol eq month) and countryCodeCol.isNull() }
+        .map { it[plantIdCol] }.toSet()
 
     return fromCountry + fromGlobal
 }
@@ -62,55 +62,55 @@ private val SUN_ORDER = listOf("full_sun", "partial_shade", "shade")
 @Repository
 class GardenRepository {
 
-    fun findVegetableIds(userId: UUID): Set<UUID> = transaction {
-        GardenVegetables.selectAll()
-            .where { GardenVegetables.userId eq userId }
-            .map { it[GardenVegetables.vegetableId] }
+    fun findPlantIds(userId: UUID): Set<UUID> = transaction {
+        GardenPlants.selectAll()
+            .where { GardenPlants.userId eq userId }
+            .map { it[GardenPlants.plantId] }
             .toSet()
     }
 
-    fun add(userId: UUID, vegetableId: UUID): Unit = transaction {
-        GardenVegetables.upsert {
-            it[GardenVegetables.userId]      = userId
-            it[GardenVegetables.vegetableId] = vegetableId
+    fun add(userId: UUID, plantId: UUID): Unit = transaction {
+        GardenPlants.upsert {
+            it[GardenPlants.userId]  = userId
+            it[GardenPlants.plantId] = plantId
         }
     }
 
-    fun remove(userId: UUID, vegetableId: UUID): Unit = transaction {
-        GardenVegetables.deleteWhere {
-            (GardenVegetables.userId eq userId) and (GardenVegetables.vegetableId eq vegetableId)
+    fun remove(userId: UUID, plantId: UUID): Unit = transaction {
+        GardenPlants.deleteWhere {
+            (GardenPlants.userId eq userId) and (GardenPlants.plantId eq plantId)
         }
     }
 
     fun findSuggestions(userId: UUID): PlantingSuggestions = transaction {
-        val ids = GardenVegetables.selectAll()
-            .where { GardenVegetables.userId eq userId }
-            .map { it[GardenVegetables.vegetableId] }
+        val ids = GardenPlants.selectAll()
+            .where { GardenPlants.userId eq userId }
+            .map { it[GardenPlants.plantId] }
 
         if (ids.size < 2) return@transaction PlantingSuggestions(emptyList(), emptyList())
 
-        val vegs = Vegetables.selectAll()
-            .where { Vegetables.id inList ids }
+        val plants = Plants.selectAll()
+            .where { Plants.id inList ids }
             .map { row ->
                 Triple(
-                    SimpleVeg(row[Vegetables.id], row[Vegetables.name], row[Vegetables.emoji]),
-                    row[Vegetables.sunRequirement],
-                    row[Vegetables.id],
+                    SimpleVeg(row[Plants.id], row[Plants.name], row[Plants.emoji]),
+                    row[Plants.sunRequirement],
+                    row[Plants.id],
                 )
             }
 
-        val vegById = vegs.associate { it.first.id to it.first }
+        val vegById = plants.associate { it.first.id to it.first }
 
         // Companion pairs where both are in the garden
         val companionRows = CompanionPlants.selectAll()
-            .where { (CompanionPlants.vegetableId inList ids) and (CompanionPlants.companionId inList ids) }
-            .map { Triple(it[CompanionPlants.vegetableId], it[CompanionPlants.companionId], it[CompanionPlants.relationship]) }
+            .where { (CompanionPlants.plantId inList ids) and (CompanionPlants.companionId inList ids) }
+            .map { Triple(it[CompanionPlants.plantId], it[CompanionPlants.companionId], it[CompanionPlants.relationship]) }
 
         val goodPairIds = companionRows.filter { it.third == "good" }.map { it.first to it.second }.toSet()
         val badPairIds  = companionRows.filter { it.third == "bad"  }.map { it.first to it.second }.toSet()
 
         // Group by sun requirement
-        val sunGroups = vegs
+        val sunGroups = plants
             .groupBy { it.second ?: "unknown" }
             .entries
             .sortedBy { SUN_ORDER.indexOf(it.key).takeIf { i -> i >= 0 } ?: Int.MAX_VALUE }
@@ -124,6 +124,7 @@ class GardenRepository {
                         VegPair(va, vb)
                     }
                 SunGroup(sun, members.map { it.first }.sortedBy { it.name }, goodPairs)
+
             }
 
         val conflicts = badPairIds.mapNotNull { (a, b) ->
@@ -142,22 +143,22 @@ class GardenRepository {
         val weekStart  = today.with(WeekFields.ISO.dayOfWeek(), 1)
         val weekEnd    = weekStart.plusDays(6)
 
-        val ids = GardenVegetables.selectAll()
-            .where { GardenVegetables.userId eq userId }
-            .map { it[GardenVegetables.vegetableId] }
+        val ids = GardenPlants.selectAll()
+            .where { GardenPlants.userId eq userId }
+            .map { it[GardenPlants.plantId] }
 
         if (ids.isEmpty()) return@transaction WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, emptyList())
 
-        val seedingIds   = resolvedMonthIds(SeedingMonths.vegetableId,   SeedingMonths.monthNum,   SeedingMonths.countryCode,   ids, month, countryCode)
-        val harvestingIds = resolvedMonthIds(HarvestingMonths.vegetableId, HarvestingMonths.monthNum, HarvestingMonths.countryCode, ids, month, countryCode)
+        val seedingIds   = resolvedMonthIds(SeedingMonths.plantId,   SeedingMonths.monthNum,   SeedingMonths.countryCode,   ids, month, countryCode)
+        val harvestingIds = resolvedMonthIds(HarvestingMonths.plantId, HarvestingMonths.monthNum, HarvestingMonths.countryCode, ids, month, countryCode)
 
         val activeIds = seedingIds + harvestingIds
         if (activeIds.isEmpty()) return@transaction WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, emptyList())
 
-        val actions = Vegetables.selectAll()
-            .where { Vegetables.id inList activeIds }
+        val actions = Plants.selectAll()
+            .where { Plants.id inList activeIds }
             .map { row ->
-                val id       = row[Vegetables.id]
+                val id       = row[Plants.id]
                 val sows     = id in seedingIds
                 val harvests = id in harvestingIds
                 val type     = when {
@@ -167,39 +168,39 @@ class GardenRepository {
                 }
                 WeekAction(
                     type               = type,
-                    vegetable          = SimpleVeg(id, row[Vegetables.name], row[Vegetables.emoji]),
-                    sowingMethod       = row[Vegetables.sowingMethod],
-                    germinationDaysMin = row[Vegetables.germinationDaysMin],
-                    germinationDaysMax = row[Vegetables.germinationDaysMax],
+                    plant              = SimpleVeg(id, row[Plants.name], row[Plants.emoji]),
+                    sowingMethod       = row[Plants.sowingMethod],
+                    germinationDaysMin = row[Plants.germinationDaysMin],
+                    germinationDaysMax = row[Plants.germinationDaysMax],
                 )
             }
-            .sortedWith(compareBy({ it.type }, { it.vegetable.name }))
+            .sortedWith(compareBy({ it.type }, { it.plant.name }))
 
         WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, actions)
     }
 
-    fun findDetails(userId: UUID, countryCode: String?): List<VegetableDetail> = transaction {
-        val ids = GardenVegetables.selectAll()
-            .where { GardenVegetables.userId eq userId }
-            .map { it[GardenVegetables.vegetableId] }
+    fun findDetails(userId: UUID, countryCode: String?): List<PlantDetail> = transaction {
+        val ids = GardenPlants.selectAll()
+            .where { GardenPlants.userId eq userId }
+            .map { it[GardenPlants.plantId] }
 
         ids.mapNotNull { id ->
-            Vegetables.selectAll()
-                .where { Vegetables.id eq id }
+            Plants.selectAll()
+                .where { Plants.id eq id }
                 .map { row ->
-                    val seedingMonths    = resolvedMonthNums(SeedingMonths.vegetableId,   SeedingMonths.monthNum,   SeedingMonths.countryCode,   id, countryCode)
-                    val harvestingMonths = resolvedMonthNums(HarvestingMonths.vegetableId, HarvestingMonths.monthNum, HarvestingMonths.countryCode, id, countryCode)
-                    val countries = (VegetableCountries innerJoin Countries)
+                    val seedingMonths    = resolvedMonthNums(SeedingMonths.plantId,   SeedingMonths.monthNum,   SeedingMonths.countryCode,   id, countryCode)
+                    val harvestingMonths = resolvedMonthNums(HarvestingMonths.plantId, HarvestingMonths.monthNum, HarvestingMonths.countryCode, id, countryCode)
+                    val countries = (PlantCountries innerJoin Countries)
                         .selectAll()
-                        .where { VegetableCountries.vegetableId eq id }
+                        .where { PlantCountries.plantId eq id }
                         .map { Country(it[Countries.code], it[Countries.name]) }
                         .sortedBy { it.name }
-                    VegetableDetail(
-                        id               = row[Vegetables.id],
-                        name             = row[Vegetables.name],
-                        category         = row[Vegetables.category],
-                        emoji            = row[Vegetables.emoji],
-                        imageUrl         = row[Vegetables.imageUrl],
+                    PlantDetail(
+                        id               = row[Plants.id],
+                        name             = row[Plants.name],
+                        category         = row[Plants.category],
+                        emoji            = row[Plants.emoji],
+                        imageUrl         = row[Plants.imageUrl],
                         sunRequirement   = null,
                         pruningType      = null,
                         pruningTip       = null,

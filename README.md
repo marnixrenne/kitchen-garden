@@ -1,14 +1,14 @@
 # Kitchen Garden
 
-A web application that shows which vegetables you can seed each month, based on a temperate European climate. Users can create an account, browse vegetables, and maintain their personal garden list.
+A web application that shows which plants you can seed each month, based on a temperate European climate. Users can create an account, browse plants, and maintain their personal garden list.
 
 ## Features
 
-- Browse vegetables by seeding month
-- Vegetables grouped by category: Fruiting, Leafy, Brassica, Root, Legume, Herb
+- Browse plants by seeding month
+- Plants grouped by category: Fruiting, Leafy, Brassica, Root, Legume, Herb
 - Month overview showing how many crops can be seeded per month
 - User accounts with email-based signup and email verification
-- Personal garden list — add or remove vegetables from your garden
+- Personal garden list — add or remove plants from your garden
 - User preferences (key-value store per user)
 - Role-based access control
 
@@ -27,7 +27,6 @@ A web application that shows which vegetables you can seed each month, based on 
 - **vue-router v4** — client-side routing
 - **vue-i18n v11** — internationalisation (English + Dutch)
 - **Vite** — dev server and build tool
-- **Vitest** + **@vue/test-utils** — component unit tests
 
 ## Getting started
 
@@ -45,7 +44,7 @@ docker compose -f docker/docker-compose.yml up -d
 ./gradlew bootRun
 ```
 
-Flyway runs all migrations automatically on startup and seeds the vegetable data.
+Flyway runs all migrations automatically on startup and seeds the plant data.
 
 ### Frontend (dev server on port 5173)
 
@@ -56,15 +55,6 @@ npm run dev
 ```
 
 Then open [http://localhost:5173](http://localhost:5173) in your browser.
-
-### Frontend tests
-
-```bash
-cd frontend
-npm test
-```
-
-Tests run with [Vitest](https://vitest.dev/) + [@vue/test-utils](https://test-utils.vuejs.org/) in a happy-dom environment. The test suite lives in `frontend/src/views/__tests__/` and covers component behaviour such as data loading on mount, route-param-driven re-fetching, and the companion garden toggle button.
 
 ### Default credentials
 
@@ -117,13 +107,13 @@ The project includes a `Dockerfile` (multi-stage: Node → JDK → JRE) and a `r
 
 ## API
 
-### Vegetables
+### Plants
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `GET` | `/api/vegetables?month={1-12}` | No | Vegetables seedable in the given month |
-| `GET` | `/api/vegetables/counts` | No | Number of seedable crops per month |
-| `GET` | `/api/vegetables/{id}` | No | Single vegetable detail |
+| `GET` | `/api/plants?month={1-12}` | No | Plants seedable in the given month |
+| `GET` | `/api/plants/counts` | No | Number of seedable crops per month |
+| `GET` | `/api/plants/{id}` | No | Single plant detail |
 
 ### Authentication
 
@@ -140,9 +130,9 @@ The project includes a `Dockerfile` (multi-stage: Node → JDK → JRE) and a `r
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `GET` | `/api/garden` | Yes | IDs of vegetables in the user's garden |
-| `PUT` | `/api/garden/{vegetableId}` | Yes | Add a vegetable to the garden |
-| `DELETE` | `/api/garden/{vegetableId}` | Yes | Remove a vegetable from the garden |
+| `GET` | `/api/garden` | Yes | IDs of plants in the user's garden |
+| `PUT` | `/api/garden/{plantId}` | Yes | Add a plant to the garden |
+| `DELETE` | `/api/garden/{plantId}` | Yes | Remove a plant from the garden |
 
 ### Preferences
 
@@ -165,24 +155,22 @@ The project includes a `Dockerfile` (multi-stage: Node → JDK → JRE) and a `r
 │       ├── i18n/                         # en.js + nl.js translations
 │       ├── components/
 │       │   ├── MonthSelector.vue
-│       │   ├── VegetableList.vue         # Vegetable cards with garden toggle
+│       │   ├── PlantList.vue             # Plant cards with garden toggle
 │       │   └── LoginForm.vue
 │       └── views/
-│           ├── __tests__/
-│           │   └── VegetableDetailView.spec.js
 │           ├── LandingView.vue           # Public landing page
-│           ├── HomeView.vue              # Month selector + vegetable list
-│           ├── VegetableDetailView.vue   # Vegetable detail + garden button
+│           ├── HomeView.vue              # Month selector + plant list
+│           ├── PlantDetailView.vue       # Plant detail + garden button
 │           ├── SignupView.vue            # Email signup form
 │           └── VerifyView.vue           # Token verification + password form
 └── src/main/
     ├── kotlin/.../kitchengarden/
     │   ├── KitchenGardenApplication.kt
     │   ├── ExposedConfig.kt              # Exposed + transaction manager wiring
-    │   ├── Tables.kt                     # Vegetables, SeedingMonths, GardenVegetables, UserPreferences
-    │   ├── Vegetable.kt
-    │   ├── VegetableRepository.kt
-    │   ├── VegetableController.kt
+    │   ├── plants/Tables.kt              # Plants, SeedingMonths, GardenPlants
+    │   ├── plants/Plant.kt
+    │   ├── plants/PlantRepository.kt
+    │   ├── plants/PlantController.kt
     │   ├── GardenRepository.kt
     │   ├── GardenController.kt
     │   ├── PreferenceRepository.kt
@@ -198,11 +186,12 @@ The project includes a `Dockerfile` (multi-stage: Node → JDK → JRE) and a `r
     └── resources/
         ├── application.yaml
         └── db/migration/
-            ├── V1__create_schema.sql     # vegetables, seeding_months
-            ├── V2__seed_vegetables.sql   # 24 vegetables with seeding months
+            ├── V1__create_schema.sql     # plants, seeding_months
+            ├── V2__seed_vegetables.sql   # 24 plants with seeding months
             ├── V3__create_users.sql
             ├── V4__create_roles.sql      # roles, role_authorities, user_roles
             ├── V5__create_user_preferences.sql
             ├── V6__add_email_and_signup_tokens.sql
-            └── V7__create_garden_vegetables.sql
+            ├── V7__create_garden_vegetables.sql
+            └── V36__rename_vegetable_to_plant.sql
 ```

@@ -3,7 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import MonthSelector from '../components/MonthSelector.vue'
-import VegetableList from '../components/VegetableList.vue'
+import PlantList from '../components/PlantList.vue'
 import { csrfHeaders } from '../stores/auth.js'
 
 const CATEGORY_ORDER = ['Fruiting', 'Leafy', 'Brassica', 'Root', 'Legume', 'Herb', 'Flower', 'Sea']
@@ -14,7 +14,7 @@ const router = useRouter()
 
 const selectedMonth = ref(route.query.month ? parseInt(route.query.month) : null)
 const counts        = ref({})
-const vegetables    = ref([])
+const plants        = ref([])
 const loading       = ref(false)
 const gardenIds     = ref(new Set())
 const query         = ref(route.query.q ?? '')
@@ -24,12 +24,12 @@ const months = computed(() => tm('months'))
 const grouped = computed(() => {
   const q = query.value.trim().toLowerCase()
   const filtered = q
-    ? vegetables.value.filter(v => {
-        const key = `vegetables.${v.name}`
+    ? plants.value.filter(v => {
+        const key = `plants.${v.name}`
         const localised = te(key) ? t(key) : v.name
         return localised.toLowerCase().includes(q)
       })
-    : vegetables.value
+    : plants.value
 
   const g = {}
   for (const v of filtered) {
@@ -39,8 +39,8 @@ const grouped = computed(() => {
   return CATEGORY_ORDER.filter(c => g[c]).map(c => ({
     category: c,
     items: g[c].slice().sort((a, b) => {
-      const nameA = te(`vegetables.${a.name}`) ? t(`vegetables.${a.name}`) : a.name
-      const nameB = te(`vegetables.${b.name}`) ? t(`vegetables.${b.name}`) : b.name
+      const nameA = te(`plants.${a.name}`) ? t(`plants.${a.name}`) : a.name
+      const nameB = te(`plants.${b.name}`) ? t(`plants.${b.name}`) : b.name
       return nameA.localeCompare(nameB)
     }),
   }))
@@ -49,7 +49,7 @@ const grouped = computed(() => {
 const filteredTotal = computed(() => grouped.value.reduce((sum, g) => sum + g.items.length, 0))
 
 async function fetchCounts() {
-  const res = await fetch('/api/vegetables/counts')
+  const res = await fetch('/api/plants/counts')
   counts.value = await res.json()
 }
 
@@ -58,25 +58,25 @@ async function fetchGarden() {
   gardenIds.value = new Set(await res.json())
 }
 
-async function toggleGarden(vegetableId) {
-  const inGarden = gardenIds.value.has(vegetableId)
+async function toggleGarden(plantId) {
+  const inGarden = gardenIds.value.has(plantId)
   const method = inGarden ? 'DELETE' : 'PUT'
-  await fetch(`/api/garden/${vegetableId}`, { method, headers: csrfHeaders() })
+  await fetch(`/api/garden/${plantId}`, { method, headers: csrfHeaders() })
   const next = new Set(gardenIds.value)
-  inGarden ? next.delete(vegetableId) : next.add(vegetableId)
+  inGarden ? next.delete(plantId) : next.add(plantId)
   gardenIds.value = next
 }
 
-async function fetchVegetables(month) {
+async function fetchPlants(month) {
   loading.value = true
-  const url = month ? `/api/vegetables?month=${month}` : '/api/vegetables'
+  const url = month ? `/api/plants?month=${month}` : '/api/plants'
   const res = await fetch(url)
-  vegetables.value = await res.json()
+  plants.value = await res.json()
   loading.value = false
 }
 
 watch(selectedMonth, month => {
-  fetchVegetables(month)
+  fetchPlants(month)
   router.replace({ query: { ...(query.value ? { q: query.value } : {}), ...(month ? { month } : {}) } })
 })
 
@@ -86,7 +86,7 @@ watch(query, q => {
 
 onMounted(() => {
   fetchCounts()
-  fetchVegetables(selectedMonth.value)
+  fetchPlants(selectedMonth.value)
   fetchGarden()
 })
 </script>
@@ -110,7 +110,7 @@ onMounted(() => {
         class="search-input"
       />
     </div>
-    <VegetableList
+    <PlantList
       :grouped="grouped"
       :month-name="selectedMonth ? months[selectedMonth - 1] : null"
       :total="filteredTotal"

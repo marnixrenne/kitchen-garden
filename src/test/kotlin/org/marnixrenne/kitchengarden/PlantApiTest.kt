@@ -7,13 +7,13 @@ import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.web.servlet.get
 
-class VegetableApiTest : IntegrationTestBase() {
+class PlantApiTest : IntegrationTestBase() {
 
     @Autowired lateinit var jdbc: JdbcTemplate
 
     @Test
-    fun `GET vegetables returns all 157 vegetables when no month given`() {
-        mvc.get("/api/vegetables")
+    fun `GET plants returns all 157 plants when no month given`() {
+        mvc.get("/api/plants")
             .andExpect {
                 status { isOk() }
                 content { contentTypeCompatibleWith(MediaType.APPLICATION_JSON) }
@@ -22,8 +22,8 @@ class VegetableApiTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `GET vegetables filtered by month returns only seeding vegetables for that month`() {
-        mvc.get("/api/vegetables?month=3")
+    fun `GET plants filtered by month returns only seeding plants for that month`() {
+        mvc.get("/api/plants?month=3")
             .andExpect {
                 status { isOk() }
                 jsonPath("$.length()") { value(greaterThan(0)) }
@@ -32,19 +32,19 @@ class VegetableApiTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `GET vegetables with invalid month returns 400`() {
-        mvc.get("/api/vegetables?month=13")
+    fun `GET plants with invalid month returns 400`() {
+        mvc.get("/api/plants?month=13")
             .andExpect { status { isBadRequest() } }
 
-        mvc.get("/api/vegetables?month=0")
+        mvc.get("/api/plants?month=0")
             .andExpect { status { isBadRequest() } }
     }
 
     @Test
-    fun `GET vegetable by id returns detail with months and countries`() {
-        val id = jdbc.queryForObject("SELECT id FROM vegetables WHERE name = 'Tomato'", String::class.java)!!
+    fun `GET plant by id returns detail with months and countries`() {
+        val id = jdbc.queryForObject("SELECT id FROM plants WHERE name = 'Tomato'", String::class.java)!!
 
-        mvc.get("/api/vegetables/$id")
+        mvc.get("/api/plants/$id")
             .andExpect {
                 status { isOk() }
                 jsonPath("$.name") { value("Tomato") }
@@ -57,14 +57,14 @@ class VegetableApiTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `GET vegetable by unknown id returns 404`() {
-        mvc.get("/api/vegetables/00000000-0000-0000-0000-000000000000")
+    fun `GET plant by unknown id returns 404`() {
+        mvc.get("/api/plants/00000000-0000-0000-0000-000000000000")
             .andExpect { status { isNotFound() } }
     }
 
     @Test
-    fun `GET counts returns entries for months that have seeding vegetables`() {
-        mvc.get("/api/vegetables/counts")
+    fun `GET counts returns entries for months that have seeding plants`() {
+        mvc.get("/api/plants/counts")
             .andExpect {
                 status { isOk() }
                 jsonPath("$.3") { value(greaterThan(0)) }

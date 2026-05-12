@@ -68,7 +68,7 @@ class SecurityConfig(
             .authorizeHttpRequests { auth ->
                 auth.requestMatchers("/api/health").permitAll()
                 auth.requestMatchers("/api/auth/**").permitAll()
-                auth.requestMatchers("/api/vegetables/**").permitAll()
+                auth.requestMatchers("/api/plants/**").permitAll()
                 auth.requestMatchers("/api/admin/**").hasRole("ADMIN")
                 auth.requestMatchers("/api/**").authenticated()
                 auth.anyRequest().permitAll()  // frontend assets and SPA routes are public

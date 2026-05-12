@@ -1,8 +1,8 @@
-package org.marnixrenne.kitchengarden.vegetables
+package org.marnixrenne.kitchengarden.plants
 
 import java.util.UUID
 
-data class Vegetable(
+data class Plant(
     val id: UUID,
     val name: String,
     val category: String,

@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LandingView         from '../views/LandingView.vue'
 import HomeView            from '../views/HomeView.vue'
 import GardenView          from '../views/GardenView.vue'
-import VegetableDetailView from '../views/VegetableDetailView.vue'
+import PlantDetailView from '../views/PlantDetailView.vue'
 import LoginForm           from '../components/LoginForm.vue'
 import SignupView          from '../views/SignupView.vue'
 import VerifyView          from '../views/VerifyView.vue'
@@ -21,7 +21,7 @@ const router = createRouter({
     { path: '/verify',         component: VerifyView,          meta: { public: true } },
     { path: '/home',           component: HomeView,            meta: { requiresAuth: true, noAdmin: true } },
     { path: '/garden',         component: GardenView,          meta: { requiresAuth: true, noAdmin: true } },
-    { path: '/vegetable/:id',  component: VegetableDetailView, meta: { requiresAuth: true } },
+    { path: '/plant/:id',      component: PlantDetailView,     meta: { requiresAuth: true } },
     { path: '/admin',          component: AdminView,           meta: { requiresAuth: true, requiresAdmin: true } },
     { path: '/settings',       component: SettingsView,        meta: { requiresAuth: true } },
   ],

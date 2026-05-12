@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { createI18n } from 'vue-i18n'
-import VegetableDetailView from '../VegetableDetailView.vue'
+import PlantDetailView from '../PlantDetailView.vue'
 
 // ---------------------------------------------------------------------------
 // Minimal i18n setup
@@ -23,7 +23,7 @@ const i18n = createI18n({
       garden: { add: 'Add', added: 'Added', addTooltip: 'Add to garden', removeTooltip: 'Remove from garden' },
       countries: 'Countries',
       countryNames: {},
-      vegetables: {},
+      plants: {},
       descriptions: {},
       pruning: { title: 'Pruning', type: {}, tips: {} },
       sowing: {
@@ -41,7 +41,7 @@ const i18n = createI18n({
 })
 
 // ---------------------------------------------------------------------------
-// Fixture vegetables
+// Fixture plants
 // ---------------------------------------------------------------------------
 const TOMATO = {
   id: 'aaaaaaaa-0000-0000-0000-000000000001',
@@ -79,7 +79,7 @@ const NASTURTIUM = {
   ],
 }
 
-const VEGETABLES = {
+const PLANTS = {
   [TOMATO.id]: TOMATO,
   [NASTURTIUM.id]: NASTURTIUM,
 }
@@ -93,13 +93,12 @@ function makeFetch(gardenIds = []) {
       return { ok: true, json: async () => gardenIds }
     }
     if (url.startsWith('/api/garden/')) {
-      // PUT / DELETE: upsert or remove — just succeed
       return { ok: true, json: async () => ({}) }
     }
-    const match = url.match(/^\/api\/vegetables\/(.+)$/)
+    const match = url.match(/^\/api\/plants\/(.+)$/)
     if (match) {
-      const veg = VEGETABLES[match[1]]
-      if (veg) return { ok: true, json: async () => veg }
+      const plant = PLANTS[match[1]]
+      if (plant) return { ok: true, json: async () => plant }
     }
     return { ok: false, json: async () => ({}) }
   })
@@ -108,15 +107,14 @@ function makeFetch(gardenIds = []) {
 function makeRouter() {
   return createRouter({
     history: createMemoryHistory(),
-    routes: [{ path: '/vegetable/:id', component: VegetableDetailView }],
+    routes: [{ path: '/plant/:id', component: PlantDetailView }],
   })
 }
 
-async function mountAt(router, vegetableId, gardenIds = []) {
+async function mountAt(router, plantId, gardenIds = []) {
   global.fetch = makeFetch(gardenIds)
-  // Navigate first so route.params.id is set when the component mounts
-  await router.push(`/vegetable/${vegetableId}`)
-  const wrapper = mount(VegetableDetailView, {
+  await router.push(`/plant/${plantId}`)
+  const wrapper = mount(PlantDetailView, {
     global: { plugins: [router, i18n] },
   })
   await flushPromises()
@@ -126,12 +124,12 @@ async function mountAt(router, vegetableId, gardenIds = []) {
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
-describe('VegetableDetailView', () => {
+describe('PlantDetailView', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
 
-  it('loads vegetable data on mount and displays the name', async () => {
+  it('loads plant data on mount and displays the name', async () => {
     const router = makeRouter()
     const wrapper = await mountAt(router, TOMATO.id)
 
@@ -151,11 +149,11 @@ describe('VegetableDetailView', () => {
 
     expect(wrapper.text()).toContain('Tomato')
 
-    // Simulate clicking a companion chip: navigate to another vegetable
-    await router.push(`/vegetable/${NASTURTIUM.id}`)
+    // Simulate clicking a companion chip: navigate to another plant
+    await router.push(`/plant/${NASTURTIUM.id}`)
     await flushPromises()
 
-    // Component should now show the new vegetable
+    // Component should now show the new plant
     expect(wrapper.text()).toContain('Nasturtium')
     expect(wrapper.text()).not.toContain('Basil') // Tomato's companion
     expect(wrapper.text()).toContain('Tomato')    // Nasturtium's companion
@@ -165,20 +163,17 @@ describe('VegetableDetailView', () => {
     const router = makeRouter()
     const wrapper = await mountAt(router, TOMATO.id, []) // garden is empty
 
-    // Find the + button next to Basil
     const addBtn = wrapper.find('.companion-garden-btn')
     expect(addBtn.text()).toBe('+')
 
     await addBtn.trigger('click')
     await flushPromises()
 
-    // Button should now show ✓
     expect(addBtn.text()).toBe('✓')
   })
 
   it('companion garden button shows ✓ when companion is already in garden', async () => {
     const router = makeRouter()
-    // Basil (TOMATO's companion) is already in the garden
     const wrapper = await mountAt(router, TOMATO.id, [TOMATO.companions[0].id])
 
     const addBtn = wrapper.find('.companion-garden-btn')
@@ -202,7 +197,6 @@ describe('VegetableDetailView', () => {
     const router = makeRouter()
     const wrapper = await mountAt(router, TOMATO.id, [])
 
-    // Click the button (inner): should NOT trigger navigation
     const addBtn = wrapper.find('.companion-garden-btn')
     await addBtn.trigger('click')
     await flushPromises()

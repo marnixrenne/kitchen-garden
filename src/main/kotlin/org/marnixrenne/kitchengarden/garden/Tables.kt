@@ -2,11 +2,11 @@ package org.marnixrenne.kitchengarden.garden
 
 import org.jetbrains.exposed.sql.Table
 import org.marnixrenne.kitchengarden.security.Users
-import org.marnixrenne.kitchengarden.vegetables.Vegetables
+import org.marnixrenne.kitchengarden.plants.Plants
 
-object GardenVegetables : Table("garden_vegetables") {
-    val userId      = uuid("user_id")      references Users.id
-    val vegetableId = uuid("vegetable_id") references Vegetables.id
+object GardenPlants : Table("garden_plants") {
+    val userId  = uuid("user_id")  references Users.id
+    val plantId = uuid("plant_id") references Plants.id
 
-    override val primaryKey = PrimaryKey(userId, vegetableId)
+    override val primaryKey = PrimaryKey(userId, plantId)
 }

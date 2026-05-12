@@ -1,8 +1,8 @@
-package org.marnixrenne.kitchengarden.vegetables
+package org.marnixrenne.kitchengarden.plants
 
 import org.jetbrains.exposed.sql.Table
 
-object Vegetables : Table("vegetables") {
+object Plants : Table("plants") {
     val id       = uuid("id")
     val name     = varchar("name", 100)
     val category = varchar("category", 50)
@@ -24,13 +24,13 @@ object Vegetables : Table("vegetables") {
 }
 
 object SeedingMonths : Table("seeding_months") {
-    val vegetableId = uuid("vegetable_id") references Vegetables.id
+    val plantId     = uuid("plant_id") references Plants.id
     val monthNum    = integer("month_num")
     val countryCode = char("country_code", 2).nullable()
 }
 
 object HarvestingMonths : Table("harvesting_months") {
-    val vegetableId = uuid("vegetable_id") references Vegetables.id
+    val plantId     = uuid("plant_id") references Plants.id
     val monthNum    = integer("month_num")
     val countryCode = char("country_code", 2).nullable()
 }
@@ -42,17 +42,17 @@ object Countries : Table("countries") {
     override val primaryKey = PrimaryKey(code)
 }
 
-object VegetableCountries : Table("vegetable_countries") {
-    val vegetableId = uuid("vegetable_id") references Vegetables.id
+object PlantCountries : Table("plant_countries") {
+    val plantId     = uuid("plant_id") references Plants.id
     val countryCode = char("country_code", 2) references Countries.code
 
-    override val primaryKey = PrimaryKey(vegetableId, countryCode)
+    override val primaryKey = PrimaryKey(plantId, countryCode)
 }
 
 object CompanionPlants : Table("companion_plants") {
-    val vegetableId  = uuid("vegetable_id") references Vegetables.id
-    val companionId  = uuid("companion_id") references Vegetables.id
+    val plantId      = uuid("plant_id") references Plants.id
+    val companionId  = uuid("companion_id") references Plants.id
     val relationship = varchar("relationship", 4)
 
-    override val primaryKey = PrimaryKey(vegetableId, companionId)
+    override val primaryKey = PrimaryKey(plantId, companionId)
 }

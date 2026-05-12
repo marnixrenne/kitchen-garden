@@ -117,20 +117,6 @@ header h1 { font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
   color: rgba(255,255,255,0.7);
 }
 
-.logout-btn {
-  padding: 0.35rem 0.7rem;
-  border: 1.5px solid rgba(255,255,255,0.3);
-  border-radius: 6px;
-  background: transparent;
-  color: rgba(255,255,255,0.8);
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
-}
-
-.logout-btn:hover { border-color: rgba(255,255,255,0.8); color: #fff; }
-
 .settings-btn {
   padding: 0.35rem 0.7rem;
   border: 1.5px solid rgba(255,255,255,0.3);
@@ -144,6 +130,20 @@ header h1 { font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
 
 .settings-btn:hover { border-color: rgba(255,255,255,0.7); color: #fff; }
 .settings-btn.router-link-active { border-color: #fff; color: #fff; }
+
+.logout-btn {
+  padding: 0.35rem 0.7rem;
+  border: 1.5px solid rgba(255,255,255,0.3);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255,255,255,0.8);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.logout-btn:hover { border-color: rgba(255,255,255,0.8); color: #fff; }
 
 @media (max-width: 540px) {
   .header-top { gap: 0.5rem; padding-bottom: 0.25rem; }

@@ -17,7 +17,7 @@ const router = useRouter()
         <h1>Kitchen Garden</h1>
         <p class="tagline">
           Know exactly what to seed and when. A simple guide to planning
-          your vegetable garden through the seasons.
+          your plant garden through the seasons.
         </p>
         <button class="cta-btn" @click="router.push('/login')">Get started</button>
       </div>
@@ -26,11 +26,11 @@ const router = useRouter()
         <div class="feature">
           <div class="feature-icon">📅</div>
           <h2>Month by month</h2>
-          <p>Select any month and instantly see which vegetables you can start seeding.</p>
+          <p>Select any month and instantly see which plants you can start seeding.</p>
         </div>
         <div class="feature">
           <div class="feature-icon">🥦</div>
-          <h2>24 vegetables</h2>
+          <h2>24 plants</h2>
           <p>From tomatoes to fennel — covering fruiting, leafy, root, brassica, legume and herb varieties.</p>
         </div>
         <div class="feature">

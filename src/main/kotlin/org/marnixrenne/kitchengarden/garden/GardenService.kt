@@ -4,7 +4,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.marnixrenne.kitchengarden.preferences.PreferenceService
 import org.marnixrenne.kitchengarden.security.Users
-import org.marnixrenne.kitchengarden.vegetables.VegetableDetail
+import org.marnixrenne.kitchengarden.plants.PlantDetail
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Service
 import java.util.UUID
@@ -22,10 +22,10 @@ class GardenService(
             .firstOrNull()
     } ?: error("Authenticated user not found in database")
 
-    fun getVegetableIds(authentication: Authentication): Set<UUID> =
-        repository.findVegetableIds(resolveUserId(authentication))
+    fun getPlantIds(authentication: Authentication): Set<UUID> =
+        repository.findPlantIds(resolveUserId(authentication))
 
-    fun getDetails(authentication: Authentication): List<VegetableDetail> =
+    fun getDetails(authentication: Authentication): List<PlantDetail> =
         repository.findDetails(resolveUserId(authentication), preferenceService.getCountry(authentication))
 
     fun getWeekSummary(authentication: Authentication): WeekSummary =
@@ -34,9 +34,9 @@ class GardenService(
     fun getSuggestions(authentication: Authentication): PlantingSuggestions =
         repository.findSuggestions(resolveUserId(authentication))
 
-    fun add(authentication: Authentication, vegetableId: UUID) =
-        repository.add(resolveUserId(authentication), vegetableId)
+    fun add(authentication: Authentication, plantId: UUID) =
+        repository.add(resolveUserId(authentication), plantId)
 
-    fun remove(authentication: Authentication, vegetableId: UUID) =
-        repository.remove(resolveUserId(authentication), vegetableId)
+    fun remove(authentication: Authentication, plantId: UUID) =
+        repository.remove(resolveUserId(authentication), plantId)
 }
