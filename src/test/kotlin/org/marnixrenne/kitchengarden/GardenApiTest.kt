@@ -15,7 +15,7 @@ class GardenApiTest : IntegrationTestBase() {
     @Autowired lateinit var jdbc: JdbcTemplate
 
     private fun tomatoId() =
-        jdbc.queryForObject("SELECT id FROM plants WHERE name = 'Tomato'", String::class.java)!!
+        jdbc.queryForObject("SELECT id FROM pts_plants WHERE name = 'Tomato'", String::class.java)!!
 
     @Test
     fun `authenticated user starts with empty garden`() {

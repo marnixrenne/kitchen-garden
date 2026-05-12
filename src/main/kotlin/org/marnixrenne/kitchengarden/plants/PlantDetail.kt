@@ -27,6 +27,8 @@ data class PlantDetail(
     val pruningType: String?,
     val pruningTip: String?,
     val sowingGuide: SowingGuide?,
+    val heightMinCm: Int?,
+    val heightMaxCm: Int?,
     val seedingMonths: List<Int>,
     val harvestingMonths: List<Int>,
     val countries: List<Country>,

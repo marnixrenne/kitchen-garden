@@ -85,6 +85,8 @@ class PlantRepository {
                     pruningType      = row[Plants.pruningType],
                     pruningTip       = row[Plants.pruningTip],
                     sowingGuide      = sowingGuide,
+                    heightMinCm      = row[Plants.heightMinCm]?.toInt(),
+                    heightMaxCm      = row[Plants.heightMaxCm]?.toInt(),
                     seedingMonths    = seedingMonths,
                     harvestingMonths = harvestingMonths,
                     countries        = countries,

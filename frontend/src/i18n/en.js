@@ -105,6 +105,7 @@ export default {
     spacing: 'Spacing',
     germination: 'Germination',
     maturity: 'Days to harvest',
+    height: 'Height',
     method: {
       label: 'Sowing method',
       indoor: '🏠 Start indoors',

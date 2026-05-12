@@ -205,6 +205,8 @@ class GardenRepository {
                         pruningType      = null,
                         pruningTip       = null,
                         sowingGuide      = null,
+                        heightMinCm      = row[Plants.heightMinCm]?.toInt(),
+                        heightMaxCm      = row[Plants.heightMaxCm]?.toInt(),
                         seedingMonths    = seedingMonths,
                         harvestingMonths = harvestingMonths,
                         countries        = countries,

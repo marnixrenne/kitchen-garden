@@ -106,35 +106,41 @@ watch(() => route.params.id, (id) => { if (id) loadPlant(id) })
 
         <p class="description">{{ description }}</p>
 
-        <div v-if="plant.sowingGuide" class="sowing-section">
+        <div v-if="plant.sowingGuide || plant.heightMinCm != null" class="sowing-section">
           <h3>{{ t('sowing.title') }}</h3>
           <div class="sowing-grid">
-            <div v-if="plant.sowingGuide.method" class="sowing-stat">
+            <div v-if="plant.heightMinCm != null" class="sowing-stat">
+              <span class="sowing-label">{{ t('sowing.height') }}</span>
+              <span class="sowing-value">
+                {{ plant.heightMinCm }}–{{ plant.heightMaxCm }} cm
+              </span>
+            </div>
+            <div v-if="plant.sowingGuide?.method" class="sowing-stat">
               <span class="sowing-label">{{ t('sowing.method.label') }}</span>
               <span class="sowing-value">{{ t(`sowing.method.${plant.sowingGuide.method}`) }}</span>
             </div>
-            <div v-if="plant.sowingGuide.frostTolerance" class="sowing-stat">
+            <div v-if="plant.sowingGuide?.frostTolerance" class="sowing-stat">
               <span class="sowing-label">{{ t('sowing.frost.label') }}</span>
               <span class="sowing-value" :class="`frost-${plant.sowingGuide.frostTolerance}`">
                 {{ t(`sowing.frost.${plant.sowingGuide.frostTolerance}`) }}
               </span>
             </div>
-            <div v-if="plant.sowingGuide.seedDepthMm" class="sowing-stat">
+            <div v-if="plant.sowingGuide?.seedDepthMm" class="sowing-stat">
               <span class="sowing-label">{{ t('sowing.depth') }}</span>
               <span class="sowing-value">{{ plant.sowingGuide.seedDepthMm }} mm</span>
             </div>
-            <div v-if="plant.sowingGuide.spacingCm" class="sowing-stat">
+            <div v-if="plant.sowingGuide?.spacingCm" class="sowing-stat">
               <span class="sowing-label">{{ t('sowing.spacing') }}</span>
               <span class="sowing-value">{{ plant.sowingGuide.spacingCm }} cm</span>
             </div>
-            <div v-if="plant.sowingGuide.germinationDaysMin" class="sowing-stat">
+            <div v-if="plant.sowingGuide?.germinationDaysMin" class="sowing-stat">
               <span class="sowing-label">{{ t('sowing.germination') }}</span>
               <span class="sowing-value">
                 {{ plant.sowingGuide.germinationDaysMin }}–{{ plant.sowingGuide.germinationDaysMax }}
                 {{ t('sowing.days') }}
               </span>
             </div>
-            <div v-if="plant.sowingGuide.daysToMaturityMin" class="sowing-stat">
+            <div v-if="plant.sowingGuide?.daysToMaturityMin" class="sowing-stat">
               <span class="sowing-label">{{ t('sowing.maturity') }}</span>
               <span class="sowing-value">
                 {{ plant.sowingGuide.daysToMaturityMin }}–{{ plant.sowingGuide.daysToMaturityMax }}

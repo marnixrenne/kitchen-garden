@@ -105,6 +105,7 @@ export default {
     spacing: 'Plantafstand',
     germination: 'Kieming',
     maturity: 'Groeidagen',
+    height: 'Hoogte',
     method: {
       label: 'Zaaimetode',
       indoor: '🏠 Binnen starten',

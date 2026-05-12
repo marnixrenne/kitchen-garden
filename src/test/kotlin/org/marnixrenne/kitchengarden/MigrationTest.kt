@@ -16,13 +16,13 @@ class MigrationTest : IntegrationTestBase() {
             "SELECT COUNT(*) FROM flyway_schema_history WHERE success = true",
             Int::class.java
         )!!
-        // V1 through V36 (no V32)
-        assertEquals(35, count, "Expected 35 successful migrations")
+        // V1 through V39 (no V32)
+        assertEquals(38, count, "Expected 38 successful migrations")
     }
 
     @Test
     fun `plants table contains all seeded records`() {
-        val count = jdbc.queryForObject("SELECT COUNT(*) FROM plants", Int::class.java)!!
+        val count = jdbc.queryForObject("SELECT COUNT(*) FROM pts_plants", Int::class.java)!!
         // 24 (V2) + 45 (V12) + 1 (V13) + 87 (V14) + 9 (V33) + 3 (V34) = 169
         assertEquals(169, count, "Expected 169 plants total")
     }
@@ -35,16 +35,16 @@ class MigrationTest : IntegrationTestBase() {
 
     @Test
     fun `plant_countries table is populated`() {
-        val count = jdbc.queryForObject("SELECT COUNT(*) FROM plant_countries", Int::class.java)!!
-        assert(count > 0) { "plant_countries should have entries" }
+        val count = jdbc.queryForObject("SELECT COUNT(*) FROM pts_plant_countries", Int::class.java)!!
+        assert(count > 0) { "pts_plant_countries should have entries" }
     }
 
     @Test
     fun `every original plant has seeding months`() {
         val missing = jdbc.queryForList(
             """
-            SELECT v.name FROM plants v
-            LEFT JOIN seeding_months sm ON sm.plant_id = v.id
+            SELECT v.name FROM pts_plants v
+            LEFT JOIN pts_seeding_months sm ON sm.plant_id = v.id
             WHERE sm.plant_id IS NULL
               AND v.name NOT IN ('Grape Leaves', 'Aonori', 'Arame', 'Dulse', 'Hijiki',
                                   'Kombu', 'Nori', 'Sea Lettuce', 'Sea Grape', 'Wakame')
@@ -58,8 +58,8 @@ class MigrationTest : IntegrationTestBase() {
     fun `every plant has harvesting months except sea vegetables and grape leaves`() {
         val missing = jdbc.queryForList(
             """
-            SELECT v.name FROM plants v
-            LEFT JOIN harvesting_months hm ON hm.plant_id = v.id
+            SELECT v.name FROM pts_plants v
+            LEFT JOIN pts_harvesting_months hm ON hm.plant_id = v.id
             WHERE hm.plant_id IS NULL
               AND v.name NOT IN ('Aonori', 'Arame', 'Dulse', 'Hijiki',
                                   'Kombu', 'Nori', 'Sea Lettuce', 'Sea Grape', 'Wakame')

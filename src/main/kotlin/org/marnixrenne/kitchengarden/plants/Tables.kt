@@ -2,7 +2,7 @@ package org.marnixrenne.kitchengarden.plants
 
 import org.jetbrains.exposed.sql.Table
 
-object Plants : Table("plants") {
+object Plants : Table("pts_plants") {
     val id       = uuid("id")
     val name     = varchar("name", 100)
     val category = varchar("category", 50)
@@ -19,17 +19,19 @@ object Plants : Table("plants") {
     val daysToMaturityMin  = integer("days_to_maturity_min").nullable()
     val daysToMaturityMax  = integer("days_to_maturity_max").nullable()
     val frostTolerance     = varchar("frost_tolerance", 12).nullable()
+    val heightMinCm        = short("height_min_cm").nullable()
+    val heightMaxCm        = short("height_max_cm").nullable()
 
     override val primaryKey = PrimaryKey(id)
 }
 
-object SeedingMonths : Table("seeding_months") {
+object SeedingMonths : Table("pts_seeding_months") {
     val plantId     = uuid("plant_id") references Plants.id
     val monthNum    = integer("month_num")
     val countryCode = char("country_code", 2).nullable()
 }
 
-object HarvestingMonths : Table("harvesting_months") {
+object HarvestingMonths : Table("pts_harvesting_months") {
     val plantId     = uuid("plant_id") references Plants.id
     val monthNum    = integer("month_num")
     val countryCode = char("country_code", 2).nullable()
@@ -42,14 +44,14 @@ object Countries : Table("countries") {
     override val primaryKey = PrimaryKey(code)
 }
 
-object PlantCountries : Table("plant_countries") {
+object PlantCountries : Table("pts_plant_countries") {
     val plantId     = uuid("plant_id") references Plants.id
     val countryCode = char("country_code", 2) references Countries.code
 
     override val primaryKey = PrimaryKey(plantId, countryCode)
 }
 
-object CompanionPlants : Table("companion_plants") {
+object CompanionPlants : Table("pts_companion_plants") {
     val plantId      = uuid("plant_id") references Plants.id
     val companionId  = uuid("companion_id") references Plants.id
     val relationship = varchar("relationship", 4)

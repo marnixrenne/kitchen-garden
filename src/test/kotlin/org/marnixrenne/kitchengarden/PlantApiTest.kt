@@ -42,7 +42,7 @@ class PlantApiTest : IntegrationTestBase() {
 
     @Test
     fun `GET plant by id returns detail with months and countries`() {
-        val id = jdbc.queryForObject("SELECT id FROM plants WHERE name = 'Tomato'", String::class.java)!!
+        val id = jdbc.queryForObject("SELECT id FROM pts_plants WHERE name = 'Tomato'", String::class.java)!!
 
         mvc.get("/api/plants/$id")
             .andExpect {
