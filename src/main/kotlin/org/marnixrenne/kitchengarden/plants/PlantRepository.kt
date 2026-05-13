@@ -75,6 +75,11 @@ class PlantRepository {
                     daysToMaturityMax  = row[Plants.daysToMaturityMax],
                     frostTolerance     = row[Plants.frostTolerance],
                 ).takeIf { it.method != null }
+                val typeOrder = mapOf("pollinator" to 0, "beneficial" to 1, "pest" to 2)
+                val insects = PlantInsects.selectAll()
+                    .where { PlantInsects.plantId eq id }
+                    .map { InsectAttraction(it[PlantInsects.insectName], it[PlantInsects.insectType]) }
+                    .sortedWith(compareBy({ typeOrder[it.type] ?: 99 }, { it.name }))
                 PlantDetail(
                     id               = row[Plants.id],
                     name             = row[Plants.name],
@@ -91,6 +96,7 @@ class PlantRepository {
                     harvestingMonths = harvestingMonths,
                     countries        = countries,
                     companions       = companions,
+                    insects          = insects,
                 )
             }
             .firstOrNull()

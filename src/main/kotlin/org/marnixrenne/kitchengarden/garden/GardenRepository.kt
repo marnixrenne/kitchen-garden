@@ -211,6 +211,7 @@ class GardenRepository {
                         harvestingMonths = harvestingMonths,
                         countries        = countries,
                         companions       = emptyList(),
+                        insects          = emptyList(),
                     )
                 }
                 .firstOrNull()

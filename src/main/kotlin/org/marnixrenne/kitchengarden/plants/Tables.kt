@@ -58,3 +58,11 @@ object CompanionPlants : Table("pts_companion_plants") {
 
     override val primaryKey = PrimaryKey(plantId, companionId)
 }
+
+object PlantInsects : Table("pts_plant_insects") {
+    val plantId    = uuid("plant_id") references Plants.id
+    val insectName = varchar("insect_name", 50)
+    val insectType = varchar("insect_type", 15)
+
+    override val primaryKey = PrimaryKey(plantId, insectName)
+}

@@ -29,6 +29,10 @@ const description = computed(() => {
 const goodCompanions = computed(() => plant.value?.companions.filter(c => c.relationship === 'good') ?? [])
 const badCompanions  = computed(() => plant.value?.companions.filter(c => c.relationship === 'bad')  ?? [])
 
+const pollinators = computed(() => plant.value?.insects.filter(i => i.type === 'pollinator') ?? [])
+const beneficials = computed(() => plant.value?.insects.filter(i => i.type === 'beneficial') ?? [])
+const pests       = computed(() => plant.value?.insects.filter(i => i.type === 'pest')       ?? [])
+
 const pruningTipText = computed(() => {
   if (!plant.value?.pruningType) return ''
   const key = `pruning.tips.${plant.value.name}`
@@ -218,6 +222,34 @@ watch(() => route.params.id, (id) => { if (id) loadPlant(id) })
               >
                 {{ c.emoji ?? '🌱' }} {{ te(`plants.${c.name}`) ? t(`plants.${c.name}`) : c.name }}
               </RouterLink>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="plant.insects.length > 0" class="insects-section">
+          <h3>{{ t('insects.title') }}</h3>
+          <div v-if="pollinators.length > 0" class="insect-group">
+            <p class="insect-label pollinator">{{ t('insects.pollinator') }}</p>
+            <div class="insect-list">
+              <span v-for="i in pollinators" :key="i.name" class="insect-chip pollinator">
+                {{ t(`insects.names.${i.name}`) }}
+              </span>
+            </div>
+          </div>
+          <div v-if="beneficials.length > 0" class="insect-group">
+            <p class="insect-label beneficial">{{ t('insects.beneficial') }}</p>
+            <div class="insect-list">
+              <span v-for="i in beneficials" :key="i.name" class="insect-chip beneficial">
+                {{ t(`insects.names.${i.name}`) }}
+              </span>
+            </div>
+          </div>
+          <div v-if="pests.length > 0" class="insect-group">
+            <p class="insect-label pest">{{ t('insects.pest') }}</p>
+            <div class="insect-list">
+              <span v-for="i in pests" :key="i.name" class="insect-chip pest">
+                {{ t(`insects.names.${i.name}`) }}
+              </span>
             </div>
           </div>
         </div>
@@ -419,6 +451,58 @@ main {
 .month-chip.harvest.active {
   background: #d97706;
   color: #fff;
+}
+
+.insects-section { border-top: 1px solid var(--green-pale); padding-top: 1.5rem; }
+
+.insects-section h3 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.insect-group { margin-bottom: 1rem; }
+.insect-group:last-child { margin-bottom: 0; }
+
+.insect-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.insect-label.pollinator { color: #065f46; }
+.insect-label.beneficial { color: #1e40af; }
+.insect-label.pest       { color: #991b1b; }
+
+.insect-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+.insect-chip {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.insect-chip.pollinator {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1.5px solid #6ee7b7;
+}
+
+.insect-chip.beneficial {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1.5px solid #93c5fd;
+}
+
+.insect-chip.pest {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1.5px solid #fca5a5;
 }
 
 .countries-section { border-top: 1px solid var(--green-pale); padding-top: 1.5rem; }
