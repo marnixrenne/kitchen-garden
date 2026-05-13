@@ -21,6 +21,7 @@ object Plants : Table("pts_plants") {
     val frostTolerance     = varchar("frost_tolerance", 12).nullable()
     val heightMinCm        = short("height_min_cm").nullable()
     val heightMaxCm        = short("height_max_cm").nullable()
+    val latinName          = varchar("latin_name", 150).nullable()
 
     override val primaryKey = PrimaryKey(id)
 }

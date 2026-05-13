@@ -22,6 +22,7 @@ data class SowingGuide(
 data class PlantDetail(
     val id: UUID,
     val name: String,
+    val latinName: String?,
     val category: String,
     val emoji: String?,
     val imageUrl: String?,

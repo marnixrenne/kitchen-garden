@@ -83,6 +83,7 @@ class PlantRepository {
                 PlantDetail(
                     id               = row[Plants.id],
                     name             = row[Plants.name],
+                    latinName        = row[Plants.latinName],
                     category         = row[Plants.category],
                     emoji            = row[Plants.emoji],
                     imageUrl         = row[Plants.imageUrl],

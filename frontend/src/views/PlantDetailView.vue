@@ -85,6 +85,7 @@ watch(() => route.params.id, (id) => { if (id) loadPlant(id) })
           <span class="detail-emoji">{{ plant.emoji ?? '🌱' }}</span>
           <div class="detail-hero-text">
             <h2>{{ localName }}</h2>
+            <p v-if="plant.latinName" class="latin-name">{{ plant.latinName }}</p>
             <div class="badges">
               <span class="category-badge">{{ t(`categories.${plant.category}`) }}</span>
               <span v-if="plant.sunRequirement" class="sun-badge">
@@ -324,6 +325,13 @@ main {
   font-weight: 700;
   color: var(--green-dark);
   margin-bottom: 0.35rem;
+}
+
+.latin-name {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-muted);
+  margin: 0.1rem 0 0.2rem;
 }
 
 .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.35rem; }
