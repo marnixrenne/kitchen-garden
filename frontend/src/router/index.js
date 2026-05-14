@@ -17,7 +17,7 @@ const router = createRouter({
   routes: [
     { path: '/',               component: LandingView,         meta: { public: true, guestOnly: true } },
     { path: '/login',          component: LoginForm,           meta: { public: true, guestOnly: true } },
-    { path: '/signup',         component: SignupView,          meta: { public: true, guestOnly: true } },
+    { path: '/signup',         component: SignupView,          meta: { public: true } },
     { path: '/verify',         component: VerifyView,          meta: { public: true } },
     { path: '/home',           component: HomeView,            meta: { requiresAuth: true, noAdmin: true } },
     { path: '/garden',         component: GardenView,          meta: { requiresAuth: true, noAdmin: true } },
@@ -29,7 +29,7 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   if (!authInitialized) {
-    await checkAuth()
+    try { await checkAuth() } catch { /* backend unreachable — treat as unauthenticated */ }
     authInitialized = true
   }
 

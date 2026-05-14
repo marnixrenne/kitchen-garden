@@ -1,42 +1,41 @@
 <script setup>
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="landing">
     <nav class="landing-nav">
-      <button class="sign-in-btn" @click="router.push('/login')">Sign in</button>
-      <button class="sign-up-btn" @click="router.push('/signup')">Sign up</button>
+      <button class="sign-in-btn" @click="router.push('/login')">{{ t('landing.signIn') }}</button>
+      <button class="sign-up-btn" @click="router.push('/signup')">{{ t('landing.signUp') }}</button>
     </nav>
 
     <main class="landing-main">
       <div class="hero">
         <div class="hero-icon">🌱</div>
         <h1>Kitchen Garden</h1>
-        <p class="tagline">
-          Know exactly what to seed and when. A simple guide to planning
-          your plant garden through the seasons.
-        </p>
-        <button class="cta-btn" @click="router.push('/login')">Get started</button>
+        <p class="tagline">{{ t('landing.tagline') }}</p>
+        <button class="cta-btn" @click="router.push('/login')">{{ t('landing.cta') }}</button>
       </div>
 
       <div class="features">
         <div class="feature">
           <div class="feature-icon">📅</div>
-          <h2>Month by month</h2>
-          <p>Select any month and instantly see which plants you can start seeding.</p>
+          <h2>{{ t('landing.feature1Title') }}</h2>
+          <p>{{ t('landing.feature1Desc') }}</p>
         </div>
         <div class="feature">
           <div class="feature-icon">🥦</div>
-          <h2>160+ plants</h2>
-          <p>From tomatoes to wakame — covering fruiting, leafy, root, brassica, legume, herb, flower and sea varieties.</p>
+          <h2>{{ t('landing.feature2Title') }}</h2>
+          <p>{{ t('landing.feature2Desc') }}</p>
         </div>
         <div class="feature">
           <div class="feature-icon">🌍</div>
-          <h2>English &amp; Dutch</h2>
-          <p>Fully available in both English and Dutch, tailored to a temperate European climate.</p>
+          <h2>{{ t('landing.feature3Title') }}</h2>
+          <p>{{ t('landing.feature3Desc') }}</p>
         </div>
       </div>
     </main>
