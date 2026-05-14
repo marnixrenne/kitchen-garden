@@ -5,28 +5,12 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.marnixrenne.kitchengarden.plants.*
 import org.marnixrenne.kitchengarden.plants.CompanionPlants
+import org.marnixrenne.kitchengarden.plants.batchResolvedMonthNums
+import org.marnixrenne.kitchengarden.plants.resolvedMonthNums
 import org.springframework.stereotype.Repository
 import java.time.LocalDate
 import java.time.temporal.WeekFields
 import java.util.UUID
-
-private fun resolvedMonthNums(
-    plantIdCol: Column<UUID>,
-    monthNumCol: Column<Int>,
-    countryCodeCol: Column<String?>,
-    plantId: UUID,
-    countryCode: String?,
-): List<Int> {
-    if (countryCode != null) {
-        val country = plantIdCol.table.selectAll()
-            .where { (plantIdCol eq plantId) and (countryCodeCol eq countryCode) }
-            .map { it[monthNumCol] }.sorted()
-        if (country.isNotEmpty()) return country
-    }
-    return plantIdCol.table.selectAll()
-        .where { (plantIdCol eq plantId) and countryCodeCol.isNull() }
-        .map { it[monthNumCol] }.sorted()
-}
 
 private fun resolvedMonthIds(
     plantIdCol: Column<UUID>,
@@ -101,7 +85,6 @@ class GardenRepository {
 
         val vegById = plants.associate { it.first.id to it.first }
 
-        // Companion pairs where both are in the garden
         val companionRows = CompanionPlants.selectAll()
             .where { (CompanionPlants.plantId inList ids) and (CompanionPlants.companionId inList ids) }
             .map { Triple(it[CompanionPlants.plantId], it[CompanionPlants.companionId], it[CompanionPlants.relationship]) }
@@ -109,7 +92,6 @@ class GardenRepository {
         val goodPairIds = companionRows.filter { it.third == "good" }.map { it.first to it.second }.toSet()
         val badPairIds  = companionRows.filter { it.third == "bad"  }.map { it.first to it.second }.toSet()
 
-        // Group by sun requirement
         val sunGroups = plants
             .groupBy { it.second ?: "unknown" }
             .entries
@@ -124,7 +106,6 @@ class GardenRepository {
                         VegPair(va, vb)
                     }
                 SunGroup(sun, members.map { it.first }.sortedBy { it.name }, goodPairs)
-
             }
 
         val conflicts = badPairIds.mapNotNull { (a, b) ->
@@ -137,11 +118,11 @@ class GardenRepository {
     }
 
     fun findWeekSummary(userId: UUID, countryCode: String?): WeekSummary = transaction {
-        val today      = LocalDate.now()
-        val month      = today.monthValue
-        val week       = today.get(WeekFields.ISO.weekOfWeekBasedYear())
-        val weekStart  = today.with(WeekFields.ISO.dayOfWeek(), 1)
-        val weekEnd    = weekStart.plusDays(6)
+        val today     = LocalDate.now()
+        val month     = today.monthValue
+        val week      = today.get(WeekFields.ISO.weekOfWeekBasedYear())
+        val weekStart = today.with(WeekFields.ISO.dayOfWeek(), 1)
+        val weekEnd   = weekStart.plusDays(6)
 
         val ids = GardenPlants.selectAll()
             .where { GardenPlants.userId eq userId }
@@ -184,38 +165,43 @@ class GardenRepository {
             .where { GardenPlants.userId eq userId }
             .map { it[GardenPlants.plantId] }
 
+        if (ids.isEmpty()) return@transaction emptyList()
+
+        // Batch-load all data upfront to avoid N+1 queries
+        val plantRows = Plants.selectAll()
+            .where { Plants.id inList ids }
+            .associateBy { it[Plants.id] }
+
+        val seedingByPlant    = batchResolvedMonthNums(SeedingMonths.plantId,   SeedingMonths.monthNum,   SeedingMonths.countryCode,   ids, countryCode)
+        val harvestingByPlant = batchResolvedMonthNums(HarvestingMonths.plantId, HarvestingMonths.monthNum, HarvestingMonths.countryCode, ids, countryCode)
+
+        val countriesByPlant = (PlantCountries innerJoin Countries)
+            .selectAll()
+            .where { PlantCountries.plantId inList ids }
+            .groupBy({ it[PlantCountries.plantId] }, { Country(it[Countries.code], it[Countries.name]) })
+            .mapValues { it.value.sortedBy { c -> c.name } }
+
         ids.mapNotNull { id ->
-            Plants.selectAll()
-                .where { Plants.id eq id }
-                .map { row ->
-                    val seedingMonths    = resolvedMonthNums(SeedingMonths.plantId,   SeedingMonths.monthNum,   SeedingMonths.countryCode,   id, countryCode)
-                    val harvestingMonths = resolvedMonthNums(HarvestingMonths.plantId, HarvestingMonths.monthNum, HarvestingMonths.countryCode, id, countryCode)
-                    val countries = (PlantCountries innerJoin Countries)
-                        .selectAll()
-                        .where { PlantCountries.plantId eq id }
-                        .map { Country(it[Countries.code], it[Countries.name]) }
-                        .sortedBy { it.name }
-                    PlantDetail(
-                        id               = row[Plants.id],
-                        name             = row[Plants.name],
-                        latinName        = row[Plants.latinName],
-                        category         = row[Plants.category],
-                        emoji            = row[Plants.emoji],
-                        imageUrl         = row[Plants.imageUrl],
-                        sunRequirement   = null,
-                        pruningType      = null,
-                        pruningTip       = null,
-                        sowingGuide      = null,
-                        heightMinCm      = row[Plants.heightMinCm]?.toInt(),
-                        heightMaxCm      = row[Plants.heightMaxCm]?.toInt(),
-                        seedingMonths    = seedingMonths,
-                        harvestingMonths = harvestingMonths,
-                        countries        = countries,
-                        companions       = emptyList(),
-                        insects          = emptyList(),
-                    )
-                }
-                .firstOrNull()
+            val row = plantRows[id] ?: return@mapNotNull null
+            PlantDetail(
+                id               = row[Plants.id],
+                name             = row[Plants.name],
+                latinName        = row[Plants.latinName],
+                category         = row[Plants.category],
+                emoji            = row[Plants.emoji],
+                imageUrl         = row[Plants.imageUrl],
+                sunRequirement   = null,
+                pruningType      = null,
+                pruningTip       = null,
+                sowingGuide      = null,
+                heightMinCm      = row[Plants.heightMinCm]?.toInt(),
+                heightMaxCm      = row[Plants.heightMaxCm]?.toInt(),
+                seedingMonths    = seedingByPlant[id] ?: emptyList(),
+                harvestingMonths = harvestingByPlant[id] ?: emptyList(),
+                countries        = countriesByPlant[id] ?: emptyList(),
+                companions       = emptyList(),
+                insects          = emptyList(),
+            )
         }.sortedBy { it.name }
     }
 }

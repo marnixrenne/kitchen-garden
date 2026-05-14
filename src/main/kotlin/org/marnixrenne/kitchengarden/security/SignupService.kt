@@ -1,5 +1,6 @@
 package org.marnixrenne.kitchengarden.security
 
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -19,8 +20,9 @@ class SignupService(
 
     private val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
 
-    // Simple in-memory rate limiter: max 3 signup attempts per email per hour
     private val signupAttempts = ConcurrentHashMap<String, MutableList<Long>>()
+    private val rateLimitWindowMs = 60 * 60 * 1_000L
+    private val rateLimitMax = 3
 
     fun initiateSignup(email: String) {
         if (!emailRegex.matches(email)) throw IllegalArgumentException("Invalid email address")
@@ -58,7 +60,7 @@ class SignupService(
                   <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 </head>
                 <body style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:2rem;color:#1b4332">
-                  <h2 style="margin-bottom:0.5rem">🌱 Kitchen Garden</h2>
+                  <h2 style="margin-bottom:0.5rem">Kitchen Garden</h2>
                   <p style="color:#52796f;margin-bottom:1.5rem">Verify your email address to complete your registration.</p>
                   <a href="$verifyUrl" target="_blank" rel="noopener noreferrer"
                      style="display:inline-block;padding:0.75rem 1.5rem;background:#2d6a4f;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:1rem">
@@ -75,7 +77,6 @@ class SignupService(
         )
     }
 
-    /** Returns the email address if the token is valid and unexpired, null otherwise. */
     fun validateToken(tokenStr: String): String? {
         val token = runCatching { UUID.fromString(tokenStr) }.getOrNull() ?: return null
         return transaction {
@@ -99,24 +100,32 @@ class SignupService(
 
             val email = row[SignupTokens.email]
 
-            if (Users.selectAll().where { Users.username eq email }.count() > 0)
-                throw IllegalArgumentException("Token expired or invalid")
+            // Delete the token before inserting the user to prevent concurrent completions.
+            // The DELETE succeeds for exactly one concurrent request; the other gets 0 rows
+            // deleted and must re-read the token — which will be missing — and fail.
+            val deleted = SignupTokens.deleteWhere { SignupTokens.token eq token }
+            if (deleted == 0) throw IllegalArgumentException("Token expired or invalid")
 
-            val hash: String = passwordEncoder.encode(password).toString()
-            Users.insert {
-                it[Users.id]          = UUID.randomUUID()
-                it[Users.username]    = email
-                it[Users.password]    = hash
-                it[Users.displayName] = email
-                it[Users.email]       = email as String?
+            try {
+                val hash = passwordEncoder.encode(password).toString()
+                Users.insert {
+                    it[Users.id]          = UUID.randomUUID()
+                    it[Users.username]    = email
+                    it[Users.password]    = hash
+                    it[Users.displayName] = email
+                    it[Users.email]       = email
+                }
+            } catch (e: ExposedSQLException) {
+                val msg = e.message.orEmpty().lowercase()
+                if ("unique" in msg || "duplicate" in msg)
+                    throw IllegalArgumentException("Token expired or invalid")
+                throw e
             }
-
-            SignupTokens.deleteWhere { SignupTokens.token eq token }
         }
     }
 
     private fun validatePassword(password: String) {
-        require(password.length >= 8)          { "Password must be at least 8 characters" }
+        require(password.length >= 8)              { "Password must be at least 8 characters" }
         require(password.any { it.isUpperCase() }) { "Password must contain an uppercase letter" }
         require(password.any { it.isLowerCase() }) { "Password must contain a lowercase letter" }
         require(password.any { it.isDigit() })     { "Password must contain a digit" }
@@ -124,14 +133,24 @@ class SignupService(
 
     private fun checkSignupRateLimit(email: String) {
         val now = System.currentTimeMillis()
-        val windowMs = 60 * 60 * 1_000L
         val attempts = signupAttempts.getOrPut(email) { mutableListOf() }
         synchronized(attempts) {
-            attempts.removeIf { it < now - windowMs }
-            if (attempts.size >= 3)
+            attempts.removeIf { it < now - rateLimitWindowMs }
+            if (attempts.size >= rateLimitMax)
                 throw IllegalArgumentException("Too many signup requests. Please try again later.")
             attempts.add(now)
         }
+        evictStaleRateLimitEntries(now)
     }
 
+    private fun evictStaleRateLimitEntries(now: Long) {
+        if (signupAttempts.size > 5_000) {
+            signupAttempts.entries.removeIf { (_, v) ->
+                synchronized(v) {
+                    v.removeIf { it < now - rateLimitWindowMs }
+                    v.isEmpty()
+                }
+            }
+        }
+    }
 }

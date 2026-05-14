@@ -2,6 +2,7 @@ package org.marnixrenne.kitchengarden.preferences
 
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.marnixrenne.kitchengarden.security.AppUserDetails
 import org.marnixrenne.kitchengarden.security.Users
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Service
@@ -10,12 +11,16 @@ import java.util.UUID
 @Service
 class PreferenceService(private val repository: PreferenceRepository) {
 
-    private fun resolveUserId(authentication: Authentication): UUID = transaction {
-        Users.selectAll()
-            .where { Users.username eq authentication.name }
-            .map { it[Users.id] }
-            .firstOrNull()
-    } ?: error("Authenticated user not found in database")
+    private fun resolveUserId(authentication: Authentication): UUID {
+        val principal = authentication.principal
+        if (principal is AppUserDetails) return principal.userId
+        return transaction {
+            Users.selectAll()
+                .where { Users.username eq authentication.name }
+                .map { it[Users.id] }
+                .firstOrNull()
+        } ?: error("Authenticated user not found in database")
+    }
 
     fun getAll(authentication: Authentication): Map<String, String> =
         repository.findAll(resolveUserId(authentication))

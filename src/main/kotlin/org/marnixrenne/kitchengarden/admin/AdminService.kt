@@ -42,7 +42,9 @@ class AdminService(private val sessionRegistry: SessionRegistry) {
         }
     }
 
-    fun setDisabled(username: String, disabled: Boolean): Boolean {
+    fun setDisabled(currentUsername: String, username: String, disabled: Boolean): Boolean {
+        require(username != currentUsername) { "Cannot disable your own account" }
+
         val updated = transaction {
             Users.update({ Users.username eq username }) { it[Users.disabled] = disabled }
         }

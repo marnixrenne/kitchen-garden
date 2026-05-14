@@ -4,7 +4,6 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.security.core.authority.SimpleGrantedAuthority
-import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
@@ -26,11 +25,12 @@ class UserDetailsServiceImpl : UserDetailsService {
                 .where { UserRoles.userId eq userRow[Users.id] }
                 .map { SimpleGrantedAuthority(it[RoleAuthorities.authority]) }
 
-            User.builder()
-                .username(userRow[Users.username])
-                .password(userRow[Users.password])
-                .authorities(authorities)
-                .disabled(userRow[Users.disabled])
-                .build()
+            AppUserDetails(
+                userId      = userRow[Users.id],
+                username    = userRow[Users.username],
+                password    = userRow[Users.password],
+                authorities = authorities,
+                enabled     = !userRow[Users.disabled],
+            )
         }
 }

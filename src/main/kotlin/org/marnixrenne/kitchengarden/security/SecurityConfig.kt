@@ -1,5 +1,6 @@
 package org.marnixrenne.kitchengarden.security
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -30,7 +31,9 @@ import org.springframework.web.filter.OncePerRequestFilter
 class SecurityConfig(
     @Value("\${app.base-url}") private val baseUrl: String,
     private val userLoginService: UserLoginService,
+    private val bruteForce: BruteForceProtectionService,
 ) {
+    private val json = ObjectMapper()
 
     @Bean
     fun sessionRegistry(): SessionRegistry = SessionRegistryImpl()
@@ -45,12 +48,9 @@ class SecurityConfig(
                 csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 // Use the non-XOR handler: the JS SPA reads the raw cookie value and sends
                 // it as X-XSRF-TOKEN, so we must not apply XOR-masking on the server side.
-                // (XorCsrfTokenRequestAttributeHandler is Spring Security 7's default but is
-                //  incompatible with the read-cookie-send-header SPA pattern.)
                 csrf.csrfTokenRequestHandler(CsrfTokenRequestAttributeHandler())
                 // Signup and complete-signup are genuinely public endpoints: no authenticated
                 // session is involved, so CSRF adds no meaningful protection here.
-                // (Signup only sends an email; complete requires possessing a UUID from that email.)
                 csrf.ignoringRequestMatchers("/api/auth/signup", "/api/auth/complete")
             }
             .cors { cors -> cors.configurationSource(corsConfigurationSource()) }
@@ -63,7 +63,8 @@ class SecurityConfig(
                 }
             }
             .sessionManagement { session ->
-                session.maximumSessions(-1).sessionRegistry(sessionRegistry)
+                session.sessionFixation { it.newSession() }
+                session.maximumSessions(5).sessionRegistry(sessionRegistry)
             }
             .authorizeHttpRequests { auth ->
                 auth.requestMatchers("/api/health").permitAll()
@@ -71,23 +72,34 @@ class SecurityConfig(
                 auth.requestMatchers("/api/plants/**").permitAll()
                 auth.requestMatchers("/api/admin/**").hasRole("ADMIN")
                 auth.requestMatchers("/api/**").authenticated()
-                auth.anyRequest().permitAll()  // frontend assets and SPA routes are public
+                auth.anyRequest().permitAll()
             }
-            // Eagerly load the deferred CSRF token so the XSRF-TOKEN cookie is written on every response
             .addFilterAfter(CsrfCookieFilter(), UsernamePasswordAuthenticationFilter::class.java)
             .formLogin { form ->
                 form.loginProcessingUrl("/api/auth/login")
                 form.successHandler { _, response, authentication ->
+                    bruteForce.reset(authentication.name)
                     userLoginService.recordLogin(authentication.name)
                     val roles = authentication.authorities.map { it.authority }
                     response.status = HttpServletResponse.SC_OK
                     response.contentType = "application/json"
-                    response.writer.write("""{"username":"${authentication.name}","roles":${roles.joinToString(",", "[", "]") { "\"$it\"" }}}""")
+                    response.writer.write(
+                        json.writeValueAsString(
+                            mapOf("username" to authentication.name, "roles" to roles)
+                        )
+                    )
                 }
-                form.failureHandler { _, response, _ ->
-                    response.status = HttpServletResponse.SC_UNAUTHORIZED
+                form.failureHandler { request, response, _ ->
+                    val username = request.getParameter("username").orEmpty()
+                    bruteForce.recordFailure(username)
+                    val blocked = bruteForce.isBlocked(username)
+                    response.status = if (blocked) HttpServletResponse.SC_FORBIDDEN else HttpServletResponse.SC_UNAUTHORIZED
                     response.contentType = "application/json"
-                    response.writer.write("""{"error":"Invalid username or password"}""")
+                    response.writer.write(
+                        json.writeValueAsString(
+                            mapOf("error" to if (blocked) "Too many failed attempts. Try again later." else "Invalid username or password")
+                        )
+                    )
                 }
             }
             .logout { logout ->
@@ -103,7 +115,7 @@ class SecurityConfig(
                 exceptions.authenticationEntryPoint { _, response, _ ->
                     response.status = HttpServletResponse.SC_UNAUTHORIZED
                     response.contentType = "application/json"
-                    response.writer.write("""{"error":"Unauthorized"}""")
+                    response.writer.write(json.writeValueAsString(mapOf("error" to "Unauthorized")))
                 }
             }
 
@@ -138,8 +150,8 @@ class SecurityConfig(
             filterChain: FilterChain,
         ) {
             when (val attr = request.getAttribute(CsrfToken::class.java.name)) {
-                is CsrfToken      -> attr.token          // already loaded
-                is Supplier<*>    -> (attr.get() as? CsrfToken)?.token  // deferred — loading writes the cookie
+                is CsrfToken   -> attr.token
+                is Supplier<*> -> (attr.get() as? CsrfToken)?.token
             }
             filterChain.doFilter(request, response)
         }

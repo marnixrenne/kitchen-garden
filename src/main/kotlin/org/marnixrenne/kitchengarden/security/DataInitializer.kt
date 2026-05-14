@@ -14,11 +14,15 @@ import java.util.UUID
 @DependsOn("flywayInitializer", "springTransactionManager")
 class DataInitializer(
     private val passwordEncoder: PasswordEncoder,
-    @Value("\${app.admin.password:admin}") private val adminPassword: String,
+    @Value("\${app.admin.password}") private val adminPassword: String,
 ) {
 
     @PostConstruct
     fun init() {
+        require(adminPassword.isNotBlank()) {
+            "ADMIN_PASSWORD must be set — refusing to start with a blank admin password"
+        }
+
         transaction {
             if (Users.selectAll().count() == 0L) {
                 val adminId = UUID.randomUUID()

@@ -6,7 +6,7 @@ import org.jetbrains.exposed.sql.javatime.timestamp
 object Users : Table("sec_users") {
     val id          = uuid("id")
     val username    = varchar("username", 50)
-    val password    = varchar("password", 100)
+    val password    = varchar("password", 255)
     val displayName = varchar("display_name", 100)
     val email       = varchar("email", 200).nullable()
     val lastLogin   = timestamp("last_login").nullable()

@@ -12,12 +12,12 @@ class PlantApiTest : IntegrationTestBase() {
     @Autowired lateinit var jdbc: JdbcTemplate
 
     @Test
-    fun `GET plants returns all 157 plants when no month given`() {
+    fun `GET plants returns all 181 plants when no month given`() {
         mvc.get("/api/plants")
             .andExpect {
                 status { isOk() }
                 content { contentTypeCompatibleWith(MediaType.APPLICATION_JSON) }
-                jsonPath("$.length()") { value(169) }
+                jsonPath("$.length()") { value(181) }
             }
     }
 

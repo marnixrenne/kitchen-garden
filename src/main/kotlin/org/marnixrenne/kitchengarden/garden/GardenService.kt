@@ -3,6 +3,7 @@ package org.marnixrenne.kitchengarden.garden
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.marnixrenne.kitchengarden.preferences.PreferenceService
+import org.marnixrenne.kitchengarden.security.AppUserDetails
 import org.marnixrenne.kitchengarden.security.Users
 import org.marnixrenne.kitchengarden.plants.PlantDetail
 import org.springframework.security.core.Authentication
@@ -15,12 +16,16 @@ class GardenService(
     private val preferenceService: PreferenceService,
 ) {
 
-    private fun resolveUserId(authentication: Authentication): UUID = transaction {
-        Users.selectAll()
-            .where { Users.username eq authentication.name }
-            .map { it[Users.id] }
-            .firstOrNull()
-    } ?: error("Authenticated user not found in database")
+    private fun resolveUserId(authentication: Authentication): UUID {
+        val principal = authentication.principal
+        if (principal is AppUserDetails) return principal.userId
+        return transaction {
+            Users.selectAll()
+                .where { Users.username eq authentication.name }
+                .map { it[Users.id] }
+                .firstOrNull()
+        } ?: error("Authenticated user not found in database")
+    }
 
     fun getPlantIds(authentication: Authentication): Set<UUID> =
         repository.findPlantIds(resolveUserId(authentication))

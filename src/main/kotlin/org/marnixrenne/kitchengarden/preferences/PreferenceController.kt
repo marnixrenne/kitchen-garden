@@ -24,8 +24,8 @@ class PreferenceController(private val preferenceService: PreferenceService) {
             return ResponseEntity.badRequest().body(mapOf("error" to "Invalid preference key"))
         val value = body["value"]
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "Value is required"))
-        if (value.length > 1000)
-            return ResponseEntity.badRequest().body(mapOf("error" to "Value too long (max 1000 characters)"))
+        if (value.length > 500)
+            return ResponseEntity.badRequest().body(mapOf("error" to "Value too long (max 500 characters)"))
         preferenceService.set(authentication, key, value)
         return ResponseEntity.noContent().build<Unit>()
     }

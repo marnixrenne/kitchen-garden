@@ -42,8 +42,8 @@ class PlantRepository {
         Plants.selectAll()
             .where { Plants.id eq id }
             .map { row ->
-                val seedingMonths    = resolvedSeedingMonths(id, countryCode)
-                val harvestingMonths = resolvedHarvestingMonths(id, countryCode)
+                val seedingMonths    = resolvedMonthNums(SeedingMonths.plantId,   SeedingMonths.monthNum,   SeedingMonths.countryCode,   id, countryCode)
+                val harvestingMonths = resolvedMonthNums(HarvestingMonths.plantId, HarvestingMonths.monthNum, HarvestingMonths.countryCode, id, countryCode)
                 val countries = (PlantCountries innerJoin Countries)
                     .selectAll()
                     .where { PlantCountries.plantId eq id }
@@ -129,7 +129,6 @@ class PlantRepository {
         }
     }
 
-    // Returns plant IDs that are seedable in the given month, respecting country fallback.
     internal fun seedingIdsForMonth(month: Int, countryCode: String?): List<UUID> {
         if (countryCode == null) {
             return SeedingMonths.selectAll()
@@ -153,29 +152,5 @@ class PlantRepository {
             .map { it[SeedingMonths.plantId] }
 
         return fromCountry + fromGlobal
-    }
-
-    private fun resolvedSeedingMonths(plantId: UUID, countryCode: String?): List<Int> {
-        if (countryCode != null) {
-            val country = SeedingMonths.selectAll()
-                .where { (SeedingMonths.plantId eq plantId) and (SeedingMonths.countryCode eq countryCode) }
-                .map { it[SeedingMonths.monthNum] }.sorted()
-            if (country.isNotEmpty()) return country
-        }
-        return SeedingMonths.selectAll()
-            .where { (SeedingMonths.plantId eq plantId) and SeedingMonths.countryCode.isNull() }
-            .map { it[SeedingMonths.monthNum] }.sorted()
-    }
-
-    private fun resolvedHarvestingMonths(plantId: UUID, countryCode: String?): List<Int> {
-        if (countryCode != null) {
-            val country = HarvestingMonths.selectAll()
-                .where { (HarvestingMonths.plantId eq plantId) and (HarvestingMonths.countryCode eq countryCode) }
-                .map { it[HarvestingMonths.monthNum] }.sorted()
-            if (country.isNotEmpty()) return country
-        }
-        return HarvestingMonths.selectAll()
-            .where { (HarvestingMonths.plantId eq plantId) and HarvestingMonths.countryCode.isNull() }
-            .map { it[HarvestingMonths.monthNum] }.sorted()
     }
 }
