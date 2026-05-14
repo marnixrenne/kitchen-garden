@@ -52,17 +52,21 @@ class SignupService(
             text    = "Click the link below to complete your registration:\n\n$verifyUrl\n\nThe link expires in 24 hours.",
             html    = """
                 <!DOCTYPE html>
-                <html>
+                <html lang="en">
+                <head>
+                  <meta charset="UTF-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                </head>
                 <body style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:2rem;color:#1b4332">
                   <h2 style="margin-bottom:0.5rem">🌱 Kitchen Garden</h2>
                   <p style="color:#52796f;margin-bottom:1.5rem">Verify your email address to complete your registration.</p>
-                  <a href="$verifyUrl"
-                     style="display:inline-block;padding:0.75rem 1.5rem;background:#2d6a4f;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">
+                  <a href="$verifyUrl" target="_blank" rel="noopener noreferrer"
+                     style="display:inline-block;padding:0.75rem 1.5rem;background:#2d6a4f;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:1rem">
                     Verify my email
                   </a>
                   <p style="margin-top:1.5rem;font-size:0.85rem;color:#52796f">
                     Or copy this link into your browser:<br>
-                    <a href="$verifyUrl" style="color:#2d6a4f;word-break:break-all">$verifyUrl</a>
+                    <a href="$verifyUrl" target="_blank" rel="noopener noreferrer" style="color:#2d6a4f;word-break:break-all">$verifyUrl</a>
                   </p>
                   <p style="font-size:0.8rem;color:#52796f">This link expires in 24 hours.</p>
                 </body>
