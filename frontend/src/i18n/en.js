@@ -146,6 +146,7 @@ export default {
   },
   seedingMonths: 'Seeding months',
   harvestingMonths: 'Harvesting months',
+  growingCalendar: 'Growing calendar',
   home: 'Explore',
   myGarden: 'My garden',
   garden: {

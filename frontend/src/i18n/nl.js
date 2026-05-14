@@ -146,6 +146,7 @@ export default {
   },
   seedingMonths: 'Zaaimaanden',
   harvestingMonths: 'Oogstmaanden',
+  growingCalendar: 'Groeikalender',
   home: 'Ontdekken',
   myGarden: 'Mijn tuin',
   garden: {

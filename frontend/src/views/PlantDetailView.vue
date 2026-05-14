@@ -33,6 +33,15 @@ const pollinators = computed(() => plant.value?.insects.filter(i => i.type === '
 const beneficials = computed(() => plant.value?.insects.filter(i => i.type === 'beneficial') ?? [])
 const pests       = computed(() => plant.value?.insects.filter(i => i.type === 'pest')       ?? [])
 
+function monthType(m) {
+  const sow     = plant.value.seedingMonths.includes(m)
+  const harvest = plant.value.harvestingMonths.includes(m)
+  if (sow && harvest) return 'both'
+  if (sow)            return 'sow'
+  if (harvest)        return 'harvest'
+  return null
+}
+
 const pruningTipText = computed(() => {
   if (!plant.value?.pruningType) return ''
   const key = `pruning.tips.${plant.value.name}`
@@ -162,30 +171,27 @@ watch(() => route.params.id, (id) => { if (id) loadPlant(id) })
         </div>
 
         <div class="months-section">
-          <h3>{{ t('seedingMonths') }}</h3>
-          <div class="months-grid">
-            <div
-              v-for="(name, i) in months"
-              :key="i"
-              class="month-chip"
-              :class="{ active: plant.seedingMonths.includes(i + 1) }"
-            >
-              {{ name }}
-            </div>
+          <h3>{{ t('growingCalendar') }}</h3>
+          <div class="months-legend">
+            <span class="legend-item"><span class="legend-swatch sow" />{{ t('garden.toSow') }}</span>
+            <span class="legend-item"><span class="legend-swatch harvest" />{{ t('garden.toHarvest') }}</span>
+            <span class="legend-item"><span class="legend-swatch both" />{{ t('garden.both') }}</span>
           </div>
-        </div>
-
-        <div class="months-section">
-          <h3>{{ t('harvestingMonths') }}</h3>
-          <div class="months-grid">
-            <div
-              v-for="(name, i) in months"
-              :key="i"
-              class="month-chip harvest"
-              :class="{ active: plant.harvestingMonths.includes(i + 1) }"
-            >
-              {{ name }}
-            </div>
+          <div class="calendar-wrap">
+            <table class="month-calendar">
+              <thead>
+                <tr>
+                  <th v-for="(name, i) in months" :key="i" class="month-col">{{ name }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td v-for="m in 12" :key="m" class="month-cell">
+                    <span v-if="monthType(m)" class="cell-bar" :class="monthType(m)" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -424,42 +430,77 @@ main {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.65rem;
 }
 
-.months-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
+.months-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.85rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
   gap: 0.4rem;
-}
-
-@media (max-width: 480px) {
-  .months-grid { grid-template-columns: repeat(4, 1fr); }
-}
-
-@media (max-width: 360px) {
-  .months-grid { grid-template-columns: repeat(3, 1fr); }
-}
-
-.month-chip {
-  padding: 0.45rem 0.25rem;
-  text-align: center;
-  border-radius: 6px;
   font-size: 0.8rem;
-  font-weight: 600;
-  background: var(--bg);
   color: var(--text-muted);
 }
 
-.month-chip.active {
-  background: var(--green-mid);
-  color: #fff;
+.legend-swatch {
+  display: inline-block;
+  width: 24px;
+  height: 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
-.month-chip.harvest.active {
-  background: #d97706;
-  color: #fff;
+.legend-swatch.sow     { background: var(--green-mid); }
+.legend-swatch.harvest { background: #d97706; }
+.legend-swatch.both    { background: linear-gradient(90deg, var(--green-mid) 50%, #d97706 50%); }
+
+.calendar-wrap {
+  overflow-x: auto;
+  border: 1.5px solid var(--green-pale);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  -webkit-overflow-scrolling: touch;
 }
+
+.month-calendar {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 480px;
+}
+
+.month-col {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 0.5rem 0.25rem;
+  border-bottom: 2px solid var(--green-pale);
+  white-space: nowrap;
+  width: calc(100% / 12);
+}
+
+.month-cell {
+  padding: 0.5rem 0.2rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.cell-bar {
+  display: block;
+  height: 10px;
+  border-radius: 5px;
+  margin: 0 2px;
+}
+
+.cell-bar.sow     { background: var(--green-mid); }
+.cell-bar.harvest { background: #d97706; }
+.cell-bar.both    { background: linear-gradient(90deg, var(--green-mid) 50%, #d97706 50%); }
 
 .insects-section { border-top: 1px solid var(--green-pale); padding-top: 1.5rem; }
 
