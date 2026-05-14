@@ -15,11 +15,14 @@ const loading  = ref(false)
 async function submit() {
   error.value   = false
   loading.value = true
-  const ok = await login(username.value, password.value)
-  if (ok) {
-    router.push('/home')
-  } else {
-    error.value   = true
+  try {
+    const ok = await login(username.value, password.value)
+    if (ok) {
+      router.push('/home')
+    } else {
+      error.value = true
+    }
+  } finally {
     loading.value = false
   }
 }

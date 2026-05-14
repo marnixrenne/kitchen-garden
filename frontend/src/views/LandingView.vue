@@ -30,8 +30,8 @@ const router = useRouter()
         </div>
         <div class="feature">
           <div class="feature-icon">🥦</div>
-          <h2>24 plants</h2>
-          <p>From tomatoes to fennel — covering fruiting, leafy, root, brassica, legume and herb varieties.</p>
+          <h2>160+ plants</h2>
+          <p>From tomatoes to wakame — covering fruiting, leafy, root, brassica, legume, herb, flower and sea varieties.</p>
         </div>
         <div class="feature">
           <div class="feature-icon">🌍</div>

@@ -26,8 +26,16 @@ function cellType(plant, month) {
   return null
 }
 
-function hasSowing(month)     { return sortedPlants.value.some(v => v.seedingMonths.includes(month)) }
-function hasHarvesting(month) { return sortedPlants.value.some(v => v.harvestingMonths.includes(month)) }
+const sowingMonthSet = computed(() => {
+  const s = new Set()
+  for (const p of sortedPlants.value) for (const m of p.seedingMonths) s.add(m)
+  return s
+})
+const harvestingMonthSet = computed(() => {
+  const s = new Set()
+  for (const p of sortedPlants.value) for (const m of p.harvestingMonths) s.add(m)
+  return s
+})
 
 const toSow     = computed(() => selectedMonth.value == null ? [] :
   sortedPlants.value.filter(v => v.seedingMonths.includes(selectedMonth.value)))
@@ -100,7 +108,7 @@ function downloadIcal() {
   a.href     = url
   a.download = 'kitchen-garden.ics'
   a.click()
-  URL.revokeObjectURL(url)
+  setTimeout(() => URL.revokeObjectURL(url), 100)
 }
 
 function plantName(plant) {
@@ -117,7 +125,7 @@ function weekRangeLabel(s) {
   return `${t('garden.week')} ${s.week} · ${range}`
 }
 
-function weekActionHints(action) {
+function hintsFor(action) {
   const hints = []
   if (action.type !== 'harvest') {
     if (action.sowingMethod === 'indoor') hints.push(t('garden.hintIndoor'))
@@ -132,6 +140,11 @@ function weekActionHints(action) {
   }
   return hints
 }
+
+const actionHints = computed(() => {
+  if (!weekSummary.value) return new Map()
+  return new Map(weekSummary.value.actions.map(a => [a.plant.id, hintsFor(a)]))
+})
 
 onMounted(async () => {
   const [detailsRes, suggestionsRes, weekRes] = await Promise.all([
@@ -178,15 +191,16 @@ onMounted(async () => {
         <table class="calendar">
           <thead>
             <tr>
-              <th class="plant-col-header"></th>
+              <th scope="col" class="plant-col-header"></th>
               <th
                 v-for="(name, i) in months"
                 :key="i"
+                scope="col"
                 class="month-header"
                 :class="{
-                  selected:     selectedMonth === i + 1,
-                  'has-sow':    hasSowing(i + 1),
-                  'has-harvest':hasHarvesting(i + 1),
+                  selected:      selectedMonth === i + 1,
+                  'has-sow':     sowingMonthSet.has(i + 1),
+                  'has-harvest': harvestingMonthSet.has(i + 1),
                 }"
                 @click="selectMonth(i + 1)"
               >
@@ -200,7 +214,13 @@ onMounted(async () => {
               :key="plant.id"
               class="plant-row"
             >
-              <td class="plant-name" @click="router.push(`/plant/${plant.id}`)">
+              <td
+                class="plant-name"
+                role="button"
+                tabindex="0"
+                @click="router.push(`/plant/${plant.id}`)"
+                @keydown.enter="router.push(`/plant/${plant.id}`)"
+              >
                 <span class="plant-emoji">{{ plant.emoji ?? '🌱' }}</span>
                 <span>{{ plantName(plant) }}</span>
               </td>
@@ -233,7 +253,10 @@ onMounted(async () => {
                 v-for="plant in toSow"
                 :key="plant.id"
                 class="plant-chip"
+                role="button"
+                tabindex="0"
                 @click="router.push(`/plant/${plant.id}`)"
+                @keydown.enter="router.push(`/plant/${plant.id}`)"
               >
                 <span>{{ plant.emoji ?? '🌱' }}</span>
                 <span>{{ plantName(plant) }}</span>
@@ -247,7 +270,10 @@ onMounted(async () => {
                 v-for="plant in toHarvest"
                 :key="plant.id"
                 class="plant-chip"
+                role="button"
+                tabindex="0"
                 @click="router.push(`/plant/${plant.id}`)"
+                @keydown.enter="router.push(`/plant/${plant.id}`)"
               >
                 <span>{{ plant.emoji ?? '🌱' }}</span>
                 <span>{{ plantName(plant) }}</span>
@@ -270,7 +296,10 @@ onMounted(async () => {
             v-for="action in weekSummary.actions"
             :key="action.plant.id"
             class="week-action"
+            role="button"
+            tabindex="0"
             @click="router.push(`/plant/${action.plant.id}`)"
+            @keydown.enter="router.push(`/plant/${action.plant.id}`)"
           >
             <span class="week-action-emoji">{{ action.plant.emoji ?? '🌱' }}</span>
             <div class="week-action-body">
@@ -280,8 +309,8 @@ onMounted(async () => {
                   {{ action.type === 'sow' ? t('garden.actionSow') : action.type === 'harvest' ? t('garden.actionHarvest') : t('garden.actionBoth') }}
                 </span>
               </div>
-              <div v-if="weekActionHints(action).length" class="week-action-hints">
-                {{ weekActionHints(action).join(' · ') }}
+              <div v-if="actionHints.get(action.plant.id)?.length" class="week-action-hints">
+                {{ actionHints.get(action.plant.id).join(' · ') }}
               </div>
             </div>
           </div>
@@ -303,7 +332,10 @@ onMounted(async () => {
                 v-for="v in group.plants"
                 :key="v.id"
                 class="sg-chip"
+                role="button"
+                tabindex="0"
                 @click="router.push(`/plant/${v.id}`)"
+                @keydown.enter="router.push(`/plant/${v.id}`)"
               >
                 {{ v.emoji ?? '🌱' }} {{ plantName(v) }}
               </div>
@@ -330,6 +362,7 @@ onMounted(async () => {
 
 <style scoped>
 main {
+  --harvest-color: #d97706;
   max-width: 960px;
   margin: 0 auto;
   padding: 1.5rem 1rem 4rem;
@@ -466,7 +499,7 @@ main {
   white-space: nowrap;
 }
 
-.week-action-badge.sow     { background: #dcfce7; color: #166534; }
+.week-action-badge.sow     { background: var(--green-pale); color: var(--green-dark); }
 .week-action-badge.harvest { background: #fef3c7; color: #92400e; }
 .week-action-badge.both    { background: #ede9fe; color: #4c1d95; }
 
@@ -500,8 +533,8 @@ main {
 }
 
 .legend-swatch.sow     { background: var(--green-mid); }
-.legend-swatch.harvest { background: #d97706; }
-.legend-swatch.both    { background: linear-gradient(90deg, var(--green-mid) 50%, #d97706 50%); }
+.legend-swatch.harvest { background: var(--harvest-color); }
+.legend-swatch.both    { background: linear-gradient(90deg, var(--green-mid) 50%, var(--harvest-color) 50%); }
 
 /* Calendar */
 .calendar-wrap {
@@ -559,9 +592,9 @@ main {
 }
 
 .month-header.has-sow::after    { background: var(--green-mid); }
-.month-header.has-harvest::after { background: #d97706; }
+.month-header.has-harvest::after { background: var(--harvest-color); }
 .month-header.has-sow.has-harvest::after {
-  background: linear-gradient(90deg, var(--green-mid) 50%, #d97706 50%);
+  background: linear-gradient(90deg, var(--green-mid) 50%, var(--harvest-color) 50%);
 }
 
 .month-header:hover  { background: var(--bg); color: var(--green-dark); }
@@ -604,8 +637,8 @@ main {
 }
 
 .cell-bar.sow     { background: var(--green-mid); }
-.cell-bar.harvest { background: #d97706; }
-.cell-bar.both    { background: linear-gradient(90deg, var(--green-mid) 50%, #d97706 50%); }
+.cell-bar.harvest { background: var(--harvest-color); }
+.cell-bar.both    { background: linear-gradient(90deg, var(--green-mid) 50%, var(--harvest-color) 50%); }
 
 /* Activity panel */
 .activity {
@@ -634,7 +667,7 @@ main {
 }
 
 .section-title.sow     { color: var(--green-mid); }
-.section-title.harvest { color: #d97706; }
+.section-title.harvest { color: var(--harvest-color); }
 
 .plant-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
@@ -730,49 +763,53 @@ main {
   gap: 0.4rem;
   padding: 0.5rem 0.9rem;
   border-top: 1px solid var(--green-pale);
-  background: #f0fdf4;
+  background: var(--green-pale);
 }
 
 .pairs-label {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #166534;
+  color: var(--green-dark);
   white-space: nowrap;
 }
 
 .pair {
   font-size: 0.78rem;
-  color: #166534;
-  background: #dcfce7;
-  border: 1px solid #bbf7d0;
+  color: var(--green-dark);
+  background: var(--bg);
+  border: 1px solid var(--green-pale);
   border-radius: 20px;
   padding: 0.15rem 0.55rem;
 }
 
 .conflicts {
+  --warn-bg: #fff7ed;
+  --warn-border: #fed7aa;
+  --warn-text: #9a3412;
+  --warn-chip: #ffedd5;
   margin-top: 1rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 0.9rem;
-  background: #fff7ed;
-  border: 1.5px solid #fed7aa;
+  background: var(--warn-bg);
+  border: 1.5px solid var(--warn-border);
   border-radius: var(--radius);
 }
 
 .conflicts-label {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #9a3412;
+  color: var(--warn-text);
   white-space: nowrap;
 }
 
 .conflict-pair {
   font-size: 0.78rem;
-  color: #9a3412;
-  background: #ffedd5;
-  border: 1px solid #fed7aa;
+  color: var(--warn-text);
+  background: var(--warn-chip);
+  border: 1px solid var(--warn-border);
   border-radius: 20px;
   padding: 0.15rem 0.55rem;
 }

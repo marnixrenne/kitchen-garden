@@ -1,9 +1,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { csrfHeaders } from '../stores/auth.js'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const email   = ref('')
 const loading = ref(false)
@@ -35,27 +37,25 @@ async function submit() {
   <div class="page">
     <div class="card">
       <div class="icon">🌱</div>
-      <h1>Create account</h1>
+      <h1>{{ t('signup.title') }}</h1>
 
       <template v-if="sent">
-        <p class="success">
-          Check your inbox — we've sent a verification link to <strong>{{ email }}</strong>.
-        </p>
-        <button class="back-link" @click="router.push('/login')">Back to sign in</button>
+        <p class="success">{{ t('signup.successMessage', { email }) }}</p>
+        <button class="back-link" @click="router.push('/login')">{{ t('signup.backToSignIn') }}</button>
       </template>
 
       <template v-else>
-        <p class="subtitle">Enter your email address and we'll send you a link to get started.</p>
+        <p class="subtitle">{{ t('signup.subtitle') }}</p>
 
         <form @submit.prevent="submit">
           <div class="field">
-            <label for="email">Email address</label>
+            <label for="email">{{ t('signup.emailLabel') }}</label>
             <input
               id="email"
               v-model="email"
               type="email"
               autocomplete="email"
-              placeholder="you@example.com"
+              :placeholder="t('signup.emailPlaceholder')"
               required
             />
           </div>
@@ -63,13 +63,13 @@ async function submit() {
           <p v-if="error" class="error">{{ error }}</p>
 
           <button type="submit" :disabled="loading">
-            {{ loading ? 'Sending…' : 'Send verification link' }}
+            {{ loading ? t('signup.sending') : t('signup.submit') }}
           </button>
         </form>
 
         <p class="footer-link">
-          Already have an account?
-          <button class="inline-link" @click="router.push('/login')">Sign in</button>
+          {{ t('signup.alreadyHaveAccount') }}
+          <button class="inline-link" @click="router.push('/login')">{{ t('signup.signIn') }}</button>
         </p>
       </template>
     </div>

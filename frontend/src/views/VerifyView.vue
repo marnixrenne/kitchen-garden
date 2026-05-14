@@ -1,10 +1,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { csrfHeaders } from '../stores/auth.js'
 
 const route  = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 const status   = ref('loading')   // 'loading' | 'valid' | 'invalid' | 'done'
 const email    = ref('')
@@ -17,7 +19,7 @@ onMounted(async () => {
   const token = route.query.token
   if (!token) { status.value = 'invalid'; return }
 
-  const res = await fetch(`/api/auth/verify/${token}`)
+  const res = await fetch(`/api/auth/verify/${encodeURIComponent(token)}`)
   if (res.ok) {
     const data = await res.json()
     email.value  = data.email
@@ -30,7 +32,7 @@ onMounted(async () => {
 async function submit() {
   error.value = ''
   if (password.value !== confirm.value) {
-    error.value = 'Passwords do not match'
+    error.value = t('verify.passwordMismatch')
     return
   }
   loading.value = true
@@ -62,32 +64,32 @@ async function submit() {
 
       <!-- Loading -->
       <template v-if="status === 'loading'">
-        <p class="center muted">Verifying your link…</p>
+        <p class="center muted">{{ t('verify.verifying') }}</p>
       </template>
 
       <!-- Invalid / expired token -->
       <template v-else-if="status === 'invalid'">
-        <h1>Link invalid or expired</h1>
-        <p class="subtitle">This verification link is no longer valid. Please request a new one.</p>
-        <button class="btn-outline" @click="router.push('/signup')">Back to sign up</button>
+        <h1>{{ t('verify.invalidTitle') }}</h1>
+        <p class="subtitle">{{ t('verify.invalidSubtitle') }}</p>
+        <button class="btn-outline" @click="router.push('/signup')">{{ t('verify.backToSignUp') }}</button>
       </template>
 
       <!-- Account created -->
       <template v-else-if="status === 'done'">
-        <h1>Account created!</h1>
-        <p class="success">Account created for <strong>{{ email }}</strong>. You can now sign in.</p>
-        <button class="btn-primary" @click="router.push('/login')">Go to sign in</button>
+        <h1>{{ t('verify.doneTitle') }}</h1>
+        <p class="success">{{ t('verify.doneSuccess', { email }) }}</p>
+        <button class="btn-primary" @click="router.push('/login')">{{ t('verify.goToSignIn') }}</button>
       </template>
 
       <!-- Set username + password -->
       <template v-else>
-        <h1>Set your password</h1>
-        <p class="subtitle">Creating account for <strong>{{ email }}</strong></p>
+        <h1>{{ t('verify.setPasswordTitle') }}</h1>
+        <p class="subtitle">{{ t('verify.creatingFor', { email }) }}</p>
 
         <form @submit.prevent="submit">
           <input type="email" :value="email" autocomplete="username" style="display:none" />
           <div class="field">
-            <label for="password">Password</label>
+            <label for="password">{{ t('verify.passwordLabel') }}</label>
             <input
               id="password"
               v-model="password"
@@ -98,7 +100,7 @@ async function submit() {
           </div>
 
           <div class="field">
-            <label for="confirm">Confirm password</label>
+            <label for="confirm">{{ t('verify.confirmLabel') }}</label>
             <input
               id="confirm"
               v-model="confirm"
@@ -111,7 +113,7 @@ async function submit() {
           <p v-if="error" class="error">{{ error }}</p>
 
           <button type="submit" class="btn-primary" :disabled="loading">
-            {{ loading ? 'Creating account…' : 'Create account' }}
+            {{ loading ? t('verify.submitting') : t('verify.submit') }}
           </button>
         </form>
       </template>
