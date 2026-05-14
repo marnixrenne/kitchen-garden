@@ -6,7 +6,7 @@ import MonthSelector from '../components/MonthSelector.vue'
 import PlantList from '../components/PlantList.vue'
 import { csrfHeaders } from '../stores/auth.js'
 
-const CATEGORY_ORDER = ['Fruiting', 'Leafy', 'Brassica', 'Root', 'Legume', 'Herb', 'Flower', 'Sea']
+const CATEGORY_ORDER = ['Fruiting', 'Leafy', 'Brassica', 'Root', 'Legume', 'Herb', 'Flower', 'Sea', 'Fruit']
 
 const { t, tm, te } = useI18n()
 const route  = useRoute()

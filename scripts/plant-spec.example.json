@@ -1,0 +1,59 @@
+{
+  "migrationDescription": "add_example_plants",
+
+  "plants": [
+    {
+      "name": "Lemon Balm",
+      "category": "Herb",
+      "emoji": "🌿",
+      "latinName": "Melissa officinalis",
+
+      "seedingMonths": [3, 4, 5],
+      "harvestingMonths": [6, 7, 8, 9],
+
+      "countries": ["NL", "BE", "DE", "FR", "GB", "AT", "CH", "DK", "PL", "SE"],
+
+      "companions": {
+        "good": ["Tomato", "Squash", "Basil"],
+        "bad":  ["Fennel"]
+      },
+
+      "insects": {
+        "pollinators": ["honeybee", "bumblebee", "butterfly", "hoverfly"],
+        "beneficial":  ["ladybird", "lacewing"],
+        "pests":       ["aphid"]
+      },
+
+      "sowing": {
+        "method":              "both",
+        "seedDepthMm":         3,
+        "spacingCm":           30,
+        "germinationMinDays":  14,
+        "germinationMaxDays":  21,
+        "daysToMaturityMin":   60,
+        "daysToMaturityMax":   90,
+        "frostTolerance":      "hardy"
+      },
+
+      "heightCm": { "min": 30, "max": 90 },
+
+      "pruning": {
+        "type": "cutting_back",
+        "tip":  "Cut back by half after the first flush of growth to keep the plant bushy. Divide clumps every 2–3 years in spring."
+      },
+
+      "i18n": {
+        "en": {
+          "name":        "Lemon Balm",
+          "description": "A lemon-scented perennial herb that is easy to grow and very attractive to bees. Can become invasive — grow in a pot or divide regularly.",
+          "pruningTip":  "Cut back by half after the first flush of growth to keep the plant bushy. Divide clumps every 2–3 years in spring."
+        },
+        "nl": {
+          "name":        "Citroenmelisse",
+          "description": "Een citroengeurig vaste-plantenkruid dat eenvoudig te kweken is en bijen aantrekt. Kan invasief worden — kweek in een pot of deel regelmatig.",
+          "pruningTip":  "Knip halverwege na de eerste groeipuls om de plant struikachtig te houden. Deel de pol elke 2–3 jaar in het voorjaar."
+        }
+      }
+    }
+  ]
+}
