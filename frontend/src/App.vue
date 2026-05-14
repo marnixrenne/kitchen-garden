@@ -48,30 +48,32 @@ async function handleLogout() {
 </template>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,400&family=Nunito:wght@400;500;600;700&display=swap');
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --green-dark:  #1b4332;
-  --green-mid:   #2d6a4f;
-  --green-light: #74c69d;
-  --green-pale:  #d8f3dc;
-  --bg:          #f4f1eb;
+  --green-dark:  #3d2b1f;
+  --green-mid:   #c26b3a;
+  --green-light: #e8a87c;
+  --green-pale:  #dfc4a4;
+  --bg:          #fdf6ec;
   --card-bg:     #ffffff;
-  --text:        #1b4332;
-  --text-muted:  #52796f;
-  --radius:      10px;
+  --text:        #3d2b1f;
+  --text-muted:  #7a5a45;
+  --radius:      16px;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Nunito', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
 }
 
 header {
-  background: var(--green-dark);
-  color: #fff;
+  background: #fff;
+  border-bottom: 1.5px dashed var(--green-pale);
   padding: 0.75rem 1.5rem;
 }
 
@@ -84,7 +86,13 @@ header {
   flex-wrap: wrap;
 }
 
-header h1 { font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
+header h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--green-dark);
+  flex-shrink: 0;
+}
 
 .header-nav {
   display: flex;
@@ -94,16 +102,16 @@ header h1 { font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
 
 .header-nav a {
   padding: 0.35rem 0.7rem;
-  border-radius: 6px;
-  color: rgba(255,255,255,0.7);
+  border-radius: 999px;
+  color: var(--text-muted);
   text-decoration: none;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   transition: background 0.15s, color 0.15s;
 }
 
-.header-nav a:hover { color: #fff; background: rgba(255,255,255,0.1); }
-.header-nav a.router-link-active { color: #fff; background: rgba(255,255,255,0.15); }
+.header-nav a:hover { color: var(--green-dark); background: var(--bg); }
+.header-nav a.router-link-active { color: var(--green-mid); background: #fff3ec; }
 
 .header-controls {
   display: flex;
@@ -114,36 +122,36 @@ header h1 { font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
 
 .display-name {
   font-size: 0.85rem;
-  color: rgba(255,255,255,0.7);
+  color: var(--text-muted);
 }
 
 .settings-btn {
   padding: 0.35rem 0.7rem;
-  border: 1.5px solid rgba(255,255,255,0.3);
-  border-radius: 6px;
-  color: rgba(255,255,255,0.7);
+  border: 1.5px dashed var(--green-pale);
+  border-radius: 999px;
+  color: var(--text-muted);
   text-decoration: none;
   font-size: 0.75rem;
-  font-weight: 600;
-  transition: border-color 0.15s, color 0.15s;
+  font-weight: 700;
+  transition: border-color 0.15s, color 0.15s, border-style 0.15s;
 }
 
-.settings-btn:hover { border-color: rgba(255,255,255,0.7); color: #fff; }
-.settings-btn.router-link-active { border-color: #fff; color: #fff; }
+.settings-btn:hover,
+.settings-btn.router-link-active { border-color: var(--green-mid); color: var(--green-mid); border-style: solid; }
 
 .logout-btn {
   padding: 0.35rem 0.7rem;
-  border: 1.5px solid rgba(255,255,255,0.3);
-  border-radius: 6px;
+  border: 1.5px solid var(--green-pale);
+  border-radius: 999px;
   background: transparent;
-  color: rgba(255,255,255,0.8);
+  color: var(--text-muted);
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 
-.logout-btn:hover { border-color: rgba(255,255,255,0.8); color: #fff; }
+.logout-btn:hover { border-color: var(--green-mid); color: var(--green-mid); background: #fff3ec; }
 
 @media (max-width: 540px) {
   .header-top { gap: 0.5rem; padding-bottom: 0.25rem; }

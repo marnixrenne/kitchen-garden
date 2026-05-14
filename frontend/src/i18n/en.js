@@ -200,8 +200,9 @@ export default {
   landing: {
     signIn: 'Sign in',
     signUp: 'Sign up',
-    tagline: 'Know exactly what to seed and when. A simple guide to planning your plant garden through the seasons.',
-    cta: 'Get started',
+    heroTitle: 'Your garden, your seasons.',
+    tagline: 'Know exactly what to seed and when — a simple guide to planning your kitchen garden through the year.',
+    cta: 'Begin planning',
     feature1Title: 'Month by month',
     feature1Desc: 'Select any month and instantly see which plants you can start seeding.',
     feature2Title: '160+ plants',

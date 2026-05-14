@@ -200,8 +200,9 @@ export default {
   landing: {
     signIn: 'Inloggen',
     signUp: 'Registreren',
-    tagline: 'Weet precies wat je kunt zaaien en wanneer. Een eenvoudige gids voor het plannen van je moestuin door de seizoenen.',
-    cta: 'Aan de slag',
+    heroTitle: 'Jouw tuin, jouw seizoenen.',
+    tagline: 'Weet precies wat je kunt zaaien en wanneer — een eenvoudige gids voor het plannen van je moestuin door het jaar.',
+    cta: 'Begin met plannen',
     feature1Title: 'Maand voor maand',
     feature1Desc: 'Selecteer een maand en zie direct welke planten je kunt zaaien.',
     feature2Title: '160+ planten',

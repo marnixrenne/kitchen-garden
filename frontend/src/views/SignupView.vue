@@ -95,8 +95,9 @@ async function submit() {
   max-width: 380px;
   padding: 2.5rem 2rem;
   background: var(--card-bg);
-  border: 1.5px solid var(--green-pale);
-  border-radius: var(--radius);
+  border: 2px solid var(--green-pale);
+  border-radius: 20px;
+  box-shadow: 5px 5px 0 var(--green-pale);
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
@@ -112,6 +113,7 @@ h1 {
   text-align: center;
   font-size: 1.4rem;
   font-weight: 700;
+  font-family: 'Fraunces', serif;
   color: var(--green-dark);
 }
 
@@ -158,15 +160,21 @@ button[type="submit"] {
   background: var(--green-mid);
   color: #fff;
   border: none;
-  border-radius: var(--radius);
+  border-radius: 999px;
+  font-family: 'Nunito', sans-serif;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s;
+  box-shadow: 3px 3px 0 #a85530;
+  transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
 }
 
-button[type="submit"]:hover:not(:disabled) { background: var(--green-dark); }
-button[type="submit"]:disabled { opacity: 0.6; cursor: not-allowed; }
+button[type="submit"]:hover:not(:disabled) {
+  background: #a85530;
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #8a3e1e;
+}
+button[type="submit"]:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
 .success {
   font-size: 0.95rem;
@@ -177,18 +185,19 @@ button[type="submit"]:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .back-link {
   background: none;
-  border: 1.5px solid var(--green-pale);
-  border-radius: var(--radius);
+  border: 1.5px dashed var(--green-pale);
+  border-radius: 999px;
   padding: 0.6rem;
   width: 100%;
   color: var(--green-mid);
+  font-family: 'Nunito', sans-serif;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, border-style 0.15s;
 }
 
-.back-link:hover { border-color: var(--green-mid); }
+.back-link:hover { border-color: var(--green-mid); border-style: solid; }
 
 .footer-link {
   text-align: center;

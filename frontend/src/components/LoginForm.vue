@@ -80,8 +80,9 @@ async function submit() {
   max-width: 360px;
   padding: 2.5rem 2rem;
   background: var(--card-bg);
-  border: 1.5px solid var(--green-pale);
-  border-radius: var(--radius);
+  border: 2px solid var(--green-pale);
+  border-radius: 20px;
+  box-shadow: 5px 5px 0 var(--green-pale);
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
@@ -100,6 +101,7 @@ h1 {
   text-align: center;
   font-size: 1.4rem;
   font-weight: 700;
+  font-family: 'Fraunces', serif;
   color: var(--green-dark);
   margin-bottom: 0.25rem;
 }
@@ -141,13 +143,19 @@ button {
   background: var(--green-mid);
   color: #fff;
   border: none;
-  border-radius: var(--radius);
+  border-radius: 999px;
+  font-family: 'Nunito', sans-serif;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s;
+  box-shadow: 3px 3px 0 #a85530;
+  transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
 }
 
-button:hover:not(:disabled) { background: var(--green-dark); }
-button:disabled { opacity: 0.6; cursor: not-allowed; }
+button:hover:not(:disabled) {
+  background: #a85530;
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #8a3e1e;
+}
+button:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 </style>

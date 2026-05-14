@@ -124,12 +124,13 @@ onMounted(() => {
 
 <style scoped>
 .home-header {
-  background: var(--green-dark);
-  padding: 0 1.5rem 1rem;
+  background: var(--bg);
+  border-bottom: 1.5px dashed var(--green-pale);
+  padding: 0.75rem 1.5rem;
   text-align: center;
 }
 
-.home-header p { color: var(--green-light); font-size: 0.95rem; }
+.home-header p { color: var(--text-muted); font-size: 0.9rem; font-style: italic; }
 
 main { max-width: 860px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
 
