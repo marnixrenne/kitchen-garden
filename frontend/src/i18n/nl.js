@@ -207,8 +207,8 @@ export default {
     feature1Desc: 'Selecteer een maand en zie direct welke planten je kunt zaaien.',
     feature2Title: '160+ planten',
     feature2Desc: 'Van tomaten tot wakame — vrucht-, blad-, wortel-, kool-, peul-, kruid-, bloem- en zeevariëteiten.',
-    feature3Title: 'Engels & Nederlands',
-    feature3Desc: 'Volledig beschikbaar in het Engels en Nederlands, afgestemd op een gematigd Europees klimaat.',
+    feature3Title: 'Engels, Nederlands & Spaans',
+    feature3Desc: 'Volledig beschikbaar in het Engels, Nederlands en Spaans, afgestemd op een gematigd Europees klimaat.',
   },
   login: {
     title: 'Inloggen',

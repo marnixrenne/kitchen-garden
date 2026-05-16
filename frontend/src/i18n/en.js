@@ -207,8 +207,8 @@ export default {
     feature1Desc: 'Select any month and instantly see which plants you can start seeding.',
     feature2Title: '160+ plants',
     feature2Desc: 'From tomatoes to wakame — covering fruiting, leafy, root, brassica, legume, herb, flower and sea varieties.',
-    feature3Title: 'English & Dutch',
-    feature3Desc: 'Fully available in both English and Dutch, tailored to a temperate European climate.',
+    feature3Title: 'English, Dutch & Spanish',
+    feature3Desc: 'Fully available in English, Dutch, and Spanish, tailored to a temperate European climate.',
   },
   login: {
     title: 'Sign in',

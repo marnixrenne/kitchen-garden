@@ -77,6 +77,12 @@ async function setCountry(code) {
           >
             🇳🇱 Nederlands
           </button>
+          <button
+            :class="['lang-btn', { active: locale === 'es' }]"
+            @click="switchLocale('es')"
+          >
+            🇪🇸 Español
+          </button>
         </div>
       </div>
 
