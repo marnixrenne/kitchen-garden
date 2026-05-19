@@ -275,6 +275,9 @@ export default {
     hintGermination: 'Germina en {min}–{max} días',
     hintHarvest: 'Lista para cosechar este mes',
     seedNow: 'Sembrar ahora',
+    loggedAction: {
+      seeding: 'Sembrado',
+    },
     seedModal: {
       title: 'Registrar siembra',
       actionLabel: 'Acción',

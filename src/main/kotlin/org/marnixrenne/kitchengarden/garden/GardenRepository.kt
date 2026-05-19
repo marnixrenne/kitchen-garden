@@ -179,6 +179,10 @@ class GardenRepository {
         val activeIds = seedingIds + harvestingIds
         if (activeIds.isEmpty()) return@transaction WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, emptyList())
 
+        val userId = Garden.selectAll()
+            .where { Garden.id eq gardenId }
+            .first()[Garden.userId]
+
         val actions = Plants.selectAll()
             .where { Plants.id inList activeIds }
             .map { row ->
@@ -196,11 +200,33 @@ class GardenRepository {
                     sowingMethod       = row[Plants.sowingMethod],
                     germinationDaysMin = row[Plants.germinationDaysMin],
                     germinationDaysMax = row[Plants.germinationDaysMax],
+                    logEntries         = emptyList(),
                 )
             }
+
+        val entriesByPlant = (PlantLog innerJoin PlantLogEntry)
+            .selectAll()
+            .where {
+                (PlantLog.userId eq userId) and
+                (PlantLog.plantId inList activeIds.toList()) and
+                (PlantLogEntry.date greaterEq weekStart) and
+                (PlantLogEntry.date lessEq weekEnd)
+            }
+            .orderBy(PlantLogEntry.date)
+            .groupBy({ it[PlantLog.plantId] }, { row ->
+                LoggedEntry(
+                    id      = row[PlantLogEntry.id],
+                    action  = row[PlantLogEntry.action],
+                    date    = row[PlantLogEntry.date],
+                    comment = row[PlantLogEntry.comment],
+                )
+            })
+
+        val actionsWithEntries = actions
+            .map { it.copy(logEntries = entriesByPlant[it.plant.id] ?: emptyList()) }
             .sortedWith(compareBy({ it.type }, { it.plant.name }))
 
-        WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, actions)
+        WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, actionsWithEntries)
     }
 
     fun findDetails(gardenId: UUID, countryCode: String?): List<PlantDetail> = transaction {

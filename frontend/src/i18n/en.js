@@ -277,6 +277,9 @@ export default {
     hintGermination: 'Germinates in {min}–{max} days',
     hintHarvest: 'Ready to harvest this month',
     seedNow: 'Seed now',
+    loggedAction: {
+      seeding: 'Seeded',
+    },
     seedModal: {
       title: 'Log seeding',
       actionLabel: 'Action',

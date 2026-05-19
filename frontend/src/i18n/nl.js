@@ -277,6 +277,9 @@ export default {
     hintGermination: 'Kiemt na {min}–{max} dagen',
     hintHarvest: 'Klaar om te oogsten deze maand',
     seedNow: 'Nu zaaien',
+    loggedAction: {
+      seeding: 'Gezaaid',
+    },
     seedModal: {
       title: 'Zaaiactie registreren',
       actionLabel: 'Actie',

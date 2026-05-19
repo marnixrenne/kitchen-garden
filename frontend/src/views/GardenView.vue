@@ -5,7 +5,11 @@ import { useI18n } from 'vue-i18n'
 import { csrfHeaders } from '../stores/auth.js'
 
 const router = useRouter()
-const { t, tm, te } = useI18n()
+const { t, tm, te, locale } = useI18n()
+
+function formatDate(isoDate) {
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString(locale.value, { day: 'numeric', month: 'short' })
+}
 
 const plants        = ref([])
 const suggestions   = ref(null)
@@ -354,6 +358,17 @@ onMounted(async () => {
               <div v-if="actionHints.get(action.plant.id)?.length" class="week-action-hints">
                 {{ actionHints.get(action.plant.id).join(' · ') }}
               </div>
+              <div v-if="action.logEntries?.length" class="week-action-log">
+                <span
+                  v-for="entry in action.logEntries"
+                  :key="entry.id"
+                  class="log-entry"
+                  :title="entry.comment || undefined"
+                >
+                  ✓ {{ t(`garden.loggedAction.${entry.action}`) }} · {{ formatDate(entry.date) }}
+                  <span v-if="entry.comment" class="log-entry-comment">— {{ entry.comment }}</span>
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -597,6 +612,25 @@ main {
   font-size: 0.78rem;
   color: var(--text-muted);
   line-height: 1.4;
+}
+
+.week-action-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.15rem;
+}
+
+.log-entry {
+  font-size: 0.75rem;
+  color: var(--green-dark);
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.log-entry-comment {
+  font-weight: 400;
+  color: var(--text-muted);
 }
 
 .seed-now-btn {
