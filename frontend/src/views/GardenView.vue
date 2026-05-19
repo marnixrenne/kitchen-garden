@@ -18,12 +18,20 @@ const loading       = ref(true)
 const selectedMonth = ref(null)
 
 const plantLog       = ref({})
+const plantPlan      = ref({})
 const expandedPlants = ref(new Set())
 
 function dotTooltip(entry) {
   const action = te(`garden.loggedAction.${entry.action}`) ? t(`garden.loggedAction.${entry.action}`) : entry.action
   const date   = formatDate(entry.date)
   return entry.comment ? `${action} · ${date}\n${entry.comment}` : `${action} · ${date}`
+}
+
+function planDotTooltip(entry) {
+  const action = te(`garden.planAction.${entry.action}`) ? t(`garden.planAction.${entry.action}`) : entry.action
+  const start  = formatDate(entry.plannedDateStart)
+  const end    = formatDate(entry.plannedDateEnd)
+  return entry.plannedDateStart === entry.plannedDateEnd ? `${action} · ${start}` : `${action} · ${start} – ${end}`
 }
 
 function toggleExpand(plantId) {
@@ -37,9 +45,28 @@ function entriesForMonth(plantId, month) {
   return (plantLog.value[plantId] ?? []).filter(e => new Date(e.date + 'T00:00:00').getMonth() + 1 === month)
 }
 
+function planEntriesForMonth(plantId, month) {
+  return (plantPlan.value[plantId] ?? []).filter(e => {
+    const startM = new Date(e.plannedDateStart + 'T00:00:00').getMonth() + 1
+    const endM   = new Date(e.plannedDateEnd   + 'T00:00:00').getMonth() + 1
+    return startM <= endM
+      ? month >= startM && month <= endM
+      : month >= startM || month <= endM  // year-spanning
+  })
+}
+
+function hasExpandContent(plantId) {
+  return (plantLog.value[plantId]?.length ?? 0) > 0 || (plantPlan.value[plantId]?.length ?? 0) > 0
+}
+
 async function fetchPlantLog() {
   const res = await fetch('/api/garden/plant-log')
   if (res.ok) plantLog.value = await res.json()
+}
+
+async function fetchPlantPlan() {
+  const res = await fetch('/api/garden/plan')
+  if (res.ok) plantPlan.value = await res.json()
 }
 
 const seedModal = ref({ open: false, plant: null, date: '', comment: '', saving: false })
@@ -73,6 +100,7 @@ async function submitSeedModal() {
     closeSeedModal()
     await Promise.all([
       fetchPlantLog(),
+      fetchPlantPlan(),
       fetch('/api/garden/week').then(r => r.ok && r.json()).then(data => { if (data) weekSummary.value = data }),
     ])
   } finally {
@@ -109,6 +137,26 @@ const toSow     = computed(() => selectedMonth.value == null ? [] :
   sortedPlants.value.filter(v => v.seedingMonths.includes(selectedMonth.value)))
 const toHarvest = computed(() => selectedMonth.value == null ? [] :
   sortedPlants.value.filter(v => v.harvestingMonths.includes(selectedMonth.value)))
+
+const weekPlanEntries = computed(() => {
+  if (!weekSummary.value) return []
+  const year = new Date().getFullYear()
+  const ws = weekSummary.value
+  const weekStart = new Date(year, ws.weekStartMonth - 1, ws.weekStartDay)
+  const weekEnd   = new Date(year, ws.weekEndMonth   - 1, ws.weekEndDay)
+  const result = []
+  for (const [plantId, entries] of Object.entries(plantPlan.value)) {
+    const plant = plants.value.find(p => p.id === plantId)
+    if (!plant) continue
+    const matching = entries.filter(e => {
+      const start = new Date(e.plannedDateStart + 'T00:00:00')
+      const end   = new Date(e.plannedDateEnd   + 'T00:00:00')
+      return start <= weekEnd && end >= weekStart
+    })
+    if (matching.length) result.push({ plant, entries: matching })
+  }
+  return result
+})
 
 function selectMonth(month) {
   selectedMonth.value = selectedMonth.value === month ? null : month
@@ -224,7 +272,7 @@ onMounted(async () => {
   if (suggestionsRes.ok) suggestions.value = await suggestionsRes.json()
   if (weekRes.ok)        weekSummary.value = await weekRes.json()
   loading.value = false
-  await fetchPlantLog()
+  await Promise.all([fetchPlantLog(), fetchPlantPlan()])
 })
 </script>
 
@@ -288,7 +336,7 @@ onMounted(async () => {
                   @keydown.enter="router.push(`/plant/${plant.id}`)"
                 >
                   <button
-                    v-if="plantLog[plant.id]?.length"
+                    v-if="hasExpandContent(plant.id)"
                     class="expand-btn"
                     :class="{ open: expandedPlants.has(plant.id) }"
                     @click.stop="toggleExpand(plant.id)"
@@ -311,7 +359,7 @@ onMounted(async () => {
                 </td>
               </tr>
               <tr
-                v-if="plantLog[plant.id]?.length && expandedPlants.has(plant.id)"
+                v-if="hasExpandContent(plant.id) && expandedPlants.has(plant.id)"
                 class="log-expand-row"
               >
                 <td class="log-expand-name-cell" />
@@ -326,6 +374,12 @@ onMounted(async () => {
                     :key="entry.id"
                     class="log-entry-dot"
                     :title="dotTooltip(entry)"
+                  />
+                  <span
+                    v-for="entry in planEntriesForMonth(plant.id, m)"
+                    :key="entry.id"
+                    :class="['plan-entry-dot', `plan-dot-${entry.action}`]"
+                    :title="planDotTooltip(entry)"
                   />
                 </td>
               </tr>
@@ -382,7 +436,7 @@ onMounted(async () => {
           <span class="this-week-title">{{ t('garden.thisWeek') }}</span>
           <span class="this-week-label">{{ weekRangeLabel(weekSummary) }}</span>
         </div>
-        <div v-if="weekSummary.actions.length === 0" class="this-week-empty">
+        <div v-if="weekSummary.actions.length === 0 && weekPlanEntries.length === 0" class="this-week-empty">
           {{ t('garden.nothingThisWeek') }}
         </div>
         <div v-else class="week-actions">
@@ -422,6 +476,30 @@ onMounted(async () => {
                 >
                   ✓ {{ t(`garden.loggedAction.${entry.action}`) }} · {{ formatDate(entry.date) }}
                   <span v-if="entry.comment" class="log-entry-comment">— {{ entry.comment }}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div
+            v-for="{ plant, entries } in weekPlanEntries"
+            :key="'plan-' + plant.id"
+            class="week-action"
+            role="button"
+            tabindex="0"
+            @click="router.push(`/plant/${plant.id}`)"
+            @keydown.enter="router.push(`/plant/${plant.id}`)"
+          >
+            <span class="week-action-emoji">{{ plant.emoji ?? '🌱' }}</span>
+            <div class="week-action-body">
+              <div class="week-action-top">
+                <span class="week-action-name">{{ plantName(plant) }}</span>
+                <span
+                  v-for="entry in entries"
+                  :key="entry.id"
+                  class="week-action-badge"
+                  :class="'plan-' + entry.action"
+                >
+                  {{ te(`garden.planAction.${entry.action}`) ? t(`garden.planAction.${entry.action}`) : entry.action }}
                 </span>
               </div>
             </div>
@@ -659,9 +737,13 @@ main {
   white-space: nowrap;
 }
 
-.week-action-badge.sow     { background: var(--green-pale); color: var(--green-dark); }
-.week-action-badge.harvest { background: #fef3c7; color: #92400e; }
-.week-action-badge.both    { background: #ede9fe; color: #4c1d95; }
+.week-action-badge.sow              { background: var(--green-pale); color: var(--green-dark); }
+.week-action-badge.harvest          { background: #fef3c7; color: #92400e; }
+.week-action-badge.both             { background: #ede9fe; color: #4c1d95; }
+.week-action-badge.plan-germination { background: #dcfce7; color: #166534; }
+.week-action-badge.plan-harvest     { background: #fef3c7; color: #92400e; }
+.week-action-badge.plan-pruning     { background: #ede9fe; color: #4c1d95; }
+.week-action-badge.plan-fertilizing { background: #fef2d0; color: #78350f; }
 
 .week-action-hints {
   font-size: 0.78rem;
@@ -870,6 +952,34 @@ main {
 
 .log-entry-dot:hover {
   opacity: 1;
+}
+
+.plan-entry-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--harvest-color);
+  background: transparent;
+  opacity: 0.6;
+  cursor: default;
+  vertical-align: middle;
+}
+
+.plan-entry-dot:hover {
+  opacity: 1;
+}
+
+.plan-dot-germination {
+  border-color: var(--green-mid);
+}
+
+.plan-dot-pruning {
+  border-color: #6d28d9;
+}
+
+.plan-dot-fertilizing {
+  border-color: #92400e;
 }
 
 .plant-emoji { font-size: 1rem; }

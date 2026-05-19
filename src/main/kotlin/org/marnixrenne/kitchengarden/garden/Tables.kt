@@ -41,3 +41,14 @@ object PlantLogEntry : Table("pts_plant_log_entry") {
 
     override val primaryKey = PrimaryKey(id)
 }
+
+object PlantPlanEntry : Table("pts_plant_plan_entry") {
+    val id          = uuid("id")
+    val logEntryId  = uuid("log_entry_id") references PlantLogEntry.id
+    val action      = varchar("action", 30)
+    val plannedDateStart = date("planned_date_start")
+    val plannedDateEnd   = date("planned_date_end")
+    val createdAt   = timestamp("created_at")
+
+    override val primaryKey = PrimaryKey(id)
+}

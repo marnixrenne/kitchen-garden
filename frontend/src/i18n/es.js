@@ -278,6 +278,12 @@ export default {
     loggedAction: {
       seeding: 'Sembrado',
     },
+    planAction: {
+      germination:  'Germinación esperada',
+      harvest:      'Listo para cosechar',
+      pruning:      'Momento de podar',
+      fertilizing:  'Momento de abonar',
+    },
     seedModal: {
       title: 'Registrar siembra',
       actionLabel: 'Acción',

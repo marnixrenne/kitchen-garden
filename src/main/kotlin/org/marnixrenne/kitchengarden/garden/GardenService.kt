@@ -16,6 +16,7 @@ import java.util.UUID
 class GardenService(
     private val repository: GardenRepository,
     private val plantLogRepository: PlantLogRepository,
+    private val plantPlanRepository: PlantPlanRepository,
     private val preferenceService: PreferenceService,
 ) {
 
@@ -66,9 +67,17 @@ class GardenService(
     fun remove(authentication: Authentication, plantId: UUID) =
         repository.remove(resolveDefaultGardenId(authentication), plantId)
 
-    fun logSeeding(authentication: Authentication, request: PlantLogRequest): PlantLogResponse =
-        plantLogRepository.save(resolveUserId(authentication), request)
+    fun logSeeding(authentication: Authentication, request: PlantLogRequest): PlantLogResponse {
+        val entry = plantLogRepository.save(resolveUserId(authentication), request)
+        if (request.action == "seeding") {
+            plantPlanRepository.generateAndSave(entry.id, request.plantId, request.date)
+        }
+        return entry
+    }
 
     fun getPlantLog(authentication: Authentication): Map<UUID, List<LoggedEntry>> =
         plantLogRepository.findAllByUser(resolveUserId(authentication))
+
+    fun getPlan(authentication: Authentication): Map<UUID, List<PlanEntry>> =
+        plantPlanRepository.findByUser(resolveUserId(authentication))
 }

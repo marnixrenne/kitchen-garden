@@ -280,6 +280,12 @@ export default {
     loggedAction: {
       seeding: 'Seeded',
     },
+    planAction: {
+      germination:  'Germination expected',
+      harvest:      'Ready to harvest',
+      pruning:      'Time to prune',
+      fertilizing:  'Time to fertilize',
+    },
     seedModal: {
       title: 'Log seeding',
       actionLabel: 'Action',

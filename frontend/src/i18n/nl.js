@@ -280,6 +280,12 @@ export default {
     loggedAction: {
       seeding: 'Gezaaid',
     },
+    planAction: {
+      germination:  'Verwachte kieming',
+      harvest:      'Klaar om te oogsten',
+      pruning:      'Tijd om te snoeien',
+      fertilizing:  'Tijd om te bemesten',
+    },
     seedModal: {
       title: 'Zaaiactie registreren',
       actionLabel: 'Actie',
