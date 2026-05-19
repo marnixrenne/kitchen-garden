@@ -193,6 +193,8 @@ class GardenRepository {
                 sunRequirement   = null,
                 pruningType      = null,
                 pruningTip       = null,
+                fertilizerType   = null,
+                fertilizerTip    = null,
                 sowingGuide      = null,
                 heightMinCm      = row[Plants.heightMinCm]?.toInt(),
                 heightMaxCm      = row[Plants.heightMaxCm]?.toInt(),

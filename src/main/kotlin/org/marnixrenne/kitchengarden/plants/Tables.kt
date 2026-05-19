@@ -11,6 +11,8 @@ object Plants : Table("pts_plants") {
     val sunRequirement     = varchar("sun_requirement", 15).nullable()
     val pruningType        = varchar("pruning_type", 20).nullable()
     val pruningTip         = text("pruning_tip").nullable()
+    val fertilizerType     = varchar("fertilizer_type", 20).nullable()
+    val fertilizerTip      = text("fertilizer_tip").nullable()
     val sowingMethod       = varchar("sowing_method", 10).nullable()
     val seedDepthMm        = integer("seed_depth_mm").nullable()
     val spacingCm          = integer("spacing_cm").nullable()

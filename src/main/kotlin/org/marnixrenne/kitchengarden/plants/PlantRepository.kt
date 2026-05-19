@@ -90,6 +90,8 @@ class PlantRepository {
                     sunRequirement   = row[Plants.sunRequirement],
                     pruningType      = row[Plants.pruningType],
                     pruningTip       = row[Plants.pruningTip],
+                    fertilizerType   = row[Plants.fertilizerType],
+                    fertilizerTip    = row[Plants.fertilizerTip],
                     sowingGuide      = sowingGuide,
                     heightMinCm      = row[Plants.heightMinCm]?.toInt(),
                     heightMaxCm      = row[Plants.heightMaxCm]?.toInt(),

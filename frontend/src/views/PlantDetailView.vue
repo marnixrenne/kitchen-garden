@@ -48,6 +48,12 @@ const pruningTipText = computed(() => {
   return te(key) ? t(key) : (plant.value.pruningTip ?? '')
 })
 
+const fertilizerTipText = computed(() => {
+  if (!plant.value?.fertilizerType) return ''
+  const key = `fertilizer.tips.${plant.value.name}`
+  return te(key) ? t(key) : (plant.value.fertilizerTip ?? '')
+})
+
 async function toggleGarden() {
   const method = inGarden.value ? 'DELETE' : 'PUT'
   await fetch(`/api/garden/${route.params.id}`, { method, headers: csrfHeaders() })
@@ -168,6 +174,14 @@ watch(() => route.params.id, (id) => { if (id) loadPlant(id) })
           <h3>{{ t('pruning.title') }}</h3>
           <span class="pruning-badge">{{ t(`pruning.type.${plant.pruningType}`) }}</span>
           <p class="pruning-tip">{{ pruningTipText }}</p>
+        </div>
+
+        <div v-if="plant.fertilizerType" class="fertilizer-section">
+          <h3>{{ t('fertilizer.title') }}</h3>
+          <span class="fertilizer-badge" :class="`fertilizer-${plant.fertilizerType}`">
+            {{ t(`fertilizer.type.${plant.fertilizerType}`) }}
+          </span>
+          <p class="fertilizer-tip">{{ fertilizerTipText }}</p>
         </div>
 
         <div class="months-section">
@@ -626,6 +640,38 @@ main {
 }
 
 .pruning-tip {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.fertilizer-section { border-top: 1px solid var(--green-pale); padding-top: 1.5rem; }
+
+.fertilizer-section h3 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.65rem;
+}
+
+.fertilizer-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.65rem;
+}
+
+.fertilizer-heavy_feeder  { background: #dcfce7; color: #166534; }
+.fertilizer-moderate_feeder { background: #d1fae5; color: #065f46; }
+.fertilizer-light_feeder  { background: #f0fdf4; color: #15803d; }
+.fertilizer-none          { background: #f3f4f6; color: #6b7280; }
+
+.fertilizer-tip {
   font-size: 0.9rem;
   line-height: 1.6;
   color: var(--text-muted);

@@ -29,6 +29,8 @@ data class PlantDetail(
     val sunRequirement: String?,
     val pruningType: String?,
     val pruningTip: String?,
+    val fertilizerType: String?,
+    val fertilizerTip: String?,
     val sowingGuide: SowingGuide?,
     val heightMinCm: Int?,
     val heightMaxCm: Int?,
