@@ -17,6 +17,31 @@ const weekSummary   = ref(null)
 const loading       = ref(true)
 const selectedMonth = ref(null)
 
+const plantLog       = ref({})
+const expandedPlants = ref(new Set())
+
+function dotTooltip(entry) {
+  const action = te(`garden.loggedAction.${entry.action}`) ? t(`garden.loggedAction.${entry.action}`) : entry.action
+  const date   = formatDate(entry.date)
+  return entry.comment ? `${action} · ${date}\n${entry.comment}` : `${action} · ${date}`
+}
+
+function toggleExpand(plantId) {
+  const s = new Set(expandedPlants.value)
+  if (s.has(plantId)) s.delete(plantId)
+  else s.add(plantId)
+  expandedPlants.value = s
+}
+
+function entriesForMonth(plantId, month) {
+  return (plantLog.value[plantId] ?? []).filter(e => new Date(e.date + 'T00:00:00').getMonth() + 1 === month)
+}
+
+async function fetchPlantLog() {
+  const res = await fetch('/api/garden/plant-log')
+  if (res.ok) plantLog.value = await res.json()
+}
+
 const seedModal = ref({ open: false, plant: null, date: '', comment: '', saving: false })
 
 function todayIso() {
@@ -46,6 +71,7 @@ async function submitSeedModal() {
       }),
     })
     closeSeedModal()
+    await fetchPlantLog()
   } finally {
     seedModal.value.saving = false
   }
@@ -195,6 +221,7 @@ onMounted(async () => {
   if (suggestionsRes.ok) suggestions.value = await suggestionsRes.json()
   if (weekRes.ok)        weekSummary.value = await weekRes.json()
   loading.value = false
+  await fetchPlantLog()
 })
 </script>
 
@@ -248,33 +275,58 @@ onMounted(async () => {
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="plant in sortedPlants"
-              :key="plant.id"
-              class="plant-row"
-            >
-              <td
-                class="plant-name"
-                role="button"
-                tabindex="0"
-                @click="router.push(`/plant/${plant.id}`)"
-                @keydown.enter="router.push(`/plant/${plant.id}`)"
+            <template v-for="plant in sortedPlants" :key="plant.id">
+              <tr class="plant-row">
+                <td
+                  class="plant-name"
+                  role="button"
+                  tabindex="0"
+                  @click="router.push(`/plant/${plant.id}`)"
+                  @keydown.enter="router.push(`/plant/${plant.id}`)"
+                >
+                  <button
+                    v-if="plantLog[plant.id]?.length"
+                    class="expand-btn"
+                    :class="{ open: expandedPlants.has(plant.id) }"
+                    @click.stop="toggleExpand(plant.id)"
+                    :aria-label="expandedPlants.has(plant.id) ? 'Collapse' : 'Expand'"
+                  >{{ expandedPlants.has(plant.id) ? '−' : '+' }}</button>
+                  <span v-else class="expand-btn-placeholder" />
+                  <span class="plant-emoji">{{ plant.emoji ?? '🌱' }}</span>
+                  <span>{{ plantName(plant) }}</span>
+                </td>
+                <td
+                  v-for="m in 12"
+                  :key="m"
+                  class="cal-cell"
+                  :class="{
+                    selected: selectedMonth === m,
+                    [cellType(plant, m)]: cellType(plant, m) !== null,
+                  }"
+                >
+                  <span v-if="cellType(plant, m)" class="cell-bar" :class="cellType(plant, m)" />
+                </td>
+              </tr>
+              <tr
+                v-if="plantLog[plant.id]?.length && expandedPlants.has(plant.id)"
+                class="log-expand-row"
               >
-                <span class="plant-emoji">{{ plant.emoji ?? '🌱' }}</span>
-                <span>{{ plantName(plant) }}</span>
-              </td>
-              <td
-                v-for="m in 12"
-                :key="m"
-                class="cal-cell"
-                :class="{
-                  selected: selectedMonth === m,
-                  [cellType(plant, m)]: cellType(plant, m) !== null,
-                }"
-              >
-                <span v-if="cellType(plant, m)" class="cell-bar" :class="cellType(plant, m)" />
-              </td>
-            </tr>
+                <td class="log-expand-name-cell" />
+                <td
+                  v-for="m in 12"
+                  :key="m"
+                  class="log-expand-month-cell"
+                  :class="{ selected: selectedMonth === m }"
+                >
+                  <span
+                    v-for="entry in entriesForMonth(plant.id, m)"
+                    :key="entry.id"
+                    class="log-entry-dot"
+                    :title="dotTooltip(entry)"
+                  />
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
@@ -711,6 +763,7 @@ main {
 .plant-col-header {
   width: 160px;
   min-width: 140px;
+  text-align: left;
 }
 
 .month-header {
@@ -758,9 +811,63 @@ main {
   align-items: center;
   gap: 0.4rem;
   transition: background 0.15s;
+  text-align: left;
 }
 
 .plant-name:hover { background: var(--bg); }
+
+.expand-btn-placeholder {
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.expand-btn {
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--green-mid);
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: -0.15rem;
+}
+
+
+.log-expand-row td { border-top: none; }
+
+.log-expand-name-cell {
+  background: var(--bg);
+}
+
+.log-expand-month-cell {
+  text-align: center;
+  padding: 0.25rem 0.2rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--green-pale);
+}
+
+.log-expand-month-cell.selected { background: rgba(216, 243, 220, 0.3); }
+
+.log-entry-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green-dark);
+  opacity: 0.55;
+  cursor: default;
+  vertical-align: middle;
+}
+
+.log-entry-dot:hover {
+  opacity: 1;
+}
 
 .plant-emoji { font-size: 1rem; }
 

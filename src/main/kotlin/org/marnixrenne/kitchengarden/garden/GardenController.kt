@@ -44,6 +44,10 @@ class GardenController(private val gardenService: GardenService) {
         return ResponseEntity.noContent().build()
     }
 
+    @GetMapping("/plant-log")
+    fun getPlantLog(authentication: Authentication): Map<UUID, List<LoggedEntry>> =
+        gardenService.getPlantLog(authentication)
+
     @PostMapping("/plant-log")
     fun logSeeding(
         @RequestBody request: PlantLogRequest,

@@ -68,4 +68,7 @@ class GardenService(
 
     fun logSeeding(authentication: Authentication, request: PlantLogRequest): PlantLogResponse =
         plantLogRepository.save(resolveUserId(authentication), request)
+
+    fun getPlantLog(authentication: Authentication): Map<UUID, List<LoggedEntry>> =
+        plantLogRepository.findAllByUser(resolveUserId(authentication))
 }

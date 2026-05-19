@@ -6,6 +6,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.stereotype.Repository
 import java.time.Instant
 import java.util.UUID
+import org.marnixrenne.kitchengarden.garden.LoggedEntry
 
 @Repository
 class PlantLogRepository {
@@ -44,5 +45,20 @@ class PlantLogRepository {
             date    = request.date,
             comment = request.comment,
         )
+    }
+
+    fun findAllByUser(userId: UUID): Map<UUID, List<LoggedEntry>> = transaction {
+        (PlantLog innerJoin PlantLogEntry)
+            .selectAll()
+            .where { PlantLog.userId eq userId }
+            .orderBy(PlantLogEntry.date, SortOrder.DESC)
+            .groupBy({ it[PlantLog.plantId] }, { row ->
+                LoggedEntry(
+                    id      = row[PlantLogEntry.id],
+                    action  = row[PlantLogEntry.action],
+                    date    = row[PlantLogEntry.date],
+                    comment = row[PlantLogEntry.comment],
+                )
+            })
     }
 }
