@@ -71,7 +71,10 @@ async function submitSeedModal() {
       }),
     })
     closeSeedModal()
-    await fetchPlantLog()
+    await Promise.all([
+      fetchPlantLog(),
+      fetch('/api/garden/week').then(r => r.ok && r.json()).then(data => { if (data) weekSummary.value = data }),
+    ])
   } finally {
     seedModal.value.saving = false
   }
