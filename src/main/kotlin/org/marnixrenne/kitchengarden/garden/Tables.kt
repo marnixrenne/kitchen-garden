@@ -42,6 +42,24 @@ object PlantLogEntry : Table("pts_plant_log_entry") {
     override val primaryKey = PrimaryKey(id)
 }
 
+object PruningSchedules : Table("pts_pruning_schedule") {
+    val pruningType      = varchar("pruning_type", 20)
+    val weeksBeforeStart = integer("weeks_before_start")
+    val weeksBeforeEnd   = integer("weeks_before_end")
+
+    override val primaryKey = PrimaryKey(pruningType)
+}
+
+object FertilizingSchedules : Table("pts_fertilizing_schedule") {
+    val fertilizerType      = varchar("fertilizer_type", 20)
+    val startDaysAfterSeed  = integer("start_days_after_seed")
+    val intervalDays        = integer("interval_days")
+    val windowDays          = integer("window_days")
+    val maxApplications     = integer("max_applications")
+
+    override val primaryKey = PrimaryKey(fertilizerType)
+}
+
 object PlantPlanEntry : Table("pts_plant_plan_entry") {
     val id          = uuid("id")
     val logEntryId  = uuid("log_entry_id") references PlantLogEntry.id

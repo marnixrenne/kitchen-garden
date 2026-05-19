@@ -12,8 +12,8 @@ object PlantPlanCalculator {
         daysToMaturityMin: Int?,
         daysToMaturityMax: Int?,
         harvestMonths: List<Int>,
-        hasPruning: Boolean,
-        hasFertilizing: Boolean,
+        pruningConfig: PruningConfig?,
+        fertilizingConfig: FertilizingConfig?,
     ): List<PlanPeriod> {
         val harvestPeriod = resolveHarvestPeriod(seedDate, daysToMaturityMin, daysToMaturityMax, harvestMonths)
         val periods = mutableListOf<PlanPeriod>()
@@ -27,22 +27,22 @@ object PlantPlanCalculator {
             periods += PlanPeriod("harvest", start, end)
         }
 
-        if (hasPruning && harvestPeriod != null) {
+        if (pruningConfig != null && harvestPeriod != null) {
             val (harvestStart, _) = harvestPeriod
-            val pruningEnd   = harvestStart.minusDays(14)
-            val pruningStart = harvestStart.minusDays(42)
+            val pruningEnd   = harvestStart.minusWeeks(pruningConfig.weeksBeforeEnd.toLong())
+            val pruningStart = harvestStart.minusWeeks(pruningConfig.weeksBeforeStart.toLong())
             if (pruningEnd.isAfter(seedDate)) {
                 periods += PlanPeriod("pruning", maxOf(pruningStart, seedDate.plusDays(1)), pruningEnd)
             }
         }
 
-        if (hasFertilizing && harvestPeriod != null) {
+        if (fertilizingConfig != null && fertilizingConfig.maxApplications > 0 && harvestPeriod != null) {
             val (harvestStart, _) = harvestPeriod
-            var fertStart = seedDate.plusDays(14)
+            var fertStart = seedDate.plusDays(fertilizingConfig.startDaysAfterSeed.toLong())
             var count = 0
-            while (fertStart.isBefore(harvestStart) && count < 3) {
-                periods += PlanPeriod("fertilizing", fertStart, fertStart.plusDays(6))
-                fertStart = fertStart.plusDays(28)
+            while (fertStart.isBefore(harvestStart) && count < fertilizingConfig.maxApplications) {
+                periods += PlanPeriod("fertilizing", fertStart, fertStart.plusDays(fertilizingConfig.windowDays.toLong()))
+                fertStart = fertStart.plusDays(fertilizingConfig.intervalDays.toLong())
                 count++
             }
         }

@@ -5,6 +5,9 @@ import java.util.UUID
 
 data class PlanPeriod(val action: String, val start: LocalDate, val end: LocalDate)
 
+data class PruningConfig(val weeksBeforeStart: Int, val weeksBeforeEnd: Int)
+data class FertilizingConfig(val startDaysAfterSeed: Int, val intervalDays: Int, val windowDays: Int, val maxApplications: Int)
+
 data class PlanEntry(
     val id: UUID,
     val plantId: UUID,

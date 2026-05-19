@@ -3,12 +3,17 @@ package org.marnixrenne.kitchengarden
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.marnixrenne.kitchengarden.garden.FertilizingConfig
 import org.marnixrenne.kitchengarden.garden.PlantPlanCalculator
+import org.marnixrenne.kitchengarden.garden.PruningConfig
 import java.time.LocalDate
 
 class PlantPlanCalculatorTest {
 
     private val seed = LocalDate.of(2025, 4, 1)
+
+    private val defaultPruning     = PruningConfig(weeksBeforeStart = 6, weeksBeforeEnd = 2)
+    private val defaultFertilizing = FertilizingConfig(startDaysAfterSeed = 14, intervalDays = 28, windowDays = 6, maxApplications = 3)
 
     @Test
     fun `germination period uses min and max days`() {
@@ -17,7 +22,7 @@ class PlantPlanCalculatorTest {
             germinationDaysMin = 7, germinationDaysMax = 14,
             daysToMaturityMin = null, daysToMaturityMax = null,
             harvestMonths = emptyList(),
-            hasPruning = false, hasFertilizing = false,
+            pruningConfig = null, fertilizingConfig = null,
         )
         val germination = periods.single { it.action == "germination" }
         assertEquals(seed.plusDays(7),  germination.start)
@@ -31,7 +36,7 @@ class PlantPlanCalculatorTest {
             germinationDaysMin = 10, germinationDaysMax = null,
             daysToMaturityMin = null, daysToMaturityMax = null,
             harvestMonths = emptyList(),
-            hasPruning = false, hasFertilizing = false,
+            pruningConfig = null, fertilizingConfig = null,
         )
         val germination = periods.single { it.action == "germination" }
         assertEquals(germination.start, germination.end)
@@ -44,7 +49,7 @@ class PlantPlanCalculatorTest {
             germinationDaysMin = null, germinationDaysMax = null,
             daysToMaturityMin = 60, daysToMaturityMax = 80,
             harvestMonths = emptyList(),
-            hasPruning = false, hasFertilizing = false,
+            pruningConfig = null, fertilizingConfig = null,
         )
         val harvest = periods.single { it.action == "harvest" }
         assertEquals(seed.plusDays(60), harvest.start)
@@ -58,7 +63,7 @@ class PlantPlanCalculatorTest {
             germinationDaysMin = null, germinationDaysMax = null,
             daysToMaturityMin = null, daysToMaturityMax = null,
             harvestMonths = listOf(7, 8, 9),
-            hasPruning = false, hasFertilizing = false,
+            pruningConfig = null, fertilizingConfig = null,
         )
         val harvest = periods.single { it.action == "harvest" }
         assertEquals(7, harvest.start.monthValue)
@@ -73,25 +78,26 @@ class PlantPlanCalculatorTest {
             germinationDaysMin = null, germinationDaysMax = null,
             daysToMaturityMin = null, daysToMaturityMax = null,
             harvestMonths = listOf(6, 7),
-            hasPruning = false, hasFertilizing = false,
+            pruningConfig = null, fertilizingConfig = null,
         )
         val harvest = periods.single { it.action == "harvest" }
         assertEquals(2026, harvest.start.year)
     }
 
     @Test
-    fun `pruning window is 6 to 2 weeks before harvest start`() {
+    fun `pruning window respects config weeks`() {
+        val config = PruningConfig(weeksBeforeStart = 6, weeksBeforeEnd = 2)
         val periods = PlantPlanCalculator.compute(
             seedDate = seed,
             germinationDaysMin = null, germinationDaysMax = null,
             daysToMaturityMin = 90, daysToMaturityMax = 90,
             harvestMonths = emptyList(),
-            hasPruning = true, hasFertilizing = false,
+            pruningConfig = config, fertilizingConfig = null,
         )
         val harvestStart = seed.plusDays(90)
         val pruning = periods.single { it.action == "pruning" }
-        assertEquals(harvestStart.minusDays(42), pruning.start)
-        assertEquals(harvestStart.minusDays(14), pruning.end)
+        assertEquals(harvestStart.minusWeeks(6), pruning.start)
+        assertEquals(harvestStart.minusWeeks(2), pruning.end)
     }
 
     @Test
@@ -101,23 +107,53 @@ class PlantPlanCalculatorTest {
             germinationDaysMin = null, germinationDaysMax = null,
             daysToMaturityMin = 10, daysToMaturityMax = 10,
             harvestMonths = emptyList(),
-            hasPruning = true, hasFertilizing = false,
+            pruningConfig = defaultPruning, fertilizingConfig = null,
         )
         assertTrue(periods.none { it.action == "pruning" })
     }
 
     @Test
-    fun `fertilizing generates up to three weekly windows`() {
+    fun `fertilizing respects config interval and max applications`() {
+        val config = FertilizingConfig(startDaysAfterSeed = 14, intervalDays = 28, windowDays = 6, maxApplications = 3)
         val periods = PlantPlanCalculator.compute(
             seedDate = seed,
             germinationDaysMin = null, germinationDaysMax = null,
             daysToMaturityMin = 120, daysToMaturityMax = 120,
             harvestMonths = emptyList(),
-            hasPruning = false, hasFertilizing = true,
+            pruningConfig = null, fertilizingConfig = config,
         )
         val fertilizing = periods.filter { it.action == "fertilizing" }
         assertEquals(3, fertilizing.size)
-        fertilizing.forEach { assertEquals(6, it.start.until(it.end).days) }
+        fertilizing.forEach { assertEquals(config.windowDays, it.start.until(it.end).days) }
+        assertEquals(seed.plusDays(14), fertilizing[0].start)
+        assertEquals(seed.plusDays(42), fertilizing[1].start)
+        assertEquals(seed.plusDays(70), fertilizing[2].start)
+    }
+
+    @Test
+    fun `fertilizing is capped by max applications from config`() {
+        val config = FertilizingConfig(startDaysAfterSeed = 14, intervalDays = 14, windowDays = 6, maxApplications = 2)
+        val periods = PlantPlanCalculator.compute(
+            seedDate = seed,
+            germinationDaysMin = null, germinationDaysMax = null,
+            daysToMaturityMin = 120, daysToMaturityMax = 120,
+            harvestMonths = emptyList(),
+            pruningConfig = null, fertilizingConfig = config,
+        )
+        assertEquals(2, periods.count { it.action == "fertilizing" })
+    }
+
+    @Test
+    fun `fertilizing is omitted when max applications is zero`() {
+        val config = FertilizingConfig(startDaysAfterSeed = 0, intervalDays = 0, windowDays = 0, maxApplications = 0)
+        val periods = PlantPlanCalculator.compute(
+            seedDate = seed,
+            germinationDaysMin = null, germinationDaysMax = null,
+            daysToMaturityMin = 120, daysToMaturityMax = 120,
+            harvestMonths = emptyList(),
+            pruningConfig = null, fertilizingConfig = config,
+        )
+        assertTrue(periods.none { it.action == "fertilizing" })
     }
 
     @Test
@@ -127,7 +163,7 @@ class PlantPlanCalculatorTest {
             germinationDaysMin = null, germinationDaysMax = null,
             daysToMaturityMin = 10, daysToMaturityMax = 10,
             harvestMonths = emptyList(),
-            hasPruning = false, hasFertilizing = true,
+            pruningConfig = null, fertilizingConfig = defaultFertilizing,
         )
         assertTrue(periods.none { it.action == "fertilizing" })
     }
@@ -139,7 +175,7 @@ class PlantPlanCalculatorTest {
             germinationDaysMin = 7, germinationDaysMax = 14,
             daysToMaturityMin = 90, daysToMaturityMax = 120,
             harvestMonths = emptyList(),
-            hasPruning = true, hasFertilizing = true,
+            pruningConfig = defaultPruning, fertilizingConfig = defaultFertilizing,
         )
         val starts = periods.map { it.start }
         assertEquals(starts.sorted(), starts)
@@ -152,7 +188,7 @@ class PlantPlanCalculatorTest {
             germinationDaysMin = null, germinationDaysMax = null,
             daysToMaturityMin = null, daysToMaturityMax = null,
             harvestMonths = emptyList(),
-            hasPruning = false, hasFertilizing = false,
+            pruningConfig = null, fertilizingConfig = null,
         )
         assertTrue(periods.isEmpty())
     }

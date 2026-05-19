@@ -29,15 +29,35 @@ class PlantPlanService(private val repository: PlantPlanRepository) {
             .map { it[HarvestingMonths.monthNum] }
             .sorted()
 
+        val pruningConfig = plant[Plants.pruningType]?.let { type ->
+            PruningSchedules.selectAll().where { PruningSchedules.pruningType eq type }.firstOrNull()?.let {
+                PruningConfig(
+                    weeksBeforeStart = it[PruningSchedules.weeksBeforeStart],
+                    weeksBeforeEnd   = it[PruningSchedules.weeksBeforeEnd],
+                )
+            }
+        }
+
+        val fertilizingConfig = plant[Plants.fertilizerType]?.let { type ->
+            FertilizingSchedules.selectAll().where { FertilizingSchedules.fertilizerType eq type }.firstOrNull()?.let {
+                FertilizingConfig(
+                    startDaysAfterSeed = it[FertilizingSchedules.startDaysAfterSeed],
+                    intervalDays       = it[FertilizingSchedules.intervalDays],
+                    windowDays         = it[FertilizingSchedules.windowDays],
+                    maxApplications    = it[FertilizingSchedules.maxApplications],
+                )
+            }
+        }
+
         PlantPlanCalculator.compute(
-            seedDate          = seedDate,
+            seedDate           = seedDate,
             germinationDaysMin = plant[Plants.germinationDaysMin],
             germinationDaysMax = plant[Plants.germinationDaysMax],
             daysToMaturityMin  = plant[Plants.daysToMaturityMin],
             daysToMaturityMax  = plant[Plants.daysToMaturityMax],
             harvestMonths      = harvestMonths,
-            hasPruning         = plant[Plants.pruningType] != null,
-            hasFertilizing     = plant[Plants.fertilizerType] != null,
+            pruningConfig      = pruningConfig,
+            fertilizingConfig  = fertilizingConfig,
         )
     }
 }
