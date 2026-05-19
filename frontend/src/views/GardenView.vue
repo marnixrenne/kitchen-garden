@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { csrfHeaders } from '../stores/auth.js'
 
 const router = useRouter()
 const { t, tm, te } = useI18n()
@@ -11,6 +12,40 @@ const suggestions   = ref(null)
 const weekSummary   = ref(null)
 const loading       = ref(true)
 const selectedMonth = ref(null)
+
+const seedModal = ref({ open: false, plant: null, date: '', comment: '', saving: false })
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function openSeedModal(plant) {
+  seedModal.value = { open: true, plant, date: todayIso(), comment: '', saving: false }
+}
+
+function closeSeedModal() {
+  seedModal.value.open = false
+}
+
+async function submitSeedModal() {
+  if (seedModal.value.saving) return
+  seedModal.value.saving = true
+  try {
+    await fetch('/api/garden/plant-log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+      body: JSON.stringify({
+        plantId: seedModal.value.plant.id,
+        action: 'seeding',
+        date: seedModal.value.date,
+        comment: seedModal.value.comment || null,
+      }),
+    })
+    closeSeedModal()
+  } finally {
+    seedModal.value.saving = false
+  }
+}
 
 const months = computed(() => tm('months'))
 const sortedPlants = computed(() =>
@@ -308,6 +343,13 @@ onMounted(async () => {
                 <span class="week-action-badge" :class="action.type">
                   {{ action.type === 'sow' ? t('garden.actionSow') : action.type === 'harvest' ? t('garden.actionHarvest') : t('garden.actionBoth') }}
                 </span>
+                <button
+                  v-if="action.type === 'sow' || action.type === 'both'"
+                  class="seed-now-btn"
+                  @click.stop="openSeedModal(action.plant)"
+                >
+                  🌱 {{ t('garden.seedNow') }}
+                </button>
               </div>
               <div v-if="actionHints.get(action.plant.id)?.length" class="week-action-hints">
                 {{ actionHints.get(action.plant.id).join(' · ') }}
@@ -358,6 +400,54 @@ onMounted(async () => {
       </div>
     </template>
   </main>
+
+  <!-- Seed now modal -->
+  <Teleport to="body">
+    <div v-if="seedModal.open" class="modal-backdrop" @click.self="closeSeedModal">
+      <div class="modal" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <span class="modal-title">{{ t('garden.seedModal.title') }}</span>
+          <span v-if="seedModal.plant" class="modal-plant">
+            {{ seedModal.plant.emoji ?? '🌱' }} {{ plantName(seedModal.plant) }}
+          </span>
+        </div>
+        <form class="modal-body" @submit.prevent="submitSeedModal">
+          <div class="form-row">
+            <label class="form-label">{{ t('garden.seedModal.actionLabel') }}</label>
+            <span class="form-value">{{ t('garden.seedModal.actionValue') }}</span>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="seed-date">{{ t('garden.seedModal.dateLabel') }}</label>
+            <input
+              id="seed-date"
+              v-model="seedModal.date"
+              type="date"
+              class="form-input"
+              required
+            />
+          </div>
+          <div class="form-row form-row--col">
+            <label class="form-label" for="seed-comment">{{ t('garden.seedModal.commentLabel') }}</label>
+            <textarea
+              id="seed-comment"
+              v-model="seedModal.comment"
+              class="form-textarea"
+              :placeholder="t('garden.seedModal.commentPlaceholder')"
+              rows="3"
+            />
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="modal-cancel" @click="closeSeedModal">
+              {{ t('garden.seedModal.cancel') }}
+            </button>
+            <button type="submit" class="modal-save" :disabled="seedModal.saving">
+              {{ t('garden.seedModal.save') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -507,6 +597,26 @@ main {
   font-size: 0.78rem;
   color: var(--text-muted);
   line-height: 1.4;
+}
+
+.seed-now-btn {
+  margin-left: auto;
+  padding: 0.2rem 0.65rem;
+  border: 1.5px solid var(--green-mid);
+  border-radius: 20px;
+  background: var(--green-pale);
+  color: var(--green-dark);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.seed-now-btn:hover {
+  background: var(--green-light);
+  border-color: var(--green-dark);
 }
 
 /* Legend */
@@ -813,4 +923,152 @@ main {
   border-radius: 20px;
   padding: 0.15rem 0.55rem;
 }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+
+.modal {
+  background: var(--card-bg);
+  border: 1.5px solid var(--green-pale);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  background: var(--green-pale);
+  border-bottom: 1.5px solid var(--green-pale);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.modal-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--green-dark);
+}
+
+.modal-plant {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--green-mid);
+  white-space: nowrap;
+}
+
+.modal-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.form-row--col {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.form-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+.form-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--green-dark);
+}
+
+.form-input {
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  border: 1.5px solid var(--green-pale);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--green-mid);
+}
+
+.form-textarea {
+  padding: 0.5rem 0.6rem;
+  border: 1.5px solid var(--green-pale);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-family: inherit;
+  resize: vertical;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--green-mid);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding-top: 0.25rem;
+}
+
+.modal-cancel {
+  padding: 0.45rem 1rem;
+  border: 1.5px solid var(--green-pale);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.modal-cancel:hover {
+  border-color: var(--green-mid);
+  color: var(--green-dark);
+}
+
+.modal-save {
+  padding: 0.45rem 1.1rem;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--green-mid);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.modal-save:hover:not(:disabled) { opacity: 0.85; }
+.modal-save:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>

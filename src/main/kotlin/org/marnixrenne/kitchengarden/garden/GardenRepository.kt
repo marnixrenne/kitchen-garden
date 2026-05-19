@@ -8,6 +8,7 @@ import org.marnixrenne.kitchengarden.plants.CompanionPlants
 import org.marnixrenne.kitchengarden.plants.batchResolvedMonthNums
 import org.marnixrenne.kitchengarden.plants.resolvedMonthNums
 import org.springframework.stereotype.Repository
+import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.WeekFields
 import java.util.UUID
@@ -46,29 +47,71 @@ private val SUN_ORDER = listOf("full_sun", "partial_shade", "shade")
 @Repository
 class GardenRepository {
 
-    fun findPlantIds(userId: UUID): Set<UUID> = transaction {
+    // ── Garden CRUD ──────────────────────────────────────────────────────────
+
+    fun findGardens(userId: UUID): List<GardenSummary> = transaction {
+        Garden.selectAll()
+            .where { Garden.userId eq userId }
+            .orderBy(Garden.createdAt)
+            .map { GardenSummary(it[Garden.id], it[Garden.name]) }
+    }
+
+    fun findOrCreateDefaultGarden(userId: UUID): UUID = transaction {
+        Garden.selectAll()
+            .where { Garden.userId eq userId }
+            .orderBy(Garden.createdAt)
+            .firstOrNull()
+            ?.get(Garden.id)
+            ?: createGardenInTx(userId, "My Garden")
+    }
+
+    fun createGarden(userId: UUID, name: String): GardenSummary = transaction {
+        val id = createGardenInTx(userId, name)
+        GardenSummary(id, name)
+    }
+
+    private fun createGardenInTx(userId: UUID, name: String): UUID {
+        val id = UUID.randomUUID()
+        Garden.insert {
+            it[Garden.id]        = id
+            it[Garden.userId]    = userId
+            it[Garden.name]      = name
+            it[Garden.createdAt] = Instant.now()
+        }
+        return id
+    }
+
+    fun deleteGarden(gardenId: UUID, userId: UUID): Boolean = transaction {
+        Garden.deleteWhere { (Garden.id eq gardenId) and (Garden.userId eq userId) } > 0
+    }
+
+    // ── Plant membership ─────────────────────────────────────────────────────
+
+    fun findPlantIds(gardenId: UUID): Set<UUID> = transaction {
         GardenPlants.selectAll()
-            .where { GardenPlants.userId eq userId }
+            .where { GardenPlants.gardenId eq gardenId }
             .map { it[GardenPlants.plantId] }
             .toSet()
     }
 
-    fun add(userId: UUID, plantId: UUID): Unit = transaction {
+    fun add(gardenId: UUID, plantId: UUID): Unit = transaction {
         GardenPlants.upsert {
-            it[GardenPlants.userId]  = userId
-            it[GardenPlants.plantId] = plantId
+            it[GardenPlants.gardenId] = gardenId
+            it[GardenPlants.plantId]  = plantId
         }
     }
 
-    fun remove(userId: UUID, plantId: UUID): Unit = transaction {
+    fun remove(gardenId: UUID, plantId: UUID): Unit = transaction {
         GardenPlants.deleteWhere {
-            (GardenPlants.userId eq userId) and (GardenPlants.plantId eq plantId)
+            (GardenPlants.gardenId eq gardenId) and (GardenPlants.plantId eq plantId)
         }
     }
 
-    fun findSuggestions(userId: UUID): PlantingSuggestions = transaction {
+    // ── Views ─────────────────────────────────────────────────────────────────
+
+    fun findSuggestions(gardenId: UUID): PlantingSuggestions = transaction {
         val ids = GardenPlants.selectAll()
-            .where { GardenPlants.userId eq userId }
+            .where { GardenPlants.gardenId eq gardenId }
             .map { it[GardenPlants.plantId] }
 
         if (ids.size < 2) return@transaction PlantingSuggestions(emptyList(), emptyList())
@@ -117,7 +160,7 @@ class GardenRepository {
         PlantingSuggestions(sunGroups, conflicts)
     }
 
-    fun findWeekSummary(userId: UUID, countryCode: String?): WeekSummary = transaction {
+    fun findWeekSummary(gardenId: UUID, countryCode: String?): WeekSummary = transaction {
         val today     = LocalDate.now()
         val month     = today.monthValue
         val week      = today.get(WeekFields.ISO.weekOfWeekBasedYear())
@@ -125,12 +168,12 @@ class GardenRepository {
         val weekEnd   = weekStart.plusDays(6)
 
         val ids = GardenPlants.selectAll()
-            .where { GardenPlants.userId eq userId }
+            .where { GardenPlants.gardenId eq gardenId }
             .map { it[GardenPlants.plantId] }
 
         if (ids.isEmpty()) return@transaction WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, emptyList())
 
-        val seedingIds   = resolvedMonthIds(SeedingMonths.plantId,   SeedingMonths.monthNum,   SeedingMonths.countryCode,   ids, month, countryCode)
+        val seedingIds    = resolvedMonthIds(SeedingMonths.plantId,    SeedingMonths.monthNum,    SeedingMonths.countryCode,    ids, month, countryCode)
         val harvestingIds = resolvedMonthIds(HarvestingMonths.plantId, HarvestingMonths.monthNum, HarvestingMonths.countryCode, ids, month, countryCode)
 
         val activeIds = seedingIds + harvestingIds
@@ -160,19 +203,18 @@ class GardenRepository {
         WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, actions)
     }
 
-    fun findDetails(userId: UUID, countryCode: String?): List<PlantDetail> = transaction {
+    fun findDetails(gardenId: UUID, countryCode: String?): List<PlantDetail> = transaction {
         val ids = GardenPlants.selectAll()
-            .where { GardenPlants.userId eq userId }
+            .where { GardenPlants.gardenId eq gardenId }
             .map { it[GardenPlants.plantId] }
 
         if (ids.isEmpty()) return@transaction emptyList()
 
-        // Batch-load all data upfront to avoid N+1 queries
         val plantRows = Plants.selectAll()
             .where { Plants.id inList ids }
             .associateBy { it[Plants.id] }
 
-        val seedingByPlant    = batchResolvedMonthNums(SeedingMonths.plantId,   SeedingMonths.monthNum,   SeedingMonths.countryCode,   ids, countryCode)
+        val seedingByPlant    = batchResolvedMonthNums(SeedingMonths.plantId,    SeedingMonths.monthNum,    SeedingMonths.countryCode,    ids, countryCode)
         val harvestingByPlant = batchResolvedMonthNums(HarvestingMonths.plantId, HarvestingMonths.monthNum, HarvestingMonths.countryCode, ids, countryCode)
 
         val countriesByPlant = (PlantCountries innerJoin Countries)

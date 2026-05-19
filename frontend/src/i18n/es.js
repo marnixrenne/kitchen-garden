@@ -274,6 +274,17 @@ export default {
     hintBoth: 'Interior o directa',
     hintGermination: 'Germina en {min}–{max} días',
     hintHarvest: 'Lista para cosechar este mes',
+    seedNow: 'Sembrar ahora',
+    seedModal: {
+      title: 'Registrar siembra',
+      actionLabel: 'Acción',
+      actionValue: 'Siembra',
+      dateLabel: 'Fecha',
+      commentLabel: 'Comentario',
+      commentPlaceholder: 'Nota opcional…',
+      save: 'Guardar',
+      cancel: 'Cancelar',
+    },
   },
   settings: {
     title: 'Ajustes',

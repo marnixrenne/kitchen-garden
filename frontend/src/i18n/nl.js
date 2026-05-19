@@ -276,6 +276,17 @@ export default {
     hintBoth: 'Binnen of buiten',
     hintGermination: 'Kiemt na {min}–{max} dagen',
     hintHarvest: 'Klaar om te oogsten deze maand',
+    seedNow: 'Nu zaaien',
+    seedModal: {
+      title: 'Zaaiactie registreren',
+      actionLabel: 'Actie',
+      actionValue: 'Zaaien',
+      dateLabel: 'Datum',
+      commentLabel: 'Opmerking',
+      commentPlaceholder: 'Optionele notitie…',
+      save: 'Opslaan',
+      cancel: 'Annuleren',
+    },
   },
   settings: {
     title: 'Instellingen',

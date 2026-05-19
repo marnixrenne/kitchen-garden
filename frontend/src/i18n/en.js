@@ -276,6 +276,17 @@ export default {
     hintBoth: 'Indoors or direct',
     hintGermination: 'Germinates in {min}–{max} days',
     hintHarvest: 'Ready to harvest this month',
+    seedNow: 'Seed now',
+    seedModal: {
+      title: 'Log seeding',
+      actionLabel: 'Action',
+      actionValue: 'Seeding',
+      dateLabel: 'Date',
+      commentLabel: 'Comment',
+      commentPlaceholder: 'Optional note…',
+      save: 'Save',
+      cancel: 'Cancel',
+    },
   },
   settings: {
     title: 'Settings',

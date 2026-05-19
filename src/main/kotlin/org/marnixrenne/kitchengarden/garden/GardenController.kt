@@ -43,4 +43,13 @@ class GardenController(private val gardenService: GardenService) {
         gardenService.remove(authentication, plantId)
         return ResponseEntity.noContent().build()
     }
+
+    @PostMapping("/plant-log")
+    fun logSeeding(
+        @RequestBody request: PlantLogRequest,
+        authentication: Authentication,
+    ): ResponseEntity<PlantLogResponse> {
+        val entry = gardenService.logSeeding(authentication, request)
+        return ResponseEntity.status(201).body(entry)
+    }
 }
