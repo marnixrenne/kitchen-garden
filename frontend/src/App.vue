@@ -3,7 +3,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, RouterView, RouterLink } from 'vue-router'
 import { user, logout, csrfHeaders } from './stores/auth.js'
-import { activeGardenId, setActiveGarden } from './stores/garden.js'
+import { activeGardenId, activeGardenName, gardens, setActiveGarden } from './stores/garden.js'
 
 const { t, locale } = useI18n()
 const router = useRouter()
@@ -31,8 +31,6 @@ async function handleLogout() {
 
 // ── Gardens list ─────────────────────────────────────────────────────────────
 
-const gardens = ref([])
-
 async function fetchGardens() {
   const res = await fetch('/api/garden/gardens')
   if (res.ok) {
@@ -45,8 +43,8 @@ async function fetchGardens() {
 
 watch(user, (u) => { if (u) fetchGardens() }, { immediate: true })
 
-const activeGardenName = computed(() =>
-  gardens.value.find(g => g.id === activeGardenId.value)?.name ?? t('myGarden')
+const activeGardenDisplayName = computed(() =>
+  activeGardenName.value ?? t('myGarden')
 )
 
 // ── Garden dropdown ───────────────────────────────────────────────────────────
@@ -116,7 +114,7 @@ async function submitNewGarden() {
               class="nav-garden-trigger"
               :class="{ 'router-link-active': $route.path === '/garden' }"
               @click="toggleDropdown"
-            >{{ activeGardenName }} <span class="nav-garden-caret">▾</span></button>
+            >{{ activeGardenDisplayName }} <span class="nav-garden-caret">▾</span></button>
             <div v-if="dropdownOpen" class="nav-garden-menu">
               <button
                 v-for="g in gardens"

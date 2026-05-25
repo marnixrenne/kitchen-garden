@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ThisWeekCard from '../components/ThisWeekCard.vue'
-import { gardenParam } from '../stores/garden.js'
+import { gardenParam, activeGardenName } from '../stores/garden.js'
 
 const router = useRouter()
 const { t, tm, te, locale } = useI18n()
@@ -238,7 +238,7 @@ onMounted(async () => {
 <template>
   <main>
     <div class="page-header">
-      <h2 class="page-title">{{ t('myGarden') }}</h2>
+      <h2 class="page-title">{{ activeGardenName ?? t('myGarden') }}</h2>
       <button
         v-if="sortedPlants.length > 0"
         class="ical-btn"

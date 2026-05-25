@@ -57,8 +57,8 @@ class GardenService(
 
     // ── Plant operations (default garden) ────────────────────────────────────
 
-    fun getPlantIds(authentication: Authentication): Set<UUID> =
-        repository.findPlantIds(resolveDefaultGardenId(authentication))
+    fun getPlantIds(authentication: Authentication, gardenId: UUID? = null): Set<UUID> =
+        repository.findPlantIds(resolveGardenId(authentication, gardenId))
 
     fun getDetails(authentication: Authentication, gardenId: UUID? = null): List<PlantDetail> =
         repository.findDetails(resolveGardenId(authentication, gardenId), preferenceService.getCountry(authentication))
@@ -69,11 +69,11 @@ class GardenService(
     fun getSuggestions(authentication: Authentication, gardenId: UUID? = null): PlantingSuggestions =
         repository.findSuggestions(resolveGardenId(authentication, gardenId))
 
-    fun add(authentication: Authentication, plantId: UUID) =
-        repository.add(resolveDefaultGardenId(authentication), plantId)
+    fun add(authentication: Authentication, plantId: UUID, gardenId: UUID? = null) =
+        repository.add(resolveGardenId(authentication, gardenId), plantId)
 
-    fun remove(authentication: Authentication, plantId: UUID) =
-        repository.remove(resolveDefaultGardenId(authentication), plantId)
+    fun remove(authentication: Authentication, plantId: UUID, gardenId: UUID? = null) =
+        repository.remove(resolveGardenId(authentication, gardenId), plantId)
 
     fun getInstances(authentication: Authentication, gardenId: UUID? = null): List<PlantInstance> =
         repository.findInstances(resolveGardenId(authentication, gardenId))

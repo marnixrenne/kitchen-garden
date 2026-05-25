@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { csrfHeaders } from '../stores/auth.js'
+import { gardenParam } from '../stores/garden.js'
 
 const route  = useRoute()
 const router = useRouter()
@@ -56,13 +57,13 @@ const fertilizerTipText = computed(() => {
 
 async function toggleGarden() {
   const method = inGarden.value ? 'DELETE' : 'PUT'
-  await fetch(`/api/garden/${route.params.id}`, { method, headers: csrfHeaders() })
+  await fetch(`/api/garden/${route.params.id}${gardenParam()}`, { method, headers: csrfHeaders() })
   inGarden.value = !inGarden.value
 }
 
 async function toggleCompanionGarden(id) {
   const inG = gardenIds.value.has(id)
-  await fetch(`/api/garden/${id}`, { method: inG ? 'DELETE' : 'PUT', headers: csrfHeaders() })
+  await fetch(`/api/garden/${id}${gardenParam()}`, { method: inG ? 'DELETE' : 'PUT', headers: csrfHeaders() })
   const next = new Set(gardenIds.value)
   inG ? next.delete(id) : next.add(id)
   gardenIds.value = next
@@ -73,7 +74,7 @@ async function loadPlant(id) {
   plant.value = null
   const [plantRes, gardenRes] = await Promise.all([
     fetch(`/api/plants/${id}`),
-    fetch('/api/garden'),
+    fetch(`/api/garden${gardenParam()}`),
   ])
   if (plantRes.ok) plant.value = await plantRes.json()
   if (gardenRes.ok) {

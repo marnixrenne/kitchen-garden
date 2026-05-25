@@ -24,8 +24,10 @@ class GardenController(private val gardenService: GardenService) {
     }
 
     @GetMapping
-    fun getGarden(authentication: Authentication): Set<UUID> =
-        gardenService.getPlantIds(authentication)
+    fun getGarden(
+        @RequestParam(required = false) gardenId: UUID?,
+        authentication: Authentication,
+    ): Set<UUID> = gardenService.getPlantIds(authentication, gardenId)
 
     @GetMapping("/details")
     fun getGardenDetails(
@@ -48,18 +50,20 @@ class GardenController(private val gardenService: GardenService) {
     @PutMapping("/{plantId}")
     fun addToGarden(
         @PathVariable plantId: UUID,
+        @RequestParam(required = false) gardenId: UUID?,
         authentication: Authentication,
     ): ResponseEntity<Unit> {
-        gardenService.add(authentication, plantId)
+        gardenService.add(authentication, plantId, gardenId)
         return ResponseEntity.noContent().build()
     }
 
     @DeleteMapping("/{plantId}")
     fun removeFromGarden(
         @PathVariable plantId: UUID,
+        @RequestParam(required = false) gardenId: UUID?,
         authentication: Authentication,
     ): ResponseEntity<Unit> {
-        gardenService.remove(authentication, plantId)
+        gardenService.remove(authentication, plantId, gardenId)
         return ResponseEntity.noContent().build()
     }
 

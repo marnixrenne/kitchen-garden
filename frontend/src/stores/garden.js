@@ -1,6 +1,11 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 export const activeGardenId = ref(localStorage.getItem('activeGardenId') || null)
+export const gardens = ref([])
+
+export const activeGardenName = computed(() =>
+  gardens.value.find(g => g.id === activeGardenId.value)?.name ?? null
+)
 
 export function setActiveGarden(id) {
   activeGardenId.value = id
