@@ -300,6 +300,7 @@ export default {
     overdue: 'Vencido',
     newGarden: 'Nuevo huerto',
     newGardenPlaceholder: 'Nombre del huerto…',
+    selectGarden: 'Seleccionar huerto',
     actionModal: {
       title: 'Registrar acción',
       actionLabel: 'Acción',

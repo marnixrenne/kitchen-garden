@@ -108,13 +108,12 @@ async function submitNewGarden() {
           <!-- Single garden: plain link -->
           <RouterLink v-if="gardens.length <= 1" to="/garden">{{ t('myGarden') }}</RouterLink>
 
-          <!-- Multiple gardens: dropdown -->
+          <!-- Multiple gardens: split button -->
           <div v-else class="nav-garden-dropdown" @click.stop>
-            <button
-              class="nav-garden-trigger"
-              :class="{ 'router-link-active': $route.path === '/garden' }"
-              @click="toggleDropdown"
-            >{{ activeGardenDisplayName }} <span class="nav-garden-caret">▾</span></button>
+            <div class="nav-garden-split" :class="{ 'router-link-active': $route.path === '/garden' }">
+              <RouterLink class="nav-garden-label" to="/garden">{{ activeGardenDisplayName }}</RouterLink>
+              <button class="nav-garden-caret-btn" @click="toggleDropdown" :title="t('garden.selectGarden')">▾</button>
+            </div>
             <div v-if="dropdownOpen" class="nav-garden-menu">
               <button
                 v-for="g in gardens"
@@ -227,30 +226,53 @@ header h1 { font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
   position: relative;
 }
 
-.nav-garden-trigger {
-  padding: 0.35rem 0.7rem;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  color: rgba(255,255,255,0.7);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
+.nav-garden-split {
   display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  transition: background 0.15s, color 0.15s;
+  align-items: stretch;
+  border-radius: 6px;
+  overflow: hidden;
+  transition: background 0.15s;
 }
 
-.nav-garden-trigger:hover,
-.nav-garden-trigger.router-link-active {
-  color: #fff;
+.nav-garden-split.router-link-active {
   background: rgba(255,255,255,0.15);
 }
 
-.nav-garden-caret {
-  font-size: 0.65rem;
-  opacity: 0.7;
+.nav-garden-label {
+  padding: 0.35rem 0.55rem 0.35rem 0.7rem;
+  color: rgba(255,255,255,0.7);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.nav-garden-label:hover { color: #fff; }
+.nav-garden-split.router-link-active .nav-garden-label { color: #fff; }
+
+.nav-garden-caret-btn {
+  padding: 0.35rem 0.5rem;
+  border: none;
+  border-left: 1px solid rgba(255,255,255,0.2);
+  background: transparent;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.6rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.nav-garden-caret-btn:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+}
+
+.nav-garden-split:not(.router-link-active):hover {
+  background: rgba(255,255,255,0.08);
 }
 
 .nav-garden-menu {

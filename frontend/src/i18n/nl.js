@@ -302,6 +302,7 @@ export default {
     overdue: 'Te laat',
     newGarden: 'Nieuwe tuin',
     newGardenPlaceholder: 'Naam van de tuin…',
+    selectGarden: 'Tuin selecteren',
     actionModal: {
       title: 'Actie registreren',
       actionLabel: 'Actie',

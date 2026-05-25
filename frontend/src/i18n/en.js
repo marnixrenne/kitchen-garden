@@ -302,6 +302,7 @@ export default {
     overdue: 'Overdue',
     newGarden: 'New garden',
     newGardenPlaceholder: 'Garden name…',
+    selectGarden: 'Select garden',
     actionModal: {
       title: 'Log action',
       actionLabel: 'Action',
