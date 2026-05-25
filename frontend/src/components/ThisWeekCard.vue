@@ -176,7 +176,7 @@ const actionGroups = computed(() => {
       action: a,
       icon:   ACTION_ICON[a],
       label:  te(GROUP_LABEL_KEY[a]) ? t(GROUP_LABEL_KEY[a]) : a,
-      items:  buckets[a],
+      items:  [...buckets[a]].sort((x, y) => pName(x.plant).localeCompare(pName(y.plant))),
     }))
     .filter(g => g.items.length > 0)
 })
