@@ -1,5 +1,6 @@
 package org.marnixrenne.kitchengarden.garden
 
+import org.marnixrenne.kitchengarden.garden.plan.PlanEntry
 import org.marnixrenne.kitchengarden.plants.PlantDetail
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication

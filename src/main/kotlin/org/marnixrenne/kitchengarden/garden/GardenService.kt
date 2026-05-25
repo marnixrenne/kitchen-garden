@@ -2,6 +2,8 @@ package org.marnixrenne.kitchengarden.garden
 
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.marnixrenne.kitchengarden.garden.plan.PlanEntry
+import org.marnixrenne.kitchengarden.garden.plan.PlantPlanService
 import org.marnixrenne.kitchengarden.preferences.PreferenceService
 import org.marnixrenne.kitchengarden.security.AppUserDetails
 import org.marnixrenne.kitchengarden.security.Users

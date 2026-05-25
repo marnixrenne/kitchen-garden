@@ -1,7 +1,10 @@
-package org.marnixrenne.kitchengarden.garden
+package org.marnixrenne.kitchengarden.garden.plan
 
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.marnixrenne.kitchengarden.garden.PlantLog
+import org.marnixrenne.kitchengarden.garden.PlantLogEntry
+import org.marnixrenne.kitchengarden.garden.PlantPlanEntry
 import org.springframework.stereotype.Repository
 import java.time.Instant
 import java.util.UUID

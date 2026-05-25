@@ -1,8 +1,9 @@
-package org.marnixrenne.kitchengarden.garden
+package org.marnixrenne.kitchengarden.garden.lifecycle
 
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.marnixrenne.kitchengarden.garden.PlantLog
 import org.springframework.stereotype.Repository
 import java.time.Instant
 import java.util.UUID

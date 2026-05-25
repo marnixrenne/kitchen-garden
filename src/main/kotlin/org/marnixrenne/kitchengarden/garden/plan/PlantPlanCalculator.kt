@@ -1,4 +1,4 @@
-package org.marnixrenne.kitchengarden.garden
+package org.marnixrenne.kitchengarden.garden.plan
 
 import java.time.LocalDate
 import java.time.YearMonth

@@ -1,8 +1,11 @@
-package org.marnixrenne.kitchengarden.garden
+package org.marnixrenne.kitchengarden.garden.plan
 
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.marnixrenne.kitchengarden.garden.FertilizingSchedules
+import org.marnixrenne.kitchengarden.garden.PruningSchedules
+import org.marnixrenne.kitchengarden.garden.WateringSchedules
 import org.marnixrenne.kitchengarden.plants.HarvestingMonths
 import org.marnixrenne.kitchengarden.plants.Plants
 import org.springframework.stereotype.Service

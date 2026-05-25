@@ -1,4 +1,4 @@
-package org.marnixrenne.kitchengarden.garden
+package org.marnixrenne.kitchengarden.garden.lifecycle
 
 import java.util.UUID
 
