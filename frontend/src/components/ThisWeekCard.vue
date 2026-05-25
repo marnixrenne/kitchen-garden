@@ -116,15 +116,20 @@ const actionGroups = computed(() => {
 
   for (const wa of (ws.actions ?? [])) {
     if (wa.type === 'sow' || wa.type === 'both') {
-      const iid = (instancesByPlantId.value[wa.plant.id] ?? [])[0] ?? null
+      const allInst = instancesByPlantId.value[wa.plant.id] ?? []
+      const iid = allInst.find(id => !lifecycle.value[id]) ?? null
+      if (!iid) continue  // all instances already seeded
       buckets.seeding.push({
         plant: wa.plant, instanceId: iid,
-        seedDate: iid ? instanceSeedDate(iid) : null,
+        seedDate: null,
         dateRange: null, done: false,
         planEntry: null, lc: null, sowAction: wa,
       })
     }
   }
+
+  const shownGermination = new Set()
+  const shownHarvest     = new Set()
 
   for (const [instanceId, entries] of Object.entries(plantPlan.value)) {
     const inst  = instanceById.value[instanceId]
@@ -138,12 +143,12 @@ const actionGroups = computed(() => {
       const end   = new Date(entry.plannedDateEnd   + 'T00:00:00')
       if (start > weekEnd || end < weekStart) continue
 
-      const seedDate = formatDate(entry.seedDate)
-
+      const seedDate   = formatDate(entry.seedDate)
       const seedAction = entry.seedAction
 
       if (entry.action === 'germination') {
-        if (!lc || lc.nextState === 'germinating_indoor' || lc.nextState === 'germinating_direct') {
+        if (!shownGermination.has(instanceId) && (!lc || lc.nextState === 'germinating_indoor' || lc.nextState === 'germinating_direct')) {
+          shownGermination.add(instanceId)
           buckets.germination.push({
             plant, instanceId, seedDate, seedAction,
             dateRange: planDateRange(entry),
@@ -152,7 +157,8 @@ const actionGroups = computed(() => {
           })
         }
       } else if (entry.action === 'harvest') {
-        if (lc?.nextState === 'ready_to_harvest') {
+        if (!shownHarvest.has(instanceId) && lc?.nextState === 'ready_to_harvest') {
+          shownHarvest.add(instanceId)
           buckets.harvest.push({
             plant, instanceId, seedDate, seedAction,
             dateRange: planDateRange(entry),
