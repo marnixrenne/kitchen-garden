@@ -300,6 +300,8 @@ export default {
     },
     logDone: 'Gedaan',
     overdue: 'Te laat',
+    newGarden: 'Nieuwe tuin',
+    newGardenPlaceholder: 'Naam van de tuin…',
     actionModal: {
       title: 'Actie registreren',
       actionLabel: 'Actie',

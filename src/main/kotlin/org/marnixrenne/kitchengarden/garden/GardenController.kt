@@ -10,6 +10,19 @@ import java.util.UUID
 @RequestMapping("/api/garden")
 class GardenController(private val gardenService: GardenService) {
 
+    @GetMapping("/gardens")
+    fun listGardens(authentication: Authentication): List<GardenSummary> =
+        gardenService.listGardens(authentication)
+
+    @PostMapping("/gardens")
+    fun createGarden(
+        @RequestBody request: CreateGardenRequest,
+        authentication: Authentication,
+    ): ResponseEntity<GardenSummary> {
+        val garden = gardenService.createGarden(authentication, request.name)
+        return ResponseEntity.status(201).body(garden)
+    }
+
     @GetMapping
     fun getGarden(authentication: Authentication): Set<UUID> =
         gardenService.getPlantIds(authentication)

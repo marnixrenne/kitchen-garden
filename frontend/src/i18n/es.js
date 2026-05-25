@@ -298,6 +298,8 @@ export default {
     },
     logDone: 'Marcar hecho',
     overdue: 'Vencido',
+    newGarden: 'Nuevo huerto',
+    newGardenPlaceholder: 'Nombre del huerto…',
     actionModal: {
       title: 'Registrar acción',
       actionLabel: 'Acción',

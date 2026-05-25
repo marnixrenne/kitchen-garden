@@ -300,6 +300,8 @@ export default {
     },
     logDone: 'Mark done',
     overdue: 'Overdue',
+    newGarden: 'New garden',
+    newGardenPlaceholder: 'Garden name…',
     actionModal: {
       title: 'Log action',
       actionLabel: 'Action',

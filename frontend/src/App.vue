@@ -1,8 +1,8 @@
 <script setup>
-import { watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, RouterView, RouterLink } from 'vue-router'
-import { user, logout } from './stores/auth.js'
+import { user, logout, csrfHeaders } from './stores/auth.js'
 
 const { t, locale } = useI18n()
 const router = useRouter()
@@ -24,6 +24,33 @@ async function handleLogout() {
   await logout()
   router.push('/')
 }
+
+const newGardenModal = ref({ open: false, name: '', saving: false, error: '' })
+
+function openNewGardenModal() {
+  newGardenModal.value = { open: true, name: '', saving: false, error: '' }
+}
+
+async function submitNewGarden() {
+  const name = newGardenModal.value.name.trim()
+  if (!name) return
+  newGardenModal.value.saving = true
+  newGardenModal.value.error = ''
+  try {
+    const res = await fetch('/api/garden/gardens', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+      body: JSON.stringify({ name }),
+    })
+    if (!res.ok) {
+      newGardenModal.value.error = `Error ${res.status}`
+      return
+    }
+    newGardenModal.value.open = false
+  } finally {
+    newGardenModal.value.saving = false
+  }
+}
 </script>
 
 <template>
@@ -34,6 +61,7 @@ async function handleLogout() {
         <template v-if="!user?.roles?.includes('ROLE_ADMIN')">
           <RouterLink to="/home">{{ t('home') }}</RouterLink>
           <RouterLink to="/garden">{{ t('myGarden') }}</RouterLink>
+          <button class="new-garden-btn" :title="t('garden.newGarden')" @click="openNewGardenModal">+</button>
         </template>
         <RouterLink v-if="user?.roles?.includes('ROLE_ADMIN')" to="/admin">Admin</RouterLink>
       </nav>
@@ -45,6 +73,30 @@ async function handleLogout() {
     </div>
   </header>
   <RouterView />
+
+  <Teleport to="body">
+    <div v-if="newGardenModal.open" class="ng-backdrop" @click.self="newGardenModal.open = false">
+      <div class="ng-modal" role="dialog" aria-modal="true">
+        <div class="ng-header">{{ t('garden.newGarden') }}</div>
+        <form class="ng-body" @submit.prevent="submitNewGarden">
+          <input
+            v-model="newGardenModal.name"
+            class="ng-input"
+            :placeholder="t('garden.newGardenPlaceholder')"
+            required
+            autofocus
+          />
+          <p v-if="newGardenModal.error" class="ng-error">{{ newGardenModal.error }}</p>
+          <div class="ng-actions">
+            <button type="button" class="ng-cancel" @click="newGardenModal.open = false">{{ t('garden.seedModal.cancel') }}</button>
+            <button type="submit" class="ng-save" :disabled="newGardenModal.saving || !newGardenModal.name.trim()">
+              {{ t('garden.seedModal.save') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style>
@@ -104,6 +156,114 @@ header h1 { font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
 
 .header-nav a:hover { color: #fff; background: rgba(255,255,255,0.1); }
 .header-nav a.router-link-active { color: #fff; background: rgba(255,255,255,0.15); }
+
+.new-garden-btn {
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255,255,255,0.35);
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.new-garden-btn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.6);
+  color: #fff;
+}
+
+/* New garden modal */
+.ng-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+
+.ng-modal {
+  background: #fff;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+.ng-header {
+  padding: 0.85rem 1.25rem;
+  background: var(--green-pale);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--green-dark);
+}
+
+.ng-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ng-input {
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  border: 1.5px solid var(--green-pale);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+}
+
+.ng-input:focus { border-color: var(--green-mid); }
+
+.ng-error {
+  font-size: 0.8rem;
+  color: #b91c1c;
+  margin-top: -0.5rem;
+}
+
+.ng-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.ng-cancel {
+  padding: 0.4rem 0.9rem;
+  border: 1.5px solid var(--green-pale);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ng-cancel:hover { border-color: var(--green-mid); color: var(--green-dark); }
+
+.ng-save {
+  padding: 0.4rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--green-mid);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.ng-save:hover:not(:disabled) { opacity: 0.85; }
+.ng-save:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .header-controls {
   display: flex;
