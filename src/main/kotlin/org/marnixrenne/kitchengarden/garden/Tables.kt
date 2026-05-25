@@ -23,10 +23,12 @@ object GardenPlants : Table("garden_plants") {
 }
 
 object PlantLog : Table("pts_plant_log") {
-    val id        = uuid("id")
-    val userId    = uuid("user_id")  references Users.id
-    val plantId   = uuid("plant_id") references Plants.id
-    val createdAt = timestamp("created_at")
+    val id                  = uuid("id")
+    val userId              = uuid("user_id")  references Users.id
+    val plantId             = uuid("plant_id") references Plants.id
+    val lifecycleState      = varchar("lifecycle_state", 20).default("seeded")
+    val lifecycleUpdatedAt  = timestamp("lifecycle_updated_at").nullable()
+    val createdAt           = timestamp("created_at")
 
     override val primaryKey = PrimaryKey(id)
 }
@@ -58,6 +60,15 @@ object FertilizingSchedules : Table("pts_fertilizing_schedule") {
     val maxApplications     = integer("max_applications")
 
     override val primaryKey = PrimaryKey(fertilizerType)
+}
+
+object WateringSchedules : Table("pts_watering_schedule") {
+    val plantCategory      = varchar("plant_category", 50)
+    val startDaysAfterSeed = integer("start_days_after_seed")
+    val intervalDays       = integer("interval_days")
+    val windowDays         = integer("window_days")
+
+    override val primaryKey = PrimaryKey(plantCategory)
 }
 
 object PlantPlanEntry : Table("pts_plant_plan_entry") {

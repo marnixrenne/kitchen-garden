@@ -53,11 +53,11 @@ class GardenController(private val gardenService: GardenService) {
         gardenService.getPlan(authentication)
 
     @PostMapping("/plant-log")
-    fun logSeeding(
+    fun logAction(
         @RequestBody request: PlantLogRequest,
         authentication: Authentication,
     ): ResponseEntity<PlantLogResponse> {
-        val entry = gardenService.logSeeding(authentication, request)
+        val entry = gardenService.logAction(authentication, request)
         return ResponseEntity.status(201).body(entry)
     }
 }

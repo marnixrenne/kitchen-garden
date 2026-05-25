@@ -49,6 +49,16 @@ class PlantPlanService(private val repository: PlantPlanRepository) {
             }
         }
 
+        val wateringConfig = WateringSchedules.selectAll()
+            .where { WateringSchedules.plantCategory eq plant[Plants.category] }
+            .firstOrNull()?.let {
+                WateringConfig(
+                    startDaysAfterSeed = it[WateringSchedules.startDaysAfterSeed],
+                    intervalDays       = it[WateringSchedules.intervalDays],
+                    windowDays         = it[WateringSchedules.windowDays],
+                )
+            }
+
         PlantPlanCalculator.compute(
             seedDate           = seedDate,
             germinationDaysMin = plant[Plants.germinationDaysMin],
@@ -58,6 +68,7 @@ class PlantPlanService(private val repository: PlantPlanRepository) {
             harvestMonths      = harvestMonths,
             pruningConfig      = pruningConfig,
             fertilizingConfig  = fertilizingConfig,
+            wateringConfig     = wateringConfig,
         )
     }
 }

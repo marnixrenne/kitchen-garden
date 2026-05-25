@@ -19,6 +19,7 @@ const selectedMonth = ref(null)
 
 const plantLog       = ref({})
 const plantPlan      = ref({})
+const lifecycle      = ref({})
 const expandedPlants = ref(new Set())
 
 function dotTooltip(entry) {
@@ -69,7 +70,24 @@ async function fetchPlantPlan() {
   if (res.ok) plantPlan.value = await res.json()
 }
 
-const seedModal = ref({ open: false, plant: null, date: '', comment: '', saving: false })
+async function fetchLifecycle() {
+  const res = await fetch('/api/garden/lifecycle')
+  if (res.ok) lifecycle.value = await res.json()
+}
+
+async function advanceLifecycle(plantId) {
+  const res = await fetch(`/api/garden/lifecycle/${plantId}/advance`, {
+    method: 'PUT',
+    headers: csrfHeaders(),
+  })
+  if (res.ok) {
+    const updated = await res.json()
+    lifecycle.value = { ...lifecycle.value, [plantId]: updated }
+  }
+}
+
+const seedModal    = ref({ open: false, plant: null, date: '', comment: '', saving: false })
+const actionModal  = ref({ open: false, plant: null, action: '', date: '', comment: '', saving: false })
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10)
@@ -83,30 +101,81 @@ function closeSeedModal() {
   seedModal.value.open = false
 }
 
+function openActionModal(plant, action) {
+  actionModal.value = { open: true, plant, action, date: todayIso(), comment: '', saving: false }
+}
+
+function closeActionModal() {
+  actionModal.value.open = false
+}
+
+async function refreshAll() {
+  await Promise.all([
+    fetchPlantLog(),
+    fetchPlantPlan(),
+    fetchLifecycle(),
+    fetch('/api/garden/week').then(r => r.ok && r.json()).then(data => { if (data) weekSummary.value = data }),
+  ])
+}
+
+async function postAction(plantId, action, date, comment) {
+  await fetch('/api/garden/plant-log', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+    body: JSON.stringify({ plantId, action, date, comment: comment || null }),
+  })
+}
+
 async function submitSeedModal() {
   if (seedModal.value.saving) return
   seedModal.value.saving = true
   try {
-    await fetch('/api/garden/plant-log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-      body: JSON.stringify({
-        plantId: seedModal.value.plant.id,
-        action: 'seeding',
-        date: seedModal.value.date,
-        comment: seedModal.value.comment || null,
-      }),
-    })
+    await postAction(seedModal.value.plant.id, 'seeding', seedModal.value.date, seedModal.value.comment)
     closeSeedModal()
-    await Promise.all([
-      fetchPlantLog(),
-      fetchPlantPlan(),
-      fetch('/api/garden/week').then(r => r.ok && r.json()).then(data => { if (data) weekSummary.value = data }),
-    ])
+    await refreshAll()
   } finally {
     seedModal.value.saving = false
   }
 }
+
+async function submitActionModal() {
+  if (actionModal.value.saving) return
+  actionModal.value.saving = true
+  try {
+    await postAction(actionModal.value.plant.id, actionModal.value.action, actionModal.value.date, actionModal.value.comment)
+    closeActionModal()
+    await refreshAll()
+  } finally {
+    actionModal.value.saving = false
+  }
+}
+
+const LOGGABLE_ACTIONS = new Set(['fertilizing', 'pruning', 'watering'])
+
+function isPlanEntryDone(plantId, entry) {
+  const logs = plantLog.value[plantId] ?? []
+  return logs.some(log =>
+    log.action === entry.action &&
+    log.date >= entry.plannedDateStart &&
+    log.date <= entry.plannedDateEnd
+  )
+}
+
+const overdueEntries = computed(() => {
+  const todayStr = todayIso()
+  const result = []
+  for (const [plantId, entries] of Object.entries(plantPlan.value)) {
+    const plant = plants.value.find(p => p.id === plantId)
+    if (!plant) continue
+    const overdue = entries.filter(e =>
+      LOGGABLE_ACTIONS.has(e.action) &&
+      e.plannedDateEnd < todayStr &&
+      !isPlanEntryDone(plantId, e)
+    )
+    if (overdue.length) result.push({ plant, entries: overdue })
+  }
+  return result
+})
 
 const months = computed(() => tm('months'))
 const sortedPlants = computed(() =>
@@ -154,6 +223,36 @@ const weekPlanEntries = computed(() => {
       return start <= weekEnd && end >= weekStart
     })
     if (matching.length) result.push({ plant, entries: matching })
+  }
+  return result
+})
+
+// Maps a plan action to the lifecycle state it signals readiness to enter
+const PLAN_ACTION_TO_NEXT_STATE = {
+  germination:  'germinating',
+  harvest:      'ready_to_harvest',
+}
+
+const weekTransitions = computed(() => {
+  if (!weekSummary.value) return []
+  const year = new Date().getFullYear()
+  const ws = weekSummary.value
+  const weekStart = new Date(year, ws.weekStartMonth - 1, ws.weekStartDay)
+  const weekEnd   = new Date(year, ws.weekEndMonth   - 1, ws.weekEndDay)
+  const result = []
+  for (const [plantId, lc] of Object.entries(lifecycle.value)) {
+    if (!lc.nextState) continue
+    const plant = plants.value.find(p => p.id === plantId)
+    if (!plant) continue
+    const planEntries = plantPlan.value[plantId] ?? []
+    const triggeringEntry = planEntries.find(e => {
+      const triggeredState = PLAN_ACTION_TO_NEXT_STATE[e.action]
+      if (triggeredState !== lc.nextState) return false
+      const start = new Date(e.plannedDateStart + 'T00:00:00')
+      const end   = new Date(e.plannedDateEnd   + 'T00:00:00')
+      return start <= weekEnd && end >= weekStart
+    })
+    if (triggeringEntry) result.push({ plant, lifecycle: lc })
   }
   return result
 })
@@ -272,7 +371,7 @@ onMounted(async () => {
   if (suggestionsRes.ok) suggestions.value = await suggestionsRes.json()
   if (weekRes.ok)        weekSummary.value = await weekRes.json()
   loading.value = false
-  await Promise.all([fetchPlantLog(), fetchPlantPlan()])
+  await Promise.all([fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
 })
 </script>
 
@@ -345,6 +444,11 @@ onMounted(async () => {
                   <span v-else class="expand-btn-placeholder" />
                   <span class="plant-emoji">{{ plant.emoji ?? '🌱' }}</span>
                   <span>{{ plantName(plant) }}</span>
+                  <span
+                    v-if="lifecycle[plant.id]"
+                    class="lifecycle-badge"
+                    :class="'lc-' + lifecycle[plant.id].state"
+                  >{{ te(`garden.lifecycle.${lifecycle[plant.id].state}`) ? t(`garden.lifecycle.${lifecycle[plant.id].state}`) : lifecycle[plant.id].state }}</span>
                 </td>
                 <td
                   v-for="m in 12"
@@ -378,7 +482,7 @@ onMounted(async () => {
                   <span
                     v-for="entry in planEntriesForMonth(plant.id, m)"
                     :key="entry.id"
-                    :class="['plan-entry-dot', `plan-dot-${entry.action}`]"
+                    :class="['plan-entry-dot', `plan-dot-${entry.action}`, { 'plan-dot-done': isPlanEntryDone(plant.id, entry) }]"
                     :title="planDotTooltip(entry)"
                   />
                 </td>
@@ -436,7 +540,7 @@ onMounted(async () => {
           <span class="this-week-title">{{ t('garden.thisWeek') }}</span>
           <span class="this-week-label">{{ weekRangeLabel(weekSummary) }}</span>
         </div>
-        <div v-if="weekSummary.actions.length === 0 && weekPlanEntries.length === 0" class="this-week-empty">
+        <div v-if="weekSummary.actions.length === 0 && weekPlanEntries.length === 0 && weekTransitions.length === 0 && overdueEntries.length === 0" class="this-week-empty">
           {{ t('garden.nothingThisWeek') }}
         </div>
         <div v-else class="week-actions">
@@ -493,14 +597,61 @@ onMounted(async () => {
             <div class="week-action-body">
               <div class="week-action-top">
                 <span class="week-action-name">{{ plantName(plant) }}</span>
-                <span
-                  v-for="entry in entries"
-                  :key="entry.id"
-                  class="week-action-badge"
-                  :class="'plan-' + entry.action"
-                >
-                  {{ te(`garden.planAction.${entry.action}`) ? t(`garden.planAction.${entry.action}`) : entry.action }}
+                <template v-for="entry in entries" :key="entry.id">
+                  <span class="week-action-badge" :class="'plan-' + entry.action">
+                    {{ te(`garden.planAction.${entry.action}`) ? t(`garden.planAction.${entry.action}`) : entry.action }}
+                  </span>
+                  <span v-if="isPlanEntryDone(plant.id, entry)" class="plan-done-badge">✓</span>
+                  <button
+                    v-else-if="LOGGABLE_ACTIONS.has(entry.action)"
+                    class="log-action-btn"
+                    @click.stop="openActionModal(plant, entry.action)"
+                  >{{ t('garden.logDone') }}</button>
+                </template>
+              </div>
+            </div>
+          </div>
+          <div
+            v-for="{ plant, entries } in overdueEntries"
+            :key="'overdue-' + plant.id"
+            class="week-action week-action--overdue"
+            role="button"
+            tabindex="0"
+            @click="router.push(`/plant/${plant.id}`)"
+            @keydown.enter="router.push(`/plant/${plant.id}`)"
+          >
+            <span class="week-action-emoji">{{ plant.emoji ?? '🌱' }}</span>
+            <div class="week-action-body">
+              <div class="week-action-top">
+                <span class="week-action-name">{{ plantName(plant) }}</span>
+                <span class="overdue-badge">{{ t('garden.overdue') }}</span>
+                <template v-for="entry in entries" :key="entry.id">
+                  <span class="week-action-badge" :class="'plan-' + entry.action">
+                    {{ te(`garden.planAction.${entry.action}`) ? t(`garden.planAction.${entry.action}`) : entry.action }}
+                  </span>
+                  <button
+                    class="log-action-btn"
+                    @click.stop="openActionModal(plant, entry.action)"
+                  >{{ t('garden.logDone') }}</button>
+                </template>
+              </div>
+            </div>
+          </div>
+          <div
+            v-for="{ plant, lifecycle: lc } in weekTransitions"
+            :key="'lc-' + plant.id"
+            class="week-action"
+          >
+            <span class="week-action-emoji">{{ plant.emoji ?? '🌱' }}</span>
+            <div class="week-action-body">
+              <div class="week-action-top">
+                <span class="week-action-name">{{ plantName(plant) }}</span>
+                <span class="week-action-badge" :class="'lc-badge-' + lc.nextState">
+                  {{ te(`garden.lifecycle.${lc.nextState}`) ? t(`garden.lifecycle.${lc.nextState}`) : lc.nextState }}
                 </span>
+                <button class="advance-btn" @click.stop="advanceLifecycle(plant.id)">
+                  {{ t('garden.advanceStage') }}
+                </button>
               </div>
             </div>
           </div>
@@ -548,6 +699,54 @@ onMounted(async () => {
       </div>
     </template>
   </main>
+
+  <!-- Log action modal -->
+  <Teleport to="body">
+    <div v-if="actionModal.open" class="modal-backdrop" @click.self="closeActionModal">
+      <div class="modal" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <span class="modal-title">{{ t('garden.actionModal.title') }}</span>
+          <span v-if="actionModal.plant" class="modal-plant">
+            {{ actionModal.plant.emoji ?? '🌱' }} {{ plantName(actionModal.plant) }}
+          </span>
+        </div>
+        <form class="modal-body" @submit.prevent="submitActionModal">
+          <div class="form-row">
+            <label class="form-label">{{ t('garden.actionModal.actionLabel') }}</label>
+            <span class="form-value">{{ te(`garden.planAction.${actionModal.action}`) ? t(`garden.planAction.${actionModal.action}`) : actionModal.action }}</span>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="action-date">{{ t('garden.seedModal.dateLabel') }}</label>
+            <input
+              id="action-date"
+              v-model="actionModal.date"
+              type="date"
+              class="form-input"
+              required
+            />
+          </div>
+          <div class="form-row form-row--col">
+            <label class="form-label" for="action-comment">{{ t('garden.seedModal.commentLabel') }}</label>
+            <textarea
+              id="action-comment"
+              v-model="actionModal.comment"
+              class="form-textarea"
+              :placeholder="t('garden.seedModal.commentPlaceholder')"
+              rows="2"
+            />
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="modal-cancel" @click="closeActionModal">
+              {{ t('garden.seedModal.cancel') }}
+            </button>
+            <button type="submit" class="modal-save" :disabled="actionModal.saving">
+              {{ t('garden.seedModal.save') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </Teleport>
 
   <!-- Seed now modal -->
   <Teleport to="body">
@@ -744,6 +943,7 @@ main {
 .week-action-badge.plan-harvest     { background: #fef3c7; color: #92400e; }
 .week-action-badge.plan-pruning     { background: #ede9fe; color: #4c1d95; }
 .week-action-badge.plan-fertilizing { background: #fef2d0; color: #78350f; }
+.week-action-badge.plan-watering    { background: #e0f2fe; color: #0c4a6e; }
 
 .week-action-hints {
   font-size: 0.78rem;
@@ -982,7 +1182,85 @@ main {
   border-color: #92400e;
 }
 
+.plan-dot-watering {
+  border-color: #0369a1;
+}
+
+.plan-dot-done {
+  opacity: 0.3;
+}
+
 .plant-emoji { font-size: 1rem; }
+
+.lifecycle-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 20px;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.lc-seeded           { background: #f0fdf4; color: #166534; }
+.lc-germinating      { background: #dcfce7; color: #15803d; }
+.lc-growing          { background: #bbf7d0; color: #166534; }
+.lc-ready_to_harvest { background: #fef3c7; color: #92400e; }
+.lc-harvested        { background: #f3f4f6; color: #6b7280; }
+
+.lc-badge-seeded           { background: #f0fdf4; color: #166534; }
+.lc-badge-germinating      { background: #dcfce7; color: #15803d; }
+.lc-badge-growing          { background: #bbf7d0; color: #166534; }
+.lc-badge-ready_to_harvest { background: #fef3c7; color: #92400e; }
+.lc-badge-harvested        { background: #f3f4f6; color: #6b7280; }
+
+.advance-btn {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  border: 1.5px solid var(--green-mid);
+  background: none;
+  color: var(--green-dark);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.advance-btn:hover { background: var(--green-pale); }
+
+.log-action-btn {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  border: 1.5px solid #0369a1;
+  background: none;
+  color: #0369a1;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.log-action-btn:hover { background: #e0f2fe; }
+
+.plan-done-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--green-mid);
+  padding: 0.1rem 0.3rem;
+}
+
+.week-action--overdue {
+  border-left: 3px solid #f59e0b;
+}
+
+.overdue-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 20px;
+  background: #fef3c7;
+  color: #92400e;
+  white-space: nowrap;
+}
 
 .cal-cell {
   padding: 0.3rem 0.2rem;

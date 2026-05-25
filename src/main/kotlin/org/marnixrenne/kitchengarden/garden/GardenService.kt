@@ -20,7 +20,7 @@ class GardenService(
     private val preferenceService: PreferenceService,
 ) {
 
-    private fun resolveUserId(authentication: Authentication): UUID {
+    internal fun resolveUserId(authentication: Authentication): UUID {
         val principal = authentication.principal
         if (principal is AppUserDetails) return principal.userId
         return transaction {
@@ -67,7 +67,7 @@ class GardenService(
     fun remove(authentication: Authentication, plantId: UUID) =
         repository.remove(resolveDefaultGardenId(authentication), plantId)
 
-    fun logSeeding(authentication: Authentication, request: PlantLogRequest): PlantLogResponse {
+    fun logAction(authentication: Authentication, request: PlantLogRequest): PlantLogResponse {
         val entry = plantLogRepository.save(resolveUserId(authentication), request)
         if (request.action == "seeding") {
             plantPlanService.generateAndSave(entry.id, request.plantId, request.date)

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.marnixrenne.kitchengarden.garden.FertilizingConfig
 import org.marnixrenne.kitchengarden.garden.PlantPlanCalculator
 import org.marnixrenne.kitchengarden.garden.PruningConfig
+import org.marnixrenne.kitchengarden.garden.WateringConfig
 import java.time.LocalDate
 
 class PlantPlanCalculatorTest {
@@ -179,6 +180,38 @@ class PlantPlanCalculatorTest {
         )
         val starts = periods.map { it.start }
         assertEquals(starts.sorted(), starts)
+    }
+
+    @Test
+    fun `watering entries are generated at configured intervals until harvest`() {
+        val config = WateringConfig(startDaysAfterSeed = 3, intervalDays = 14, windowDays = 7)
+        val periods = PlantPlanCalculator.compute(
+            seedDate = seed,
+            germinationDaysMin = null, germinationDaysMax = null,
+            daysToMaturityMin = 60, daysToMaturityMax = 60,
+            harvestMonths = emptyList(),
+            pruningConfig = null, fertilizingConfig = null,
+            wateringConfig = config,
+        )
+        val watering = periods.filter { it.action == "watering" }
+        assertTrue(watering.isNotEmpty())
+        assertEquals(seed.plusDays(3), watering.first().start)
+        assertEquals(seed.plusDays(10), watering.first().end)
+        assertTrue(watering.all { it.start.isBefore(seed.plusDays(60)) })
+    }
+
+    @Test
+    fun `watering is omitted when interval is zero`() {
+        val config = WateringConfig(startDaysAfterSeed = 0, intervalDays = 0, windowDays = 0)
+        val periods = PlantPlanCalculator.compute(
+            seedDate = seed,
+            germinationDaysMin = null, germinationDaysMax = null,
+            daysToMaturityMin = 60, daysToMaturityMax = 60,
+            harvestMonths = emptyList(),
+            pruningConfig = null, fertilizingConfig = null,
+            wateringConfig = config,
+        )
+        assertTrue(periods.none { it.action == "watering" })
     }
 
     @Test

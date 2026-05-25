@@ -277,14 +277,32 @@ export default {
     hintGermination: 'Kiemt na {min}–{max} dagen',
     hintHarvest: 'Klaar om te oogsten deze maand',
     seedNow: 'Nu zaaien',
+    advanceStage: 'Fase vooruitgang',
+    lifecycle: {
+      seeded:           'Gezaaid',
+      germinating:      'Aan het kiemen',
+      growing:          'Aan het groeien',
+      ready_to_harvest: 'Oogstklaar',
+      harvested:        'Geoogst',
+    },
     loggedAction: {
-      seeding: 'Gezaaid',
+      seeding:     'Gezaaid',
+      fertilizing: 'Bemest',
+      pruning:     'Gesnoeid',
+      watering:    'Bewaterd',
     },
     planAction: {
       germination:  'Verwachte kieming',
       harvest:      'Klaar om te oogsten',
       pruning:      'Tijd om te snoeien',
       fertilizing:  'Tijd om te bemesten',
+      watering:     'Tijd om te gieten',
+    },
+    logDone: 'Gedaan',
+    overdue: 'Te laat',
+    actionModal: {
+      title: 'Actie registreren',
+      actionLabel: 'Actie',
     },
     seedModal: {
       title: 'Zaaiactie registreren',

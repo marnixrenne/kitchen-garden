@@ -277,14 +277,32 @@ export default {
     hintGermination: 'Germinates in {min}–{max} days',
     hintHarvest: 'Ready to harvest this month',
     seedNow: 'Seed now',
+    advanceStage: 'Advance stage',
+    lifecycle: {
+      seeded:           'Seeded',
+      germinating:      'Germinating',
+      growing:          'Growing',
+      ready_to_harvest: 'Ready to harvest',
+      harvested:        'Harvested',
+    },
     loggedAction: {
-      seeding: 'Seeded',
+      seeding:     'Seeded',
+      fertilizing: 'Fertilized',
+      pruning:     'Pruned',
+      watering:    'Watered',
     },
     planAction: {
       germination:  'Germination expected',
       harvest:      'Ready to harvest',
       pruning:      'Time to prune',
       fertilizing:  'Time to fertilize',
+      watering:     'Time to water',
+    },
+    logDone: 'Mark done',
+    overdue: 'Overdue',
+    actionModal: {
+      title: 'Log action',
+      actionLabel: 'Action',
     },
     seedModal: {
       title: 'Log seeding',

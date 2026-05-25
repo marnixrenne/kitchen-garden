@@ -275,14 +275,32 @@ export default {
     hintGermination: 'Germina en {min}–{max} días',
     hintHarvest: 'Lista para cosechar este mes',
     seedNow: 'Sembrar ahora',
+    advanceStage: 'Avanzar fase',
+    lifecycle: {
+      seeded:           'Sembrado',
+      germinating:      'Germinando',
+      growing:          'Creciendo',
+      ready_to_harvest: 'Listo para cosechar',
+      harvested:        'Cosechado',
+    },
     loggedAction: {
-      seeding: 'Sembrado',
+      seeding:     'Sembrado',
+      fertilizing: 'Abonado',
+      pruning:     'Podado',
+      watering:    'Regado',
     },
     planAction: {
       germination:  'Germinación esperada',
       harvest:      'Listo para cosechar',
       pruning:      'Momento de podar',
       fertilizing:  'Momento de abonar',
+      watering:     'Momento de regar',
+    },
+    logDone: 'Marcar hecho',
+    overdue: 'Vencido',
+    actionModal: {
+      title: 'Registrar acción',
+      actionLabel: 'Acción',
     },
     seedModal: {
       title: 'Registrar siembra',

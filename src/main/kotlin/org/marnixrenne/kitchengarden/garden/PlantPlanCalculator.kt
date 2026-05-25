@@ -14,6 +14,7 @@ object PlantPlanCalculator {
         harvestMonths: List<Int>,
         pruningConfig: PruningConfig?,
         fertilizingConfig: FertilizingConfig?,
+        wateringConfig: WateringConfig? = null,
     ): List<PlanPeriod> {
         val harvestPeriod = resolveHarvestPeriod(seedDate, daysToMaturityMin, daysToMaturityMax, harvestMonths)
         val periods = mutableListOf<PlanPeriod>()
@@ -44,6 +45,15 @@ object PlantPlanCalculator {
                 periods += PlanPeriod("fertilizing", fertStart, fertStart.plusDays(fertilizingConfig.windowDays.toLong()))
                 fertStart = fertStart.plusDays(fertilizingConfig.intervalDays.toLong())
                 count++
+            }
+        }
+
+        if (wateringConfig != null && wateringConfig.intervalDays > 0 && harvestPeriod != null) {
+            val (harvestStart, _) = harvestPeriod
+            var waterStart = seedDate.plusDays(wateringConfig.startDaysAfterSeed.toLong())
+            while (waterStart.isBefore(harvestStart)) {
+                periods += PlanPeriod("watering", waterStart, waterStart.plusDays(wateringConfig.windowDays.toLong()))
+                waterStart = waterStart.plusDays(wateringConfig.intervalDays.toLong())
             }
         }
 

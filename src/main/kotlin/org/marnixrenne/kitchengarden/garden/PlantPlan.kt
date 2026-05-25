@@ -7,6 +7,7 @@ data class PlanPeriod(val action: String, val start: LocalDate, val end: LocalDa
 
 data class PruningConfig(val weeksBeforeStart: Int, val weeksBeforeEnd: Int)
 data class FertilizingConfig(val startDaysAfterSeed: Int, val intervalDays: Int, val windowDays: Int, val maxApplications: Int)
+data class WateringConfig(val startDaysAfterSeed: Int, val intervalDays: Int, val windowDays: Int)
 
 data class PlanEntry(
     val id: UUID,
