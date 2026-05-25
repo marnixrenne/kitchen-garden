@@ -277,6 +277,7 @@ export default {
     hintGermination: 'Germinates in {min}–{max} days',
     hintHarvest: 'Ready to harvest this month',
     seedNow: 'Seed now',
+    seededOn: 'Seeded {date}',
     advanceStage: 'Advance stage',
     lifecycle: {
       seeded:           'Seeded',

@@ -302,8 +302,10 @@ onMounted(fetchAll)
             class="week-item"
           >
             <span class="wi-emoji">{{ item.plant.emoji ?? '🌱' }}</span>
-            <span class="wi-name">{{ pName(item.plant) }}</span>
-            <span class="wi-seeddate">{{ item.seedDate ?? '—' }}</span>
+            <span class="wi-name">
+              {{ pName(item.plant) }}
+              <span v-if="item.seedDate" class="wi-seeded-on"> – {{ t('garden.seededOn', { date: item.seedDate }) }}</span>
+            </span>
             <span class="wi-date">
               <span v-if="item.dateRange" class="wi-daterange">{{ item.dateRange }}</span>
             </span>
@@ -504,13 +506,10 @@ onMounted(fetchAll)
   text-overflow: ellipsis;
 }
 
-.wi-seeddate {
-  font-size: 0.75rem;
+.wi-seeded-on {
+  font-size: 0.78rem;
+  font-weight: 400;
   color: var(--text-muted);
-  font-weight: 500;
-  white-space: nowrap;
-  min-width: 4.5rem;
-  flex-shrink: 0;
 }
 
 .wi-date {

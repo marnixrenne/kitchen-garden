@@ -275,6 +275,7 @@ export default {
     hintGermination: 'Germina en {min}–{max} días',
     hintHarvest: 'Lista para cosechar este mes',
     seedNow: 'Sembrar ahora',
+    seededOn: 'Sembrado el {date}',
     advanceStage: 'Avanzar fase',
     lifecycle: {
       seeded:           'Sembrado',

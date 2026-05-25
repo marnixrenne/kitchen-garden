@@ -277,6 +277,7 @@ export default {
     hintGermination: 'Kiemt na {min}–{max} dagen',
     hintHarvest: 'Klaar om te oogsten deze maand',
     seedNow: 'Nu zaaien',
+    seededOn: 'Gezaaid {date}',
     advanceStage: 'Fase vooruitgang',
     lifecycle: {
       seeded:           'Gezaaid',
