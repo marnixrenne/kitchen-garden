@@ -140,9 +140,18 @@ const actionGroups = computed(() => {
       const end   = new Date(entry.plannedDateEnd   + 'T00:00:00')
       if (start > weekEnd || end < weekStart) continue
 
-      if (entry.action === 'germination' || entry.action === 'harvest') {
-        if (lc?.nextState === PLAN_TO_LC[entry.action]) {
-          buckets[entry.action]?.push({
+      if (entry.action === 'germination') {
+        if (!lc || lc.nextState === 'germinating') {
+          buckets.germination.push({
+            plant, instanceId, seedDate: sd,
+            dateRange: planDateRange(entry),
+            done: false,
+            planEntry: entry, lc: lc ?? null, sowAction: null,
+          })
+        }
+      } else if (entry.action === 'harvest') {
+        if (lc?.nextState === 'ready_to_harvest') {
+          buckets.harvest.push({
             plant, instanceId, seedDate: sd,
             dateRange: planDateRange(entry),
             done: false,
