@@ -16,4 +16,5 @@ data class PlanEntry(
     val action: String,
     val plannedDateStart: LocalDate,
     val plannedDateEnd: LocalDate,
+    val seedDate: LocalDate,
 )

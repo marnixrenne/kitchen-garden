@@ -133,17 +133,18 @@ const actionGroups = computed(() => {
     const plant = plantById.value[inst.plantId]
     if (!plant) continue
     const lc = lifecycle.value[instanceId]
-    const sd = instanceSeedDate(instanceId)
 
     for (const entry of entries) {
       const start = new Date(entry.plannedDateStart + 'T00:00:00')
       const end   = new Date(entry.plannedDateEnd   + 'T00:00:00')
       if (start > weekEnd || end < weekStart) continue
 
+      const seedDate = formatDate(entry.seedDate)
+
       if (entry.action === 'germination') {
         if (!lc || lc.nextState === 'germinating') {
           buckets.germination.push({
-            plant, instanceId, seedDate: sd,
+            plant, instanceId, seedDate,
             dateRange: planDateRange(entry),
             done: false,
             planEntry: entry, lc: lc ?? null, sowAction: null,
@@ -152,7 +153,7 @@ const actionGroups = computed(() => {
       } else if (entry.action === 'harvest') {
         if (lc?.nextState === 'ready_to_harvest') {
           buckets.harvest.push({
-            plant, instanceId, seedDate: sd,
+            plant, instanceId, seedDate,
             dateRange: planDateRange(entry),
             done: false,
             planEntry: entry, lc, sowAction: null,
@@ -160,7 +161,7 @@ const actionGroups = computed(() => {
         }
       } else if (LOGGABLE.has(entry.action)) {
         buckets[entry.action]?.push({
-          plant, instanceId, seedDate: sd,
+          plant, instanceId, seedDate,
           dateRange: planDateRange(entry),
           done: isDone(instanceId, entry),
           planEntry: entry, lc: null, sowAction: null,
