@@ -112,7 +112,6 @@ const actionGroups = computed(() => {
   const year = new Date().getFullYear()
   const weekStart = new Date(year, ws.weekStartMonth - 1, ws.weekStartDay)
   const weekEnd   = new Date(year, ws.weekEndMonth   - 1, ws.weekEndDay)
-  const todayStr  = todayIso()
 
   const buckets = Object.fromEntries(ACTION_ORDER.map(a => [a, []]))
 
@@ -122,7 +121,7 @@ const actionGroups = computed(() => {
       buckets.seeding.push({
         plant: wa.plant, instanceId: iid,
         seedDate: iid ? instanceSeedDate(iid) : null,
-        dateRange: null, overdue: false, done: false,
+        dateRange: null, done: false,
         planEntry: null, lc: null, sowAction: wa,
       })
     }
@@ -137,16 +136,6 @@ const actionGroups = computed(() => {
     const sd = instanceSeedDate(instanceId)
 
     for (const entry of entries) {
-      if (LOGGABLE.has(entry.action) && entry.plannedDateEnd < todayStr && !isDone(instanceId, entry)) {
-        buckets[entry.action]?.push({
-          plant, instanceId, seedDate: sd,
-          dateRange: planDateRange(entry),
-          overdue: true, done: false,
-          planEntry: entry, lc: null, sowAction: null,
-        })
-        continue
-      }
-
       const start = new Date(entry.plannedDateStart + 'T00:00:00')
       const end   = new Date(entry.plannedDateEnd   + 'T00:00:00')
       if (start > weekEnd || end < weekStart) continue
@@ -156,7 +145,7 @@ const actionGroups = computed(() => {
           buckets[entry.action]?.push({
             plant, instanceId, seedDate: sd,
             dateRange: planDateRange(entry),
-            overdue: false, done: false,
+            done: false,
             planEntry: entry, lc, sowAction: null,
           })
         }
@@ -164,7 +153,7 @@ const actionGroups = computed(() => {
         buckets[entry.action]?.push({
           plant, instanceId, seedDate: sd,
           dateRange: planDateRange(entry),
-          overdue: false, done: isDone(instanceId, entry),
+          done: isDone(instanceId, entry),
           planEntry: entry, lc: null, sowAction: null,
         })
       }
@@ -301,13 +290,11 @@ onMounted(fetchAll)
             v-for="(item, i) in group.items"
             :key="i"
             class="week-item"
-            :class="{ 'week-item--overdue': item.overdue }"
           >
             <span class="wi-emoji">{{ item.plant.emoji ?? '🌱' }}</span>
             <span class="wi-name">{{ pName(item.plant) }}</span>
             <span class="wi-seeddate">{{ item.seedDate ?? '—' }}</span>
             <span class="wi-date">
-              <span v-if="item.overdue" class="wi-overdue">{{ t('garden.overdue') }}</span>
               <span v-if="item.dateRange" class="wi-daterange">{{ item.dateRange }}</span>
             </span>
             <div class="wi-action">
