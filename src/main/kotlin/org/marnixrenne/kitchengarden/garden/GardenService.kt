@@ -31,8 +31,16 @@ class GardenService(
         } ?: error("Authenticated user not found in database")
     }
 
+    private fun resolveGardenId(authentication: Authentication, gardenId: UUID?): UUID {
+        val userId = resolveUserId(authentication)
+        if (gardenId == null) return repository.findOrCreateDefaultGarden(userId)
+        val owned = repository.findGardens(userId).any { it.id == gardenId }
+        if (!owned) throw ResponseStatusException(HttpStatus.NOT_FOUND)
+        return gardenId
+    }
+
     private fun resolveDefaultGardenId(authentication: Authentication): UUID =
-        repository.findOrCreateDefaultGarden(resolveUserId(authentication))
+        resolveGardenId(authentication, null)
 
     // ── Garden management ─────────────────────────────────────────────────────
 
@@ -52,14 +60,14 @@ class GardenService(
     fun getPlantIds(authentication: Authentication): Set<UUID> =
         repository.findPlantIds(resolveDefaultGardenId(authentication))
 
-    fun getDetails(authentication: Authentication): List<PlantDetail> =
-        repository.findDetails(resolveDefaultGardenId(authentication), preferenceService.getCountry(authentication))
+    fun getDetails(authentication: Authentication, gardenId: UUID? = null): List<PlantDetail> =
+        repository.findDetails(resolveGardenId(authentication, gardenId), preferenceService.getCountry(authentication))
 
-    fun getWeekSummary(authentication: Authentication): WeekSummary =
-        repository.findWeekSummary(resolveDefaultGardenId(authentication), preferenceService.getCountry(authentication))
+    fun getWeekSummary(authentication: Authentication, gardenId: UUID? = null): WeekSummary =
+        repository.findWeekSummary(resolveGardenId(authentication, gardenId), preferenceService.getCountry(authentication))
 
-    fun getSuggestions(authentication: Authentication): PlantingSuggestions =
-        repository.findSuggestions(resolveDefaultGardenId(authentication))
+    fun getSuggestions(authentication: Authentication, gardenId: UUID? = null): PlantingSuggestions =
+        repository.findSuggestions(resolveGardenId(authentication, gardenId))
 
     fun add(authentication: Authentication, plantId: UUID) =
         repository.add(resolveDefaultGardenId(authentication), plantId)
@@ -67,8 +75,8 @@ class GardenService(
     fun remove(authentication: Authentication, plantId: UUID) =
         repository.remove(resolveDefaultGardenId(authentication), plantId)
 
-    fun getInstances(authentication: Authentication): List<PlantInstance> =
-        repository.findInstances(resolveDefaultGardenId(authentication))
+    fun getInstances(authentication: Authentication, gardenId: UUID? = null): List<PlantInstance> =
+        repository.findInstances(resolveGardenId(authentication, gardenId))
 
     fun logAction(authentication: Authentication, request: PlantLogRequest): PlantLogResponse {
         val entry = plantLogRepository.save(resolveUserId(authentication), request)

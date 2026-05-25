@@ -28,16 +28,22 @@ class GardenController(private val gardenService: GardenService) {
         gardenService.getPlantIds(authentication)
 
     @GetMapping("/details")
-    fun getGardenDetails(authentication: Authentication): List<PlantDetail> =
-        gardenService.getDetails(authentication)
+    fun getGardenDetails(
+        @RequestParam(required = false) gardenId: UUID?,
+        authentication: Authentication,
+    ): List<PlantDetail> = gardenService.getDetails(authentication, gardenId)
 
     @GetMapping("/week")
-    fun getWeekSummary(authentication: Authentication): WeekSummary =
-        gardenService.getWeekSummary(authentication)
+    fun getWeekSummary(
+        @RequestParam(required = false) gardenId: UUID?,
+        authentication: Authentication,
+    ): WeekSummary = gardenService.getWeekSummary(authentication, gardenId)
 
     @GetMapping("/suggestions")
-    fun getSuggestions(authentication: Authentication): PlantingSuggestions =
-        gardenService.getSuggestions(authentication)
+    fun getSuggestions(
+        @RequestParam(required = false) gardenId: UUID?,
+        authentication: Authentication,
+    ): PlantingSuggestions = gardenService.getSuggestions(authentication, gardenId)
 
     @PutMapping("/{plantId}")
     fun addToGarden(
@@ -58,8 +64,10 @@ class GardenController(private val gardenService: GardenService) {
     }
 
     @GetMapping("/instances")
-    fun getInstances(authentication: Authentication): List<PlantInstance> =
-        gardenService.getInstances(authentication)
+    fun getInstances(
+        @RequestParam(required = false) gardenId: UUID?,
+        authentication: Authentication,
+    ): List<PlantInstance> = gardenService.getInstances(authentication, gardenId)
 
     @GetMapping("/plant-log")
     fun getPlantLog(authentication: Authentication): Map<UUID, List<LoggedEntry>> =

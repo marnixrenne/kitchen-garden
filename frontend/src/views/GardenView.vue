@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ThisWeekCard from '../components/ThisWeekCard.vue'
+import { gardenParam } from '../stores/garden.js'
 
 const router = useRouter()
 const { t, tm, te, locale } = useI18n()
@@ -86,7 +87,7 @@ function hasExpandContent(plantId) {
 }
 
 async function fetchInstances() {
-  const res = await fetch('/api/garden/instances')
+  const res = await fetch(`/api/garden/instances${gardenParam()}`)
   if (res.ok) instances.value = await res.json()
 }
 
@@ -224,8 +225,8 @@ async function onWeekRefresh() {
 
 onMounted(async () => {
   const [detailsRes, suggestionsRes] = await Promise.all([
-    fetch('/api/garden/details'),
-    fetch('/api/garden/suggestions'),
+    fetch(`/api/garden/details${gardenParam()}`),
+    fetch(`/api/garden/suggestions${gardenParam()}`),
   ])
   if (detailsRes.ok)     plants.value      = await detailsRes.json()
   if (suggestionsRes.ok) suggestions.value = await suggestionsRes.json()

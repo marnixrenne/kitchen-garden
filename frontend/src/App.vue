@@ -1,13 +1,16 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, RouterView, RouterLink } from 'vue-router'
 import { user, logout, csrfHeaders } from './stores/auth.js'
+import { activeGardenId, setActiveGarden } from './stores/garden.js'
 
 const { t, locale } = useI18n()
 const router = useRouter()
 
 const localeFlag = { en: '🇬🇧', nl: '🇳🇱' }
+
+// ── Preferences ──────────────────────────────────────────────────────────────
 
 watch(user, async (u) => {
   if (!u) return
@@ -22,8 +25,47 @@ watch(user, async (u) => {
 
 async function handleLogout() {
   await logout()
+  setActiveGarden(null)
   router.push('/')
 }
+
+// ── Gardens list ─────────────────────────────────────────────────────────────
+
+const gardens = ref([])
+
+async function fetchGardens() {
+  const res = await fetch('/api/garden/gardens')
+  if (res.ok) {
+    gardens.value = await res.json()
+    if (gardens.value.length > 0 && !activeGardenId.value) {
+      setActiveGarden(gardens.value[0].id)
+    }
+  }
+}
+
+watch(user, (u) => { if (u) fetchGardens() }, { immediate: true })
+
+const activeGardenName = computed(() =>
+  gardens.value.find(g => g.id === activeGardenId.value)?.name ?? t('myGarden')
+)
+
+// ── Garden dropdown ───────────────────────────────────────────────────────────
+
+const dropdownOpen = ref(false)
+
+function toggleDropdown() { dropdownOpen.value = !dropdownOpen.value }
+
+function selectGarden(garden) {
+  setActiveGarden(garden.id)
+  dropdownOpen.value = false
+  router.push('/garden')
+}
+
+function handleDocClick() { dropdownOpen.value = false }
+onMounted(()  => document.addEventListener('click', handleDocClick))
+onUnmounted(() => document.removeEventListener('click', handleDocClick))
+
+// ── New garden modal ──────────────────────────────────────────────────────────
 
 const newGardenModal = ref({ open: false, name: '', saving: false, error: '' })
 
@@ -46,7 +88,11 @@ async function submitNewGarden() {
       newGardenModal.value.error = `Error ${res.status}`
       return
     }
+    const created = await res.json()
+    await fetchGardens()
+    setActiveGarden(created.id)
     newGardenModal.value.open = false
+    router.push('/garden')
   } finally {
     newGardenModal.value.saving = false
   }
@@ -60,7 +106,28 @@ async function submitNewGarden() {
       <nav class="header-nav">
         <template v-if="!user?.roles?.includes('ROLE_ADMIN')">
           <RouterLink to="/home">{{ t('home') }}</RouterLink>
-          <RouterLink to="/garden">{{ t('myGarden') }}</RouterLink>
+
+          <!-- Single garden: plain link -->
+          <RouterLink v-if="gardens.length <= 1" to="/garden">{{ t('myGarden') }}</RouterLink>
+
+          <!-- Multiple gardens: dropdown -->
+          <div v-else class="nav-garden-dropdown" @click.stop>
+            <button
+              class="nav-garden-trigger"
+              :class="{ 'router-link-active': $route.path === '/garden' }"
+              @click="toggleDropdown"
+            >{{ activeGardenName }} <span class="nav-garden-caret">▾</span></button>
+            <div v-if="dropdownOpen" class="nav-garden-menu">
+              <button
+                v-for="g in gardens"
+                :key="g.id"
+                class="nav-garden-item"
+                :class="{ 'nav-garden-item--active': g.id === activeGardenId }"
+                @click="selectGarden(g)"
+              >{{ g.name }}</button>
+            </div>
+          </div>
+
           <button class="new-garden-btn" :title="t('garden.newGarden')" @click="openNewGardenModal">+</button>
         </template>
         <RouterLink v-if="user?.roles?.includes('ROLE_ADMIN')" to="/admin">Admin</RouterLink>
@@ -156,6 +223,67 @@ header h1 { font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
 
 .header-nav a:hover { color: #fff; background: rgba(255,255,255,0.1); }
 .header-nav a.router-link-active { color: #fff; background: rgba(255,255,255,0.15); }
+
+/* Garden dropdown */
+.nav-garden-dropdown {
+  position: relative;
+}
+
+.nav-garden-trigger {
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-garden-trigger:hover,
+.nav-garden-trigger.router-link-active {
+  color: #fff;
+  background: rgba(255,255,255,0.15);
+}
+
+.nav-garden-caret {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+.nav-garden-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 160px;
+  background: var(--green-dark);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 0.3rem 0;
+  z-index: 150;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
+
+.nav-garden-item {
+  display: block;
+  width: 100%;
+  padding: 0.45rem 0.9rem;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.75);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.nav-garden-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.nav-garden-item--active { color: #fff; font-weight: 700; }
 
 .new-garden-btn {
   padding: 0.25rem 0.55rem;

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { csrfHeaders } from '../stores/auth.js'
+import { gardenParam } from '../stores/garden.js'
 
 const emit = defineEmits(['refresh'])
 const { t, te, tm, locale } = useI18n()
@@ -182,13 +183,14 @@ const actionGroups = computed(() => {
 
 async function fetchAll() {
   loading.value = true
+  const p = gardenParam()
   const [weekRes, instRes, logRes, planRes, lcRes, detailRes] = await Promise.all([
-    fetch('/api/garden/week'),
-    fetch('/api/garden/instances'),
+    fetch(`/api/garden/week${p}`),
+    fetch(`/api/garden/instances${p}`),
     fetch('/api/garden/plant-log'),
     fetch('/api/garden/plan'),
     fetch('/api/garden/lifecycle'),
-    fetch('/api/garden/details'),
+    fetch(`/api/garden/details${p}`),
   ])
   if (weekRes.ok)   weekSummary.value = await weekRes.json()
   if (instRes.ok)   instances.value   = await instRes.json()
