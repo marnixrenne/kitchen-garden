@@ -71,6 +71,21 @@ const instancesByPlantId = computed(() => {
   return map
 })
 
+const seedModalInfo = computed(() => {
+  const plant = seedModal.value.plant
+  if (!plant) return null
+  const detail = plants.value.find(p => p.id === plant.id)
+  if (!detail) return null
+  return {
+    spacingCm:    detail.sowingGuide?.spacingCm ?? null,
+    seedDepthMm:  detail.sowingGuide?.seedDepthMm ?? null,
+    goodWith:     (detail.companions ?? []).filter(c => c.relationship === 'good'),
+    avoidNear:    (detail.companions ?? []).filter(c => c.relationship === 'bad'),
+    sameSun:      plants.value.filter(p => p.id !== detail.id && p.sunRequirement && p.sunRequirement === detail.sunRequirement),
+    sunRequirement: detail.sunRequirement,
+  }
+})
+
 const LOGGABLE = new Set(['fertilizing', 'pruning', 'watering'])
 
 function isDone(instanceId, entry) {
@@ -364,6 +379,42 @@ onMounted(fetchAll)
                 {{ t('garden.seedModal.methodPlanted') }}
               </label>
             </div>
+          </div>
+          <div v-if="seedModalInfo" class="seed-info">
+            <div v-if="seedModalInfo.spacingCm && seedModal.method !== 'seeding_indoor'" class="seed-info-row">
+              <span class="seed-info-label">{{ t('garden.seedModal.spacing') }}</span>
+              <span class="seed-info-value">{{ seedModalInfo.spacingCm }} cm</span>
+            </div>
+            <div v-if="seedModalInfo.seedDepthMm !== null && seedModal.method !== 'planting'" class="seed-info-row">
+              <span class="seed-info-label">{{ t('garden.seedModal.seedDepth') }}</span>
+              <span class="seed-info-value">{{ seedModalInfo.seedDepthMm }} mm</span>
+            </div>
+            <template v-if="seedModal.method === 'seeding_direct' || seedModal.method === 'planting'">
+              <div v-if="seedModalInfo.goodWith.length > 0" class="seed-info-row seed-info-row--companions">
+                <span class="seed-info-label">{{ t('garden.seedModal.plantNear') }}</span>
+                <div class="seed-info-tags">
+                  <span v-for="c in seedModalInfo.goodWith" :key="c.id" class="seed-info-tag seed-info-tag--good">
+                    {{ c.emoji ?? '🌱' }} {{ pName(c) }}
+                  </span>
+                </div>
+              </div>
+              <div v-if="seedModalInfo.avoidNear.length > 0" class="seed-info-row seed-info-row--companions">
+                <span class="seed-info-label">{{ t('garden.seedModal.avoidNear') }}</span>
+                <div class="seed-info-tags">
+                  <span v-for="c in seedModalInfo.avoidNear" :key="c.id" class="seed-info-tag seed-info-tag--bad">
+                    {{ c.emoji ?? '🌱' }} {{ pName(c) }}
+                  </span>
+                </div>
+              </div>
+              <div v-if="seedModalInfo.sameSun.length > 0" class="seed-info-row seed-info-row--companions">
+                <span class="seed-info-label">{{ t('garden.seedModal.sameSun') }}</span>
+                <div class="seed-info-tags">
+                  <span v-for="p in seedModalInfo.sameSun" :key="p.id" class="seed-info-tag seed-info-tag--sun">
+                    {{ p.emoji ?? '🌱' }} {{ pName(p) }}
+                  </span>
+                </div>
+              </div>
+            </template>
           </div>
           <div class="form-row">
             <label class="form-label" for="tw-seed-date">{{ t('garden.seedModal.dateLabel') }}</label>
@@ -817,5 +868,72 @@ onMounted(fetchAll)
 .method-option:hover:not(.active) {
   border-color: var(--green-light);
   color: var(--green-dark);
+}
+
+/* Seed modal info panel */
+.seed-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg);
+  border: 1px solid var(--green-pale);
+  border-radius: var(--radius);
+}
+
+.seed-info-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.seed-info-row--companions {
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.seed-info-label {
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+.seed-info-value {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--green-dark);
+}
+
+.seed-info-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.seed-info-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.seed-info-tag--good {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.seed-info-tag--bad {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.seed-info-tag--sun {
+  background: #fef9c3;
+  color: #713f12;
 }
 </style>

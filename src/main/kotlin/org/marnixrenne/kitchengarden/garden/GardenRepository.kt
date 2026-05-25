@@ -274,6 +274,18 @@ class GardenRepository {
             .groupBy({ it[PlantCountries.plantId] }, { Country(it[Countries.code], it[Countries.name]) })
             .mapValues { it.value.sortedBy { c -> c.name } }
 
+        val companionsByPlant = CompanionPlants.selectAll()
+            .where { (CompanionPlants.plantId inList ids) and (CompanionPlants.companionId inList ids) }
+            .groupBy({ it[CompanionPlants.plantId] }, { row ->
+                val companionRow = plantRows[row[CompanionPlants.companionId]]
+                CompanionPlant(
+                    id           = row[CompanionPlants.companionId],
+                    name         = companionRow?.get(Plants.name) ?: "",
+                    emoji        = companionRow?.get(Plants.emoji),
+                    relationship = row[CompanionPlants.relationship],
+                )
+            })
+
         ids.mapNotNull { id ->
             val row = plantRows[id] ?: return@mapNotNull null
             PlantDetail(
@@ -283,18 +295,27 @@ class GardenRepository {
                 category         = row[Plants.category],
                 emoji            = row[Plants.emoji],
                 imageUrl         = row[Plants.imageUrl],
-                sunRequirement   = null,
+                sunRequirement   = row[Plants.sunRequirement],
                 pruningType      = null,
                 pruningTip       = null,
                 fertilizerType   = null,
                 fertilizerTip    = null,
-                sowingGuide      = null,
+                sowingGuide      = SowingGuide(
+                    method             = null,
+                    seedDepthMm        = row[Plants.seedDepthMm],
+                    spacingCm          = row[Plants.spacingCm],
+                    germinationDaysMin = null,
+                    germinationDaysMax = null,
+                    daysToMaturityMin  = null,
+                    daysToMaturityMax  = null,
+                    frostTolerance     = null,
+                ),
                 heightMinCm      = row[Plants.heightMinCm]?.toInt(),
                 heightMaxCm      = row[Plants.heightMaxCm]?.toInt(),
                 seedingMonths    = seedingByPlant[id] ?: emptyList(),
                 harvestingMonths = harvestingByPlant[id] ?: emptyList(),
                 countries        = countriesByPlant[id] ?: emptyList(),
-                companions       = emptyList(),
+                companions       = companionsByPlant[id] ?: emptyList(),
                 insects          = emptyList(),
             )
         }.sortedBy { it.name }
