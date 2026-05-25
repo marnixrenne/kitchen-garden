@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ThisWeekCard from '../components/ThisWeekCard.vue'
@@ -245,7 +245,15 @@ async function confirmDeleteGarden() {
   router.push(remaining.length > 0 ? '/garden' : '/home')
 }
 
-onMounted(async () => {
+async function loadAll() {
+  loading.value = true
+  plants.value = []
+  suggestions.value = null
+  instances.value = []
+  plantLog.value = {}
+  plantPlan.value = {}
+  lifecycle.value = {}
+  expandedPlants.value = new Set()
   const [detailsRes, suggestionsRes] = await Promise.all([
     fetch(`/api/garden/details${gardenParam()}`),
     fetch(`/api/garden/suggestions${gardenParam()}`),
@@ -254,7 +262,10 @@ onMounted(async () => {
   if (suggestionsRes.ok) suggestions.value = await suggestionsRes.json()
   loading.value = false
   await Promise.all([fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
-})
+}
+
+onMounted(loadAll)
+watch(activeGardenId, loadAll)
 </script>
 
 <template>
