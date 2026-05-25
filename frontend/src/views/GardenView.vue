@@ -854,11 +854,15 @@ main {
   margin-left: auto;
 }
 
-.lc-seeded           { background: #f0fdf4; color: #166534; }
-.lc-germinating      { background: #dcfce7; color: #15803d; }
-.lc-growing          { background: #bbf7d0; color: #166534; }
-.lc-ready_to_harvest { background: #fef3c7; color: #92400e; }
-.lc-harvested        { background: #f3f4f6; color: #6b7280; }
+.lc-seeded_indoor      { background: #f0fdf4; color: #166534; }
+.lc-seeded_direct      { background: #f0fdf4; color: #166534; }
+.lc-planted            { background: #f0fdf4; color: #166534; }
+.lc-germinating_indoor { background: #dcfce7; color: #15803d; }
+.lc-germinating_direct { background: #dcfce7; color: #15803d; }
+.lc-transplanted       { background: #d1fae5; color: #065f46; }
+.lc-growing            { background: #bbf7d0; color: #166534; }
+.lc-ready_to_harvest   { background: #fef3c7; color: #92400e; }
+.lc-harvested          { background: #f3f4f6; color: #6b7280; }
 
 .cal-cell {
   padding: 0.3rem 0.2rem;

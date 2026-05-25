@@ -82,7 +82,7 @@ class GardenService(
 
     fun logAction(authentication: Authentication, request: PlantLogRequest): PlantLogResponse {
         val entry = plantLogRepository.save(resolveUserId(authentication), request)
-        if (request.action == "seeding") {
+        if (request.action in setOf("seeding_indoor", "seeding_direct", "planting")) {
             plantPlanService.generateAndSave(entry.id, entry.plantId, request.date)
         }
         return entry

@@ -39,6 +39,7 @@ class PlantPlanRepository {
                     plannedDateStart = row[PlantPlanEntry.plannedDateStart],
                     plannedDateEnd   = row[PlantPlanEntry.plannedDateEnd],
                     seedDate         = row[PlantLogEntry.date],
+                    seedAction       = row[PlantLogEntry.action],
                 )
             })
     }

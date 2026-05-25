@@ -15,7 +15,7 @@ const lifecycle   = ref({})
 const plants      = ref([])
 const loading     = ref(true)
 
-const seedModal   = ref({ open: false, plant: null, instanceId: null, date: '', comment: '', saving: false })
+const seedModal   = ref({ open: false, plant: null, instanceId: null, method: 'seeding_direct', date: '', comment: '', saving: false })
 const actionModal = ref({ open: false, plant: null, instanceId: null, action: '', date: '', comment: '', saving: false })
 
 function todayIso() { return new Date().toISOString().slice(0, 10) }
@@ -33,7 +33,7 @@ function instanceSeedDate(instanceId) {
   const entries = plantLog.value[instanceId] ?? []
   for (let i = entries.length - 1; i >= 0; i--) {
     const e = entries[i]
-    if (e.action === 'seeding' || e.action === 'planting') return formatDate(e.date)
+    if (e.action === 'seeding_indoor' || e.action === 'seeding_direct' || e.action === 'planting') return formatDate(e.date)
   }
   return null
 }
@@ -71,8 +71,7 @@ const instancesByPlantId = computed(() => {
   return map
 })
 
-const LOGGABLE   = new Set(['fertilizing', 'pruning', 'watering'])
-const PLAN_TO_LC = { germination: 'germinating', harvest: 'ready_to_harvest' }
+const LOGGABLE = new Set(['fertilizing', 'pruning', 'watering'])
 
 function isDone(instanceId, entry) {
   return (plantLog.value[instanceId] ?? []).some(l =>
@@ -141,10 +140,12 @@ const actionGroups = computed(() => {
 
       const seedDate = formatDate(entry.seedDate)
 
+      const seedAction = entry.seedAction
+
       if (entry.action === 'germination') {
-        if (!lc || lc.nextState === 'germinating') {
+        if (!lc || lc.nextState === 'germinating_indoor' || lc.nextState === 'germinating_direct') {
           buckets.germination.push({
-            plant, instanceId, seedDate,
+            plant, instanceId, seedDate, seedAction,
             dateRange: planDateRange(entry),
             done: false,
             planEntry: entry, lc: lc ?? null, sowAction: null,
@@ -153,7 +154,7 @@ const actionGroups = computed(() => {
       } else if (entry.action === 'harvest') {
         if (lc?.nextState === 'ready_to_harvest') {
           buckets.harvest.push({
-            plant, instanceId, seedDate,
+            plant, instanceId, seedDate, seedAction,
             dateRange: planDateRange(entry),
             done: false,
             planEntry: entry, lc, sowAction: null,
@@ -161,7 +162,7 @@ const actionGroups = computed(() => {
         }
       } else if (LOGGABLE.has(entry.action)) {
         buckets[entry.action]?.push({
-          plant, instanceId, seedDate,
+          plant, instanceId, seedDate, seedAction,
           dateRange: planDateRange(entry),
           done: isDone(instanceId, entry),
           planEntry: entry, lc: null, sowAction: null,
@@ -212,7 +213,7 @@ async function advanceLifecycle(instanceId) {
 }
 
 function openSeedModal(plant, instanceId) {
-  seedModal.value = { open: true, plant, instanceId, date: todayIso(), comment: '', saving: false }
+  seedModal.value = { open: true, plant, instanceId, method: 'seeding_direct', date: todayIso(), comment: '', saving: false }
 }
 
 function openActionModal(plant, action, instanceId) {
@@ -231,7 +232,7 @@ async function submitSeed() {
   if (seedModal.value.saving) return
   seedModal.value.saving = true
   try {
-    await postAction(seedModal.value.instanceId, 'seeding', seedModal.value.date, seedModal.value.comment)
+    await postAction(seedModal.value.instanceId, seedModal.value.method, seedModal.value.date, seedModal.value.comment)
     seedModal.value.open = false
     await fetchAll()
     emit('refresh')
@@ -304,7 +305,7 @@ onMounted(fetchAll)
             <span class="wi-emoji">{{ item.plant.emoji ?? '🌱' }}</span>
             <span class="wi-name">
               {{ pName(item.plant) }}
-              <span v-if="item.seedDate" class="wi-seeded-on"> – {{ t('garden.seededOn', { date: item.seedDate }) }}</span>
+              <span v-if="item.seedDate" class="wi-seeded-on"> – {{ item.seedAction === 'planting' ? t('garden.plantedOn', { date: item.seedDate }) : t('garden.seededOn', { date: item.seedDate }) }}</span>
             </span>
             <span class="wi-date">
               <span v-if="item.dateRange" class="wi-daterange">{{ item.dateRange }}</span>
@@ -341,9 +342,22 @@ onMounted(fetchAll)
           </span>
         </div>
         <form class="modal-body" @submit.prevent="submitSeed">
-          <div class="form-row">
-            <label class="form-label">{{ t('garden.seedModal.actionLabel') }}</label>
-            <span class="form-value">{{ t('garden.seedModal.actionValue') }}</span>
+          <div class="form-row form-row--col">
+            <label class="form-label">{{ t('garden.seedModal.methodLabel') }}</label>
+            <div class="method-picker">
+              <label class="method-option" :class="{ active: seedModal.method === 'seeding_indoor' }">
+                <input type="radio" v-model="seedModal.method" value="seeding_indoor" />
+                {{ t('garden.seedModal.methodIndoor') }}
+              </label>
+              <label class="method-option" :class="{ active: seedModal.method === 'seeding_direct' }">
+                <input type="radio" v-model="seedModal.method" value="seeding_direct" />
+                {{ t('garden.seedModal.methodDirect') }}
+              </label>
+              <label class="method-option" :class="{ active: seedModal.method === 'planting' }">
+                <input type="radio" v-model="seedModal.method" value="planting" />
+                {{ t('garden.seedModal.methodPlanted') }}
+              </label>
+            </div>
           </div>
           <div class="form-row">
             <label class="form-label" for="tw-seed-date">{{ t('garden.seedModal.dateLabel') }}</label>
@@ -765,4 +779,37 @@ onMounted(fetchAll)
 
 .modal-save:hover:not(:disabled) { opacity: 0.85; }
 .modal-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.method-picker {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.method-option {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border: 1.5px solid var(--green-pale);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.method-option input[type="radio"] { display: none; }
+
+.method-option.active {
+  border-color: var(--green-mid);
+  color: var(--green-dark);
+  background: var(--green-pale);
+}
+
+.method-option:hover:not(.active) {
+  border-color: var(--green-light);
+  color: var(--green-dark);
+}
 </style>

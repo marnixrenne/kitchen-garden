@@ -23,11 +23,18 @@ class PlantLogRepository {
             .firstOrNull()
             ?: run {
                 val newLogId = UUID.randomUUID()
+                val initialState = when (request.action) {
+                    "seeding_indoor" -> "seeded_indoor"
+                    "seeding_direct" -> "seeded_direct"
+                    "planting"       -> "planted"
+                    else             -> "seeded_direct"
+                }
                 PlantLog.insert {
                     it[id]                 = newLogId
                     it[PlantLog.userId]    = userId
                     it[PlantLog.plantId]   = plantId
                     it[PlantLog.instanceId] = request.instanceId
+                    it[lifecycleState]     = initialState
                     it[createdAt]          = Instant.now()
                 }
                 newLogId

@@ -29,7 +29,7 @@ object PlantLog : Table("pts_plant_log") {
     val userId              = uuid("user_id")    references Users.id
     val plantId             = uuid("plant_id")   references Plants.id
     val instanceId          = uuid("instance_id").nullable()
-    val lifecycleState      = varchar("lifecycle_state", 20).default("seeded")
+    val lifecycleState      = varchar("lifecycle_state", 30).default("seeded_direct")
     val lifecycleUpdatedAt  = timestamp("lifecycle_updated_at").nullable()
     val createdAt           = timestamp("created_at")
 
