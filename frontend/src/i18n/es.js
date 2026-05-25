@@ -301,6 +301,9 @@ export default {
     newGarden: 'Nuevo huerto',
     newGardenPlaceholder: 'Nombre del huerto…',
     selectGarden: 'Seleccionar huerto',
+    deleteGarden: 'Eliminar huerto',
+    deleteGardenConfirm: '¿Seguro que quieres eliminar "{name}"? Todas las plantas, entradas del diario y actividad se eliminarán de forma permanente.',
+    deleteGardenConfirmBtn: 'Sí, eliminar este huerto',
     actionModal: {
       title: 'Registrar acción',
       actionLabel: 'Acción',

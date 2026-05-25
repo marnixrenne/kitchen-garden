@@ -3,7 +3,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ThisWeekCard from '../components/ThisWeekCard.vue'
-import { gardenParam, activeGardenName } from '../stores/garden.js'
+import { gardenParam, activeGardenName, activeGardenId, gardens, setActiveGarden } from '../stores/garden.js'
+import { csrfHeaders } from '../stores/auth.js'
 
 const router = useRouter()
 const { t, tm, te, locale } = useI18n()
@@ -223,6 +224,27 @@ async function onWeekRefresh() {
   await Promise.all([fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
 }
 
+// ── Delete garden ─────────────────────────────────────────────────────────────
+
+const deleteModal = ref({ open: false, deleting: false })
+
+async function confirmDeleteGarden() {
+  const id = activeGardenId.value
+  if (!id) return
+  deleteModal.value.deleting = true
+  const res = await fetch(`/api/garden/gardens/${id}`, {
+    method: 'DELETE',
+    headers: csrfHeaders(),
+  })
+  deleteModal.value.deleting = false
+  if (!res.ok) return
+  deleteModal.value.open = false
+  const remaining = gardens.value.filter(g => g.id !== id)
+  setActiveGarden(remaining.length > 0 ? remaining[0].id : null)
+  gardens.value = remaining
+  router.push(remaining.length > 0 ? '/garden' : '/home')
+}
+
 onMounted(async () => {
   const [detailsRes, suggestionsRes] = await Promise.all([
     fetch(`/api/garden/details${gardenParam()}`),
@@ -239,13 +261,16 @@ onMounted(async () => {
   <main>
     <div class="page-header">
       <h2 class="page-title">{{ activeGardenName ?? t('myGarden') }}</h2>
-      <button
-        v-if="sortedPlants.length > 0"
-        class="ical-btn"
-        @click="downloadIcal"
-      >
-        📅 {{ t('garden.addToCalendar') }}
-      </button>
+      <div class="page-header-actions">
+        <button
+          v-if="sortedPlants.length > 0"
+          class="ical-btn"
+          @click="downloadIcal"
+        >
+          📅 {{ t('garden.addToCalendar') }}
+        </button>
+        <button class="delete-garden-btn" @click="deleteModal.open = true" :title="t('garden.deleteGarden')">🗑</button>
+      </div>
     </div>
 
     <div v-if="loading" class="loading">{{ t('loading') }}</div>
@@ -439,6 +464,25 @@ onMounted(async () => {
     </template>
   </main>
 
+  <Teleport to="body">
+    <div v-if="deleteModal.open" class="dg-backdrop" @click.self="deleteModal.open = false">
+      <div class="dg-modal" role="dialog" aria-modal="true">
+        <div class="dg-header">{{ t('garden.deleteGarden') }}</div>
+        <div class="dg-body">
+          <p class="dg-warning">{{ t('garden.deleteGardenConfirm', { name: activeGardenName ?? t('myGarden') }) }}</p>
+          <div class="dg-actions">
+            <button class="dg-cancel" @click="deleteModal.open = false" :disabled="deleteModal.deleting">
+              {{ t('garden.seedModal.cancel') }}
+            </button>
+            <button class="dg-confirm" @click="confirmDeleteGarden" :disabled="deleteModal.deleting">
+              {{ t('garden.deleteGardenConfirmBtn') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
 </template>
 
 <style scoped>
@@ -463,6 +507,101 @@ main {
   color: var(--green-dark);
   flex: 1;
 }
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.delete-garden-btn {
+  padding: 0.35rem 0.6rem;
+  border: 1.5px solid #fca5a5;
+  border-radius: var(--radius);
+  background: #fff;
+  color: #b91c1c;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.delete-garden-btn:hover { background: #fee2e2; border-color: #ef4444; }
+
+/* Delete garden modal */
+.dg-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+
+.dg-modal {
+  background: #fff;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+.dg-header {
+  padding: 0.85rem 1.25rem;
+  background: #fee2e2;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+.dg-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dg-warning {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.dg-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.dg-cancel {
+  padding: 0.4rem 0.9rem;
+  border: 1.5px solid var(--green-pale);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dg-cancel:hover:not(:disabled) { border-color: var(--green-mid); color: var(--green-dark); }
+
+.dg-confirm {
+  padding: 0.4rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.dg-confirm:hover:not(:disabled) { opacity: 0.85; }
+.dg-confirm:disabled, .dg-cancel:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .ical-btn {
   padding: 0.4rem 0.9rem;

@@ -23,6 +23,15 @@ class GardenController(private val gardenService: GardenService) {
         return ResponseEntity.status(201).body(garden)
     }
 
+    @DeleteMapping("/gardens/{gardenId}")
+    fun deleteGarden(
+        @PathVariable gardenId: UUID,
+        authentication: Authentication,
+    ): ResponseEntity<Unit> {
+        gardenService.deleteGarden(authentication, gardenId)
+        return ResponseEntity.noContent().build()
+    }
+
     @GetMapping
     fun getGarden(
         @RequestParam(required = false) gardenId: UUID?,

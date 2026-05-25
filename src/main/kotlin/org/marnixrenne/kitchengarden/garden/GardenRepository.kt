@@ -2,6 +2,7 @@ package org.marnixrenne.kitchengarden.garden
 
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.marnixrenne.kitchengarden.plants.*
 import org.marnixrenne.kitchengarden.plants.CompanionPlants
@@ -82,6 +83,13 @@ class GardenRepository {
     }
 
     fun deleteGarden(gardenId: UUID, userId: UUID): Boolean = transaction {
+        val instanceIds = GardenPlantInstances
+            .select(GardenPlantInstances.id)
+            .where { GardenPlantInstances.gardenId eq gardenId }
+            .map { it[GardenPlantInstances.id] }
+        if (instanceIds.isNotEmpty()) {
+            PlantLog.deleteWhere { PlantLog.instanceId inList instanceIds }
+        }
         Garden.deleteWhere { (Garden.id eq gardenId) and (Garden.userId eq userId) } > 0
     }
 

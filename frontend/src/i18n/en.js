@@ -303,6 +303,9 @@ export default {
     newGarden: 'New garden',
     newGardenPlaceholder: 'Garden name…',
     selectGarden: 'Select garden',
+    deleteGarden: 'Delete garden',
+    deleteGardenConfirm: 'Are you sure you want to delete "{name}"? All plants, log entries and activity will be permanently removed.',
+    deleteGardenConfirmBtn: 'Yes, delete this garden',
     actionModal: {
       title: 'Log action',
       actionLabel: 'Action',

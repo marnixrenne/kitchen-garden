@@ -303,6 +303,9 @@ export default {
     newGarden: 'Nieuwe tuin',
     newGardenPlaceholder: 'Naam van de tuin…',
     selectGarden: 'Tuin selecteren',
+    deleteGarden: 'Tuin verwijderen',
+    deleteGardenConfirm: 'Weet je zeker dat je "{name}" wilt verwijderen? Alle planten, logboekregels en activiteit worden permanent verwijderd.',
+    deleteGardenConfirmBtn: 'Ja, verwijder deze tuin',
     actionModal: {
       title: 'Actie registreren',
       actionLabel: 'Actie',
