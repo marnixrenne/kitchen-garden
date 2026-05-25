@@ -15,7 +15,7 @@ const lifecycle   = ref({})
 const plants      = ref([])
 const loading     = ref(true)
 
-const seedModal   = ref({ open: false, plant: null, instanceId: null, method: 'seeding_direct', date: '', comment: '', saving: false })
+const seedModal   = ref({ open: false, plant: null, instanceId: null, method: 'seeding_indoor', date: '', comment: '', saving: false })
 const actionModal = ref({ open: false, plant: null, instanceId: null, action: '', date: '', comment: '', saving: false })
 
 function todayIso() { return new Date().toISOString().slice(0, 10) }
@@ -219,7 +219,7 @@ async function advanceLifecycle(instanceId) {
 }
 
 function openSeedModal(plant, instanceId) {
-  seedModal.value = { open: true, plant, instanceId, method: 'seeding_direct', date: todayIso(), comment: '', saving: false }
+  seedModal.value = { open: true, plant, instanceId, method: 'seeding_indoor', date: todayIso(), comment: '', saving: false }
 }
 
 function openActionModal(plant, action, instanceId) {
