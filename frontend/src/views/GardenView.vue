@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { csrfHeaders } from '../stores/auth.js'
+import ThisWeekCard from '../components/ThisWeekCard.vue'
 
 const router = useRouter()
 const { t, tm, te, locale } = useI18n()
@@ -13,7 +13,6 @@ function formatDate(isoDate) {
 
 const plants        = ref([])
 const suggestions   = ref(null)
-const weekSummary   = ref(null)
 const loading       = ref(true)
 const selectedMonth = ref(null)
 
@@ -31,10 +30,6 @@ const instancesByPlantId = computed(() => {
   }
   return map
 })
-
-function primaryInstanceId(plantId) {
-  return (instancesByPlantId.value[plantId] ?? [])[0] ?? null
-}
 
 function lcForPlant(plantId) {
   for (const iid of (instancesByPlantId.value[plantId] ?? [])) {
@@ -110,85 +105,6 @@ async function fetchLifecycle() {
   if (res.ok) lifecycle.value = await res.json()
 }
 
-async function advanceLifecycle(instanceId) {
-  const res = await fetch(`/api/garden/lifecycle/${instanceId}/advance`, {
-    method: 'PUT',
-    headers: csrfHeaders(),
-  })
-  if (res.ok) {
-    const updated = await res.json()
-    lifecycle.value = { ...lifecycle.value, [instanceId]: updated }
-  }
-}
-
-const seedModal    = ref({ open: false, plant: null, instanceId: null, date: '', comment: '', saving: false })
-const actionModal  = ref({ open: false, plant: null, instanceId: null, action: '', date: '', comment: '', saving: false })
-
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
-}
-
-function openSeedModal(plant) {
-  seedModal.value = { open: true, plant, instanceId: primaryInstanceId(plant.id), date: todayIso(), comment: '', saving: false }
-}
-
-function closeSeedModal() {
-  seedModal.value.open = false
-}
-
-function openActionModal(plant, action, instanceId = null) {
-  const iid = instanceId ?? primaryInstanceId(plant.id)
-  actionModal.value = { open: true, plant, instanceId: iid, action, date: todayIso(), comment: '', saving: false }
-}
-
-function closeActionModal() {
-  actionModal.value.open = false
-}
-
-async function refreshAll() {
-  await Promise.all([
-    fetchInstances(),
-    fetchPlantLog(),
-    fetchPlantPlan(),
-    fetchLifecycle(),
-    fetch('/api/garden/week').then(r => r.ok && r.json()).then(data => { if (data) weekSummary.value = data }),
-  ])
-}
-
-async function postAction(instanceId, action, date, comment) {
-  await fetch('/api/garden/plant-log', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-    body: JSON.stringify({ instanceId, action, date, comment: comment || null }),
-  })
-}
-
-async function submitSeedModal() {
-  if (seedModal.value.saving) return
-  seedModal.value.saving = true
-  try {
-    await postAction(seedModal.value.instanceId, 'seeding', seedModal.value.date, seedModal.value.comment)
-    closeSeedModal()
-    await refreshAll()
-  } finally {
-    seedModal.value.saving = false
-  }
-}
-
-async function submitActionModal() {
-  if (actionModal.value.saving) return
-  actionModal.value.saving = true
-  try {
-    await postAction(actionModal.value.instanceId, actionModal.value.action, actionModal.value.date, actionModal.value.comment)
-    closeActionModal()
-    await refreshAll()
-  } finally {
-    actionModal.value.saving = false
-  }
-}
-
-const LOGGABLE_ACTIONS = new Set(['fertilizing', 'pruning', 'watering'])
-
 function isPlanEntryDone(instanceId, entry) {
   const logs = plantLog.value[instanceId] ?? []
   return logs.some(log =>
@@ -197,24 +113,6 @@ function isPlanEntryDone(instanceId, entry) {
     log.date <= entry.plannedDateEnd
   )
 }
-
-const overdueEntries = computed(() => {
-  const todayStr = todayIso()
-  const result = []
-  for (const [instanceId, entries] of Object.entries(plantPlan.value)) {
-    const inst  = instances.value.find(i => i.id === instanceId)
-    if (!inst) continue
-    const plant = plants.value.find(p => p.id === inst.plantId)
-    if (!plant) continue
-    const overdue = entries.filter(e =>
-      LOGGABLE_ACTIONS.has(e.action) &&
-      e.plannedDateEnd < todayStr &&
-      !isPlanEntryDone(instanceId, e)
-    )
-    if (overdue.length) result.push({ plant, instanceId, entries: overdue })
-  }
-  return result
-})
 
 const months = computed(() => tm('months'))
 const sortedPlants = computed(() =>
@@ -245,60 +143,6 @@ const toSow     = computed(() => selectedMonth.value == null ? [] :
   sortedPlants.value.filter(v => v.seedingMonths.includes(selectedMonth.value)))
 const toHarvest = computed(() => selectedMonth.value == null ? [] :
   sortedPlants.value.filter(v => v.harvestingMonths.includes(selectedMonth.value)))
-
-const weekPlanEntries = computed(() => {
-  if (!weekSummary.value) return []
-  const year = new Date().getFullYear()
-  const ws = weekSummary.value
-  const weekStart = new Date(year, ws.weekStartMonth - 1, ws.weekStartDay)
-  const weekEnd   = new Date(year, ws.weekEndMonth   - 1, ws.weekEndDay)
-  const result = []
-  for (const [instanceId, entries] of Object.entries(plantPlan.value)) {
-    const inst  = instances.value.find(i => i.id === instanceId)
-    if (!inst) continue
-    const plant = plants.value.find(p => p.id === inst.plantId)
-    if (!plant) continue
-    const matching = entries.filter(e => {
-      const start = new Date(e.plannedDateStart + 'T00:00:00')
-      const end   = new Date(e.plannedDateEnd   + 'T00:00:00')
-      return start <= weekEnd && end >= weekStart
-    })
-    if (matching.length) result.push({ plant, instanceId, entries: matching })
-  }
-  return result
-})
-
-// Maps a plan action to the lifecycle state it signals readiness to enter
-const PLAN_ACTION_TO_NEXT_STATE = {
-  germination:  'germinating',
-  harvest:      'ready_to_harvest',
-}
-
-const weekTransitions = computed(() => {
-  if (!weekSummary.value) return []
-  const year = new Date().getFullYear()
-  const ws = weekSummary.value
-  const weekStart = new Date(year, ws.weekStartMonth - 1, ws.weekStartDay)
-  const weekEnd   = new Date(year, ws.weekEndMonth   - 1, ws.weekEndDay)
-  const result = []
-  for (const [instanceId, lc] of Object.entries(lifecycle.value)) {
-    if (!lc.nextState) continue
-    const inst  = instances.value.find(i => i.id === instanceId)
-    if (!inst) continue
-    const plant = plants.value.find(p => p.id === inst.plantId)
-    if (!plant) continue
-    const planEntries = plantPlan.value[instanceId] ?? []
-    const triggeringEntry = planEntries.find(e => {
-      const triggeredState = PLAN_ACTION_TO_NEXT_STATE[e.action]
-      if (triggeredState !== lc.nextState) return false
-      const start = new Date(e.plannedDateStart + 'T00:00:00')
-      const end   = new Date(e.plannedDateEnd   + 'T00:00:00')
-      return start <= weekEnd && end >= weekStart
-    })
-    if (triggeringEntry) result.push({ plant, lifecycle: lc })
-  }
-  return result
-})
 
 function selectMonth(month) {
   selectedMonth.value = selectedMonth.value === month ? null : month
@@ -374,45 +218,17 @@ function plantName(plant) {
   return te(key) ? t(key) : plant.name
 }
 
-function weekRangeLabel(s) {
-  const startMonth = months.value[s.weekStartMonth - 1]
-  const endMonth   = months.value[s.weekEndMonth - 1]
-  const range = s.weekStartMonth === s.weekEndMonth
-    ? `${s.weekStartDay}–${s.weekEndDay} ${endMonth}`
-    : `${s.weekStartDay} ${startMonth}–${s.weekEndDay} ${endMonth}`
-  return `${t('garden.week')} ${s.week} · ${range}`
+async function onWeekRefresh() {
+  await Promise.all([fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
 }
-
-function hintsFor(action) {
-  const hints = []
-  if (action.type !== 'harvest') {
-    if (action.sowingMethod === 'indoor') hints.push(t('garden.hintIndoor'))
-    else if (action.sowingMethod === 'direct') hints.push(t('garden.hintDirect'))
-    else if (action.sowingMethod === 'both')   hints.push(t('garden.hintBoth'))
-    if (action.germinationDaysMin) {
-      hints.push(t('garden.hintGermination', { min: action.germinationDaysMin, max: action.germinationDaysMax }))
-    }
-  }
-  if (action.type === 'harvest' || action.type === 'both') {
-    hints.push(t('garden.hintHarvest'))
-  }
-  return hints
-}
-
-const actionHints = computed(() => {
-  if (!weekSummary.value) return new Map()
-  return new Map(weekSummary.value.actions.map(a => [a.plant.id, hintsFor(a)]))
-})
 
 onMounted(async () => {
-  const [detailsRes, suggestionsRes, weekRes] = await Promise.all([
+  const [detailsRes, suggestionsRes] = await Promise.all([
     fetch('/api/garden/details'),
     fetch('/api/garden/suggestions'),
-    fetch('/api/garden/week'),
   ])
   if (detailsRes.ok)     plants.value      = await detailsRes.json()
   if (suggestionsRes.ok) suggestions.value = await suggestionsRes.json()
-  if (weekRes.ok)        weekSummary.value = await weekRes.json()
   loading.value = false
   await Promise.all([fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
 })
@@ -578,128 +394,7 @@ onMounted(async () => {
         </template>
       </div>
       <!-- This week -->
-      <div v-if="weekSummary" class="this-week">
-        <div class="this-week-header">
-          <span class="this-week-title">{{ t('garden.thisWeek') }}</span>
-          <span class="this-week-label">{{ weekRangeLabel(weekSummary) }}</span>
-        </div>
-        <div v-if="weekSummary.actions.length === 0 && weekPlanEntries.length === 0 && weekTransitions.length === 0 && overdueEntries.length === 0" class="this-week-empty">
-          {{ t('garden.nothingThisWeek') }}
-        </div>
-        <div v-else class="week-actions">
-          <div
-            v-for="action in weekSummary.actions"
-            :key="action.plant.id"
-            class="week-action"
-            role="button"
-            tabindex="0"
-            @click="router.push(`/plant/${action.plant.id}`)"
-            @keydown.enter="router.push(`/plant/${action.plant.id}`)"
-          >
-            <span class="week-action-emoji">{{ action.plant.emoji ?? '🌱' }}</span>
-            <div class="week-action-body">
-              <div class="week-action-top">
-                <span class="week-action-name">{{ plantName(action.plant) }}</span>
-                <span class="week-action-badge" :class="action.type">
-                  {{ action.type === 'sow' ? t('garden.actionSow') : action.type === 'harvest' ? t('garden.actionHarvest') : t('garden.actionBoth') }}
-                </span>
-                <button
-                  v-if="action.type === 'sow' || action.type === 'both'"
-                  class="seed-now-btn"
-                  @click.stop="openSeedModal(action.plant)"
-                >
-                  🌱 {{ t('garden.seedNow') }}
-                </button>
-              </div>
-              <div v-if="actionHints.get(action.plant.id)?.length" class="week-action-hints">
-                {{ actionHints.get(action.plant.id).join(' · ') }}
-              </div>
-              <div v-if="action.logEntries?.length" class="week-action-log">
-                <span
-                  v-for="entry in action.logEntries"
-                  :key="entry.id"
-                  class="log-entry"
-                  :title="entry.comment || undefined"
-                >
-                  ✓ {{ t(`garden.loggedAction.${entry.action}`) }} · {{ formatDate(entry.date) }}
-                  <span v-if="entry.comment" class="log-entry-comment">— {{ entry.comment }}</span>
-                </span>
-              </div>
-            </div>
-          </div>
-          <div
-            v-for="{ plant, instanceId, entries } in weekPlanEntries"
-            :key="'plan-' + instanceId"
-            class="week-action"
-            role="button"
-            tabindex="0"
-            @click="router.push(`/plant/${plant.id}`)"
-            @keydown.enter="router.push(`/plant/${plant.id}`)"
-          >
-            <span class="week-action-emoji">{{ plant.emoji ?? '🌱' }}</span>
-            <div class="week-action-body">
-              <div class="week-action-top">
-                <span class="week-action-name">{{ plantName(plant) }}</span>
-                <template v-for="entry in entries" :key="entry.id">
-                  <span class="week-action-badge" :class="'plan-' + entry.action">
-                    {{ te(`garden.planAction.${entry.action}`) ? t(`garden.planAction.${entry.action}`) : entry.action }}
-                  </span>
-                  <span v-if="isPlanEntryDone(instanceId, entry)" class="plan-done-badge">✓</span>
-                  <button
-                    v-else-if="LOGGABLE_ACTIONS.has(entry.action)"
-                    class="log-action-btn"
-                    @click.stop="openActionModal(plant, entry.action, instanceId)"
-                  >{{ t('garden.logDone') }}</button>
-                </template>
-              </div>
-            </div>
-          </div>
-          <div
-            v-for="{ plant, instanceId, entries } in overdueEntries"
-            :key="'overdue-' + instanceId"
-            class="week-action week-action--overdue"
-            role="button"
-            tabindex="0"
-            @click="router.push(`/plant/${plant.id}`)"
-            @keydown.enter="router.push(`/plant/${plant.id}`)"
-          >
-            <span class="week-action-emoji">{{ plant.emoji ?? '🌱' }}</span>
-            <div class="week-action-body">
-              <div class="week-action-top">
-                <span class="week-action-name">{{ plantName(plant) }}</span>
-                <span class="overdue-badge">{{ t('garden.overdue') }}</span>
-                <template v-for="entry in entries" :key="entry.id">
-                  <span class="week-action-badge" :class="'plan-' + entry.action">
-                    {{ te(`garden.planAction.${entry.action}`) ? t(`garden.planAction.${entry.action}`) : entry.action }}
-                  </span>
-                  <button
-                    class="log-action-btn"
-                    @click.stop="openActionModal(plant, entry.action, instanceId)"
-                  >{{ t('garden.logDone') }}</button>
-                </template>
-              </div>
-            </div>
-          </div>
-          <div
-            v-for="{ plant, lifecycle: lc } in weekTransitions"
-            :key="'lc-' + plant.id"
-            class="week-action"
-          >
-            <span class="week-action-emoji">{{ plant.emoji ?? '🌱' }}</span>
-            <div class="week-action-body">
-              <div class="week-action-top">
-                <span class="week-action-name">{{ plantName(plant) }}</span>
-                <span class="week-action-badge" :class="'lc-badge-' + lc.nextState">
-                  {{ te(`garden.lifecycle.${lc.nextState}`) ? t(`garden.lifecycle.${lc.nextState}`) : lc.nextState }}
-                </span>
-                <button class="advance-btn" @click.stop="advanceLifecycle(lc.instanceId)">
-                  {{ t('garden.advanceStage') }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ThisWeekCard class="this-week-card" @refresh="onWeekRefresh" />
 
       <!-- Planting suggestions -->
       <div v-if="suggestions && (suggestions.sunGroups.length > 0 || suggestions.conflicts.length > 0)" class="suggestions">
@@ -743,101 +438,6 @@ onMounted(async () => {
     </template>
   </main>
 
-  <!-- Log action modal -->
-  <Teleport to="body">
-    <div v-if="actionModal.open" class="modal-backdrop" @click.self="closeActionModal">
-      <div class="modal" role="dialog" aria-modal="true">
-        <div class="modal-header">
-          <span class="modal-title">{{ t('garden.actionModal.title') }}</span>
-          <span v-if="actionModal.plant" class="modal-plant">
-            {{ actionModal.plant.emoji ?? '🌱' }} {{ plantName(actionModal.plant) }}
-          </span>
-        </div>
-        <form class="modal-body" @submit.prevent="submitActionModal">
-          <div class="form-row">
-            <label class="form-label">{{ t('garden.actionModal.actionLabel') }}</label>
-            <span class="form-value">{{ te(`garden.planAction.${actionModal.action}`) ? t(`garden.planAction.${actionModal.action}`) : actionModal.action }}</span>
-          </div>
-          <div class="form-row">
-            <label class="form-label" for="action-date">{{ t('garden.seedModal.dateLabel') }}</label>
-            <input
-              id="action-date"
-              v-model="actionModal.date"
-              type="date"
-              class="form-input"
-              required
-            />
-          </div>
-          <div class="form-row form-row--col">
-            <label class="form-label" for="action-comment">{{ t('garden.seedModal.commentLabel') }}</label>
-            <textarea
-              id="action-comment"
-              v-model="actionModal.comment"
-              class="form-textarea"
-              :placeholder="t('garden.seedModal.commentPlaceholder')"
-              rows="2"
-            />
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="modal-cancel" @click="closeActionModal">
-              {{ t('garden.seedModal.cancel') }}
-            </button>
-            <button type="submit" class="modal-save" :disabled="actionModal.saving">
-              {{ t('garden.seedModal.save') }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </Teleport>
-
-  <!-- Seed now modal -->
-  <Teleport to="body">
-    <div v-if="seedModal.open" class="modal-backdrop" @click.self="closeSeedModal">
-      <div class="modal" role="dialog" aria-modal="true">
-        <div class="modal-header">
-          <span class="modal-title">{{ t('garden.seedModal.title') }}</span>
-          <span v-if="seedModal.plant" class="modal-plant">
-            {{ seedModal.plant.emoji ?? '🌱' }} {{ plantName(seedModal.plant) }}
-          </span>
-        </div>
-        <form class="modal-body" @submit.prevent="submitSeedModal">
-          <div class="form-row">
-            <label class="form-label">{{ t('garden.seedModal.actionLabel') }}</label>
-            <span class="form-value">{{ t('garden.seedModal.actionValue') }}</span>
-          </div>
-          <div class="form-row">
-            <label class="form-label" for="seed-date">{{ t('garden.seedModal.dateLabel') }}</label>
-            <input
-              id="seed-date"
-              v-model="seedModal.date"
-              type="date"
-              class="form-input"
-              required
-            />
-          </div>
-          <div class="form-row form-row--col">
-            <label class="form-label" for="seed-comment">{{ t('garden.seedModal.commentLabel') }}</label>
-            <textarea
-              id="seed-comment"
-              v-model="seedModal.comment"
-              class="form-textarea"
-              :placeholder="t('garden.seedModal.commentPlaceholder')"
-              rows="3"
-            />
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="modal-cancel" @click="closeSeedModal">
-              {{ t('garden.seedModal.cancel') }}
-            </button>
-            <button type="submit" class="modal-save" :disabled="seedModal.saving">
-              {{ t('garden.seedModal.save') }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </Teleport>
 </template>
 
 <style scoped>
@@ -887,150 +487,9 @@ main {
   color: var(--text-muted);
 }
 
-/* This week */
-.this-week {
-  background: var(--card-bg);
-  border: 1.5px solid var(--green-pale);
-  border-radius: var(--radius);
-  overflow: hidden;
+.this-week-card {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
-}
-
-.this-week-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: 0.75rem 1.25rem;
-  background: var(--green-pale);
-  gap: 0.75rem;
-}
-
-.this-week-title {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--green-dark);
-}
-
-.this-week-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--green-mid);
-  white-space: nowrap;
-}
-
-.this-week-empty {
-  padding: 1.25rem;
-  font-size: 0.875rem;
-  color: var(--text-muted);
-}
-
-.week-actions {
-  display: flex;
-  flex-direction: column;
-}
-
-.week-action {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.85rem;
-  padding: 0.85rem 1.25rem;
-  cursor: pointer;
-  transition: background 0.15s;
-  border-top: 1px solid var(--green-pale);
-}
-
-.week-action:first-child { border-top: none; }
-.week-action:hover { background: var(--bg); }
-
-.week-action-emoji {
-  font-size: 1.5rem;
-  line-height: 1;
-  flex-shrink: 0;
-  padding-top: 0.1rem;
-}
-
-.week-action-body {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.week-action-top {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.week-action-name {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--green-dark);
-}
-
-.week-action-badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.15rem 0.5rem;
-  border-radius: 20px;
-  white-space: nowrap;
-}
-
-.week-action-badge.sow              { background: var(--green-pale); color: var(--green-dark); }
-.week-action-badge.harvest          { background: #fef3c7; color: #92400e; }
-.week-action-badge.both             { background: #ede9fe; color: #4c1d95; }
-.week-action-badge.plan-germination { background: #dcfce7; color: #166534; }
-.week-action-badge.plan-harvest     { background: #fef3c7; color: #92400e; }
-.week-action-badge.plan-pruning     { background: #ede9fe; color: #4c1d95; }
-.week-action-badge.plan-fertilizing { background: #fef2d0; color: #78350f; }
-.week-action-badge.plan-watering    { background: #e0f2fe; color: #0c4a6e; }
-
-.week-action-hints {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
-
-.week-action-log {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  margin-top: 0.15rem;
-}
-
-.log-entry {
-  font-size: 0.75rem;
-  color: var(--green-dark);
-  font-weight: 600;
-  opacity: 0.75;
-}
-
-.log-entry-comment {
-  font-weight: 400;
-  color: var(--text-muted);
-}
-
-.seed-now-btn {
-  margin-left: auto;
-  padding: 0.2rem 0.65rem;
-  border: 1.5px solid var(--green-mid);
-  border-radius: 20px;
-  background: var(--green-pale);
-  color: var(--green-dark);
-  font-size: 0.72rem;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: background 0.15s, border-color 0.15s;
-}
-
-.seed-now-btn:hover {
-  background: var(--green-light);
-  border-color: var(--green-dark);
 }
 
 /* Legend */
@@ -1250,61 +709,6 @@ main {
 .lc-ready_to_harvest { background: #fef3c7; color: #92400e; }
 .lc-harvested        { background: #f3f4f6; color: #6b7280; }
 
-.lc-badge-seeded           { background: #f0fdf4; color: #166534; }
-.lc-badge-germinating      { background: #dcfce7; color: #15803d; }
-.lc-badge-growing          { background: #bbf7d0; color: #166534; }
-.lc-badge-ready_to_harvest { background: #fef3c7; color: #92400e; }
-.lc-badge-harvested        { background: #f3f4f6; color: #6b7280; }
-
-.advance-btn {
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 0.2rem 0.6rem;
-  border-radius: 20px;
-  border: 1.5px solid var(--green-mid);
-  background: none;
-  color: var(--green-dark);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.advance-btn:hover { background: var(--green-pale); }
-
-.log-action-btn {
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 0.2rem 0.6rem;
-  border-radius: 20px;
-  border: 1.5px solid #0369a1;
-  background: none;
-  color: #0369a1;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.log-action-btn:hover { background: #e0f2fe; }
-
-.plan-done-badge {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--green-mid);
-  padding: 0.1rem 0.3rem;
-}
-
-.week-action--overdue {
-  border-left: 3px solid #f59e0b;
-}
-
-.overdue-badge {
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 0.1rem 0.4rem;
-  border-radius: 20px;
-  background: #fef3c7;
-  color: #92400e;
-  white-space: nowrap;
-}
-
 .cal-cell {
   padding: 0.3rem 0.2rem;
   text-align: center;
@@ -1499,151 +903,4 @@ main {
   padding: 0.15rem 0.55rem;
 }
 
-/* Modal */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 1rem;
-}
-
-.modal {
-  background: var(--card-bg);
-  border: 1.5px solid var(--green-pale);
-  border-radius: var(--radius);
-  width: 100%;
-  max-width: 420px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-}
-
-.modal-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.85rem 1.25rem;
-  background: var(--green-pale);
-  border-bottom: 1.5px solid var(--green-pale);
-  border-radius: var(--radius) var(--radius) 0 0;
-}
-
-.modal-title {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--green-dark);
-}
-
-.modal-plant {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--green-mid);
-  white-space: nowrap;
-}
-
-.modal-body {
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.form-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.form-row--col {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.35rem;
-}
-
-.form-label {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  white-space: nowrap;
-  min-width: 80px;
-}
-
-.form-value {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--green-dark);
-}
-
-.form-input {
-  flex: 1;
-  padding: 0.4rem 0.6rem;
-  border: 1.5px solid var(--green-pale);
-  border-radius: var(--radius);
-  font-size: 0.875rem;
-  background: var(--bg);
-  color: var(--text);
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--green-mid);
-}
-
-.form-textarea {
-  padding: 0.5rem 0.6rem;
-  border: 1.5px solid var(--green-pale);
-  border-radius: var(--radius);
-  font-size: 0.875rem;
-  font-family: inherit;
-  resize: vertical;
-  background: var(--bg);
-  color: var(--text);
-}
-
-.form-textarea:focus {
-  outline: none;
-  border-color: var(--green-mid);
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.6rem;
-  padding-top: 0.25rem;
-}
-
-.modal-cancel {
-  padding: 0.45rem 1rem;
-  border: 1.5px solid var(--green-pale);
-  border-radius: var(--radius);
-  background: var(--card-bg);
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
-}
-
-.modal-cancel:hover {
-  border-color: var(--green-mid);
-  color: var(--green-dark);
-}
-
-.modal-save {
-  padding: 0.45rem 1.1rem;
-  border: none;
-  border-radius: var(--radius);
-  background: var(--green-mid);
-  color: #fff;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-
-.modal-save:hover:not(:disabled) { opacity: 0.85; }
-.modal-save:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
