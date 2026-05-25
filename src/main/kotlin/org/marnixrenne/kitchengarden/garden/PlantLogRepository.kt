@@ -6,53 +6,60 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.stereotype.Repository
 import java.time.Instant
 import java.util.UUID
-import org.marnixrenne.kitchengarden.garden.LoggedEntry
 
 @Repository
 class PlantLogRepository {
 
     fun save(userId: UUID, request: PlantLogRequest): PlantLogResponse = transaction {
+        val instanceRow = (GardenPlantInstances innerJoin Garden)
+            .select(GardenPlantInstances.plantId)
+            .where { (GardenPlantInstances.id eq request.instanceId) and (Garden.userId eq userId) }
+            .firstOrNull() ?: error("Instance ${request.instanceId} not found for user")
+        val plantId = instanceRow[GardenPlantInstances.plantId]
+
         val logId = PlantLog.selectAll()
-            .where { (PlantLog.userId eq userId) and (PlantLog.plantId eq request.plantId) }
+            .where { PlantLog.instanceId eq request.instanceId }
             .map { it[PlantLog.id] }
             .firstOrNull()
             ?: run {
                 val newLogId = UUID.randomUUID()
                 PlantLog.insert {
-                    it[id]        = newLogId
-                    it[PlantLog.userId]  = userId
-                    it[PlantLog.plantId] = request.plantId
-                    it[createdAt] = Instant.now()
+                    it[id]                 = newLogId
+                    it[PlantLog.userId]    = userId
+                    it[PlantLog.plantId]   = plantId
+                    it[PlantLog.instanceId] = request.instanceId
+                    it[createdAt]          = Instant.now()
                 }
                 newLogId
             }
 
         val entryId = UUID.randomUUID()
         PlantLogEntry.insert {
-            it[id]        = entryId
-            it[PlantLogEntry.logId]  = logId
-            it[action]    = request.action
-            it[date]      = request.date
-            it[comment]   = request.comment
-            it[createdAt] = Instant.now()
+            it[id]               = entryId
+            it[PlantLogEntry.logId] = logId
+            it[action]           = request.action
+            it[date]             = request.date
+            it[comment]          = request.comment
+            it[createdAt]        = Instant.now()
         }
 
         PlantLogResponse(
-            id      = entryId,
-            logId   = logId,
-            plantId = request.plantId,
-            action  = request.action,
-            date    = request.date,
-            comment = request.comment,
+            id         = entryId,
+            logId      = logId,
+            instanceId = request.instanceId,
+            plantId    = plantId,
+            action     = request.action,
+            date       = request.date,
+            comment    = request.comment,
         )
     }
 
     fun findAllByUser(userId: UUID): Map<UUID, List<LoggedEntry>> = transaction {
         (PlantLog innerJoin PlantLogEntry)
             .selectAll()
-            .where { PlantLog.userId eq userId }
+            .where { (PlantLog.userId eq userId) and PlantLog.instanceId.isNotNull() }
             .orderBy(PlantLogEntry.date, SortOrder.DESC)
-            .groupBy({ it[PlantLog.plantId] }, { row ->
+            .groupBy({ it[PlantLog.instanceId]!! }, { row ->
                 LoggedEntry(
                     id      = row[PlantLogEntry.id],
                     action  = row[PlantLogEntry.action],

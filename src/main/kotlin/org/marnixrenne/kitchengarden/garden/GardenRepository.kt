@@ -88,31 +88,46 @@ class GardenRepository {
     // ── Plant membership ─────────────────────────────────────────────────────
 
     fun findPlantIds(gardenId: UUID): Set<UUID> = transaction {
-        GardenPlants.selectAll()
-            .where { GardenPlants.gardenId eq gardenId }
-            .map { it[GardenPlants.plantId] }
+        GardenPlantInstances.selectAll()
+            .where { GardenPlantInstances.gardenId eq gardenId }
+            .map { it[GardenPlantInstances.plantId] }
             .toSet()
     }
 
     fun add(gardenId: UUID, plantId: UUID): Unit = transaction {
-        GardenPlants.upsert {
-            it[GardenPlants.gardenId] = gardenId
-            it[GardenPlants.plantId]  = plantId
+        val exists = GardenPlantInstances.selectAll()
+            .where { (GardenPlantInstances.gardenId eq gardenId) and (GardenPlantInstances.plantId eq plantId) }
+            .count() > 0
+        if (!exists) {
+            GardenPlantInstances.insert {
+                it[GardenPlantInstances.id]        = UUID.randomUUID()
+                it[GardenPlantInstances.gardenId]  = gardenId
+                it[GardenPlantInstances.plantId]   = plantId
+                it[GardenPlantInstances.createdAt] = Instant.now()
+            }
         }
     }
 
     fun remove(gardenId: UUID, plantId: UUID): Unit = transaction {
-        GardenPlants.deleteWhere {
-            (GardenPlants.gardenId eq gardenId) and (GardenPlants.plantId eq plantId)
+        GardenPlantInstances.deleteWhere {
+            (GardenPlantInstances.gardenId eq gardenId) and (GardenPlantInstances.plantId eq plantId)
         }
+    }
+
+    fun findInstances(gardenId: UUID): List<PlantInstance> = transaction {
+        GardenPlantInstances.selectAll()
+            .where { GardenPlantInstances.gardenId eq gardenId }
+            .orderBy(GardenPlantInstances.createdAt)
+            .map { PlantInstance(it[GardenPlantInstances.id], it[GardenPlantInstances.plantId]) }
     }
 
     // ── Views ─────────────────────────────────────────────────────────────────
 
     fun findSuggestions(gardenId: UUID): PlantingSuggestions = transaction {
-        val ids = GardenPlants.selectAll()
-            .where { GardenPlants.gardenId eq gardenId }
-            .map { it[GardenPlants.plantId] }
+        val ids = GardenPlantInstances.selectAll()
+            .where { GardenPlantInstances.gardenId eq gardenId }
+            .map { it[GardenPlantInstances.plantId] }
+            .distinct()
 
         if (ids.size < 2) return@transaction PlantingSuggestions(emptyList(), emptyList())
 
@@ -167,9 +182,10 @@ class GardenRepository {
         val weekStart = today.with(WeekFields.ISO.dayOfWeek(), 1)
         val weekEnd   = weekStart.plusDays(6)
 
-        val ids = GardenPlants.selectAll()
-            .where { GardenPlants.gardenId eq gardenId }
-            .map { it[GardenPlants.plantId] }
+        val ids = GardenPlantInstances.selectAll()
+            .where { GardenPlantInstances.gardenId eq gardenId }
+            .map { it[GardenPlantInstances.plantId] }
+            .distinct()
 
         if (ids.isEmpty()) return@transaction WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, emptyList())
 
@@ -230,9 +246,10 @@ class GardenRepository {
     }
 
     fun findDetails(gardenId: UUID, countryCode: String?): List<PlantDetail> = transaction {
-        val ids = GardenPlants.selectAll()
-            .where { GardenPlants.gardenId eq gardenId }
-            .map { it[GardenPlants.plantId] }
+        val ids = GardenPlantInstances.selectAll()
+            .where { GardenPlantInstances.gardenId eq gardenId }
+            .map { it[GardenPlantInstances.plantId] }
+            .distinct()
 
         if (ids.isEmpty()) return@transaction emptyList()
 

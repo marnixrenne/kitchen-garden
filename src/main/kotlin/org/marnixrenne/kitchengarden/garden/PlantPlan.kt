@@ -11,6 +11,7 @@ data class WateringConfig(val startDaysAfterSeed: Int, val intervalDays: Int, va
 
 data class PlanEntry(
     val id: UUID,
+    val instanceId: UUID,
     val plantId: UUID,
     val action: String,
     val plannedDateStart: LocalDate,

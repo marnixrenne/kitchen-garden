@@ -67,10 +67,13 @@ class GardenService(
     fun remove(authentication: Authentication, plantId: UUID) =
         repository.remove(resolveDefaultGardenId(authentication), plantId)
 
+    fun getInstances(authentication: Authentication): List<PlantInstance> =
+        repository.findInstances(resolveDefaultGardenId(authentication))
+
     fun logAction(authentication: Authentication, request: PlantLogRequest): PlantLogResponse {
         val entry = plantLogRepository.save(resolveUserId(authentication), request)
         if (request.action == "seeding") {
-            plantPlanService.generateAndSave(entry.id, request.plantId, request.date)
+            plantPlanService.generateAndSave(entry.id, entry.plantId, request.date)
         }
         return entry
     }

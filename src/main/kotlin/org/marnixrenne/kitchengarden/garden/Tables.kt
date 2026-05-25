@@ -15,17 +15,20 @@ object Garden : Table("pts_garden") {
     override val primaryKey = PrimaryKey(id)
 }
 
-object GardenPlants : Table("garden_plants") {
-    val gardenId = uuid("garden_id") references Garden.id
-    val plantId  = uuid("plant_id")  references Plants.id
+object GardenPlantInstances : Table("garden_plant_instances") {
+    val id        = uuid("id")
+    val gardenId  = uuid("garden_id") references Garden.id
+    val plantId   = uuid("plant_id")  references Plants.id
+    val createdAt = timestamp("created_at")
 
-    override val primaryKey = PrimaryKey(gardenId, plantId)
+    override val primaryKey = PrimaryKey(id)
 }
 
 object PlantLog : Table("pts_plant_log") {
     val id                  = uuid("id")
-    val userId              = uuid("user_id")  references Users.id
-    val plantId             = uuid("plant_id") references Plants.id
+    val userId              = uuid("user_id")    references Users.id
+    val plantId             = uuid("plant_id")   references Plants.id
+    val instanceId          = uuid("instance_id").nullable()
     val lifecycleState      = varchar("lifecycle_state", 20).default("seeded")
     val lifecycleUpdatedAt  = timestamp("lifecycle_updated_at").nullable()
     val createdAt           = timestamp("created_at")

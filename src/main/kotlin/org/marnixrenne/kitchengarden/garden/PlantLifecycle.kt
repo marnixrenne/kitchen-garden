@@ -24,6 +24,7 @@ enum class LifecycleState(val key: String) {
 }
 
 data class PlantLifecycle(
+    val instanceId: UUID,
     val plantId: UUID,
     val state: String,
     val nextState: String?,

@@ -12,9 +12,9 @@ class PlantLifecycleController(private val service: PlantLifecycleService) {
     fun getAll(authentication: Authentication): Map<UUID, PlantLifecycle> =
         service.getAll(authentication)
 
-    @PutMapping("/{plantId}/advance")
+    @PutMapping("/{instanceId}/advance")
     fun advance(
-        @PathVariable plantId: UUID,
+        @PathVariable instanceId: UUID,
         authentication: Authentication,
-    ): PlantLifecycle = service.advance(authentication, plantId)
+    ): PlantLifecycle = service.advance(authentication, instanceId)
 }

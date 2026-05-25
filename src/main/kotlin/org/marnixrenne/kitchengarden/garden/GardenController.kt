@@ -44,6 +44,10 @@ class GardenController(private val gardenService: GardenService) {
         return ResponseEntity.noContent().build()
     }
 
+    @GetMapping("/instances")
+    fun getInstances(authentication: Authentication): List<PlantInstance> =
+        gardenService.getInstances(authentication)
+
     @GetMapping("/plant-log")
     fun getPlantLog(authentication: Authentication): Map<UUID, List<LoggedEntry>> =
         gardenService.getPlantLog(authentication)

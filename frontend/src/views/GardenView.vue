@@ -17,10 +17,31 @@ const weekSummary   = ref(null)
 const loading       = ref(true)
 const selectedMonth = ref(null)
 
-const plantLog       = ref({})
-const plantPlan      = ref({})
-const lifecycle      = ref({})
+const instances      = ref([])   // [{id: instanceId, plantId}]
+const plantLog       = ref({})   // keyed by instanceId
+const plantPlan      = ref({})   // keyed by instanceId
+const lifecycle      = ref({})   // keyed by instanceId
 const expandedPlants = ref(new Set())
+
+const instancesByPlantId = computed(() => {
+  const map = {}
+  for (const inst of instances.value) {
+    if (!map[inst.plantId]) map[inst.plantId] = []
+    map[inst.plantId].push(inst.id)
+  }
+  return map
+})
+
+function primaryInstanceId(plantId) {
+  return (instancesByPlantId.value[plantId] ?? [])[0] ?? null
+}
+
+function lcForPlant(plantId) {
+  for (const iid of (instancesByPlantId.value[plantId] ?? [])) {
+    if (lifecycle.value[iid]) return lifecycle.value[iid]
+  }
+  return null
+}
 
 function dotTooltip(entry) {
   const action = te(`garden.loggedAction.${entry.action}`) ? t(`garden.loggedAction.${entry.action}`) : entry.action
@@ -43,21 +64,35 @@ function toggleExpand(plantId) {
 }
 
 function entriesForMonth(plantId, month) {
-  return (plantLog.value[plantId] ?? []).filter(e => new Date(e.date + 'T00:00:00').getMonth() + 1 === month)
+  const iids = instancesByPlantId.value[plantId] ?? []
+  return iids.flatMap(iid =>
+    (plantLog.value[iid] ?? []).filter(e => new Date(e.date + 'T00:00:00').getMonth() + 1 === month)
+  )
 }
 
 function planEntriesForMonth(plantId, month) {
-  return (plantPlan.value[plantId] ?? []).filter(e => {
-    const startM = new Date(e.plannedDateStart + 'T00:00:00').getMonth() + 1
-    const endM   = new Date(e.plannedDateEnd   + 'T00:00:00').getMonth() + 1
-    return startM <= endM
-      ? month >= startM && month <= endM
-      : month >= startM || month <= endM  // year-spanning
-  })
+  const iids = instancesByPlantId.value[plantId] ?? []
+  return iids.flatMap(iid =>
+    (plantPlan.value[iid] ?? []).filter(e => {
+      const startM = new Date(e.plannedDateStart + 'T00:00:00').getMonth() + 1
+      const endM   = new Date(e.plannedDateEnd   + 'T00:00:00').getMonth() + 1
+      return startM <= endM
+        ? month >= startM && month <= endM
+        : month >= startM || month <= endM
+    })
+  )
 }
 
 function hasExpandContent(plantId) {
-  return (plantLog.value[plantId]?.length ?? 0) > 0 || (plantPlan.value[plantId]?.length ?? 0) > 0
+  const iids = instancesByPlantId.value[plantId] ?? []
+  return iids.some(iid =>
+    (plantLog.value[iid]?.length ?? 0) > 0 || (plantPlan.value[iid]?.length ?? 0) > 0
+  )
+}
+
+async function fetchInstances() {
+  const res = await fetch('/api/garden/instances')
+  if (res.ok) instances.value = await res.json()
 }
 
 async function fetchPlantLog() {
@@ -75,34 +110,35 @@ async function fetchLifecycle() {
   if (res.ok) lifecycle.value = await res.json()
 }
 
-async function advanceLifecycle(plantId) {
-  const res = await fetch(`/api/garden/lifecycle/${plantId}/advance`, {
+async function advanceLifecycle(instanceId) {
+  const res = await fetch(`/api/garden/lifecycle/${instanceId}/advance`, {
     method: 'PUT',
     headers: csrfHeaders(),
   })
   if (res.ok) {
     const updated = await res.json()
-    lifecycle.value = { ...lifecycle.value, [plantId]: updated }
+    lifecycle.value = { ...lifecycle.value, [instanceId]: updated }
   }
 }
 
-const seedModal    = ref({ open: false, plant: null, date: '', comment: '', saving: false })
-const actionModal  = ref({ open: false, plant: null, action: '', date: '', comment: '', saving: false })
+const seedModal    = ref({ open: false, plant: null, instanceId: null, date: '', comment: '', saving: false })
+const actionModal  = ref({ open: false, plant: null, instanceId: null, action: '', date: '', comment: '', saving: false })
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10)
 }
 
 function openSeedModal(plant) {
-  seedModal.value = { open: true, plant, date: todayIso(), comment: '', saving: false }
+  seedModal.value = { open: true, plant, instanceId: primaryInstanceId(plant.id), date: todayIso(), comment: '', saving: false }
 }
 
 function closeSeedModal() {
   seedModal.value.open = false
 }
 
-function openActionModal(plant, action) {
-  actionModal.value = { open: true, plant, action, date: todayIso(), comment: '', saving: false }
+function openActionModal(plant, action, instanceId = null) {
+  const iid = instanceId ?? primaryInstanceId(plant.id)
+  actionModal.value = { open: true, plant, instanceId: iid, action, date: todayIso(), comment: '', saving: false }
 }
 
 function closeActionModal() {
@@ -111,6 +147,7 @@ function closeActionModal() {
 
 async function refreshAll() {
   await Promise.all([
+    fetchInstances(),
     fetchPlantLog(),
     fetchPlantPlan(),
     fetchLifecycle(),
@@ -118,11 +155,11 @@ async function refreshAll() {
   ])
 }
 
-async function postAction(plantId, action, date, comment) {
+async function postAction(instanceId, action, date, comment) {
   await fetch('/api/garden/plant-log', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-    body: JSON.stringify({ plantId, action, date, comment: comment || null }),
+    body: JSON.stringify({ instanceId, action, date, comment: comment || null }),
   })
 }
 
@@ -130,7 +167,7 @@ async function submitSeedModal() {
   if (seedModal.value.saving) return
   seedModal.value.saving = true
   try {
-    await postAction(seedModal.value.plant.id, 'seeding', seedModal.value.date, seedModal.value.comment)
+    await postAction(seedModal.value.instanceId, 'seeding', seedModal.value.date, seedModal.value.comment)
     closeSeedModal()
     await refreshAll()
   } finally {
@@ -142,7 +179,7 @@ async function submitActionModal() {
   if (actionModal.value.saving) return
   actionModal.value.saving = true
   try {
-    await postAction(actionModal.value.plant.id, actionModal.value.action, actionModal.value.date, actionModal.value.comment)
+    await postAction(actionModal.value.instanceId, actionModal.value.action, actionModal.value.date, actionModal.value.comment)
     closeActionModal()
     await refreshAll()
   } finally {
@@ -152,8 +189,8 @@ async function submitActionModal() {
 
 const LOGGABLE_ACTIONS = new Set(['fertilizing', 'pruning', 'watering'])
 
-function isPlanEntryDone(plantId, entry) {
-  const logs = plantLog.value[plantId] ?? []
+function isPlanEntryDone(instanceId, entry) {
+  const logs = plantLog.value[instanceId] ?? []
   return logs.some(log =>
     log.action === entry.action &&
     log.date >= entry.plannedDateStart &&
@@ -164,15 +201,17 @@ function isPlanEntryDone(plantId, entry) {
 const overdueEntries = computed(() => {
   const todayStr = todayIso()
   const result = []
-  for (const [plantId, entries] of Object.entries(plantPlan.value)) {
-    const plant = plants.value.find(p => p.id === plantId)
+  for (const [instanceId, entries] of Object.entries(plantPlan.value)) {
+    const inst  = instances.value.find(i => i.id === instanceId)
+    if (!inst) continue
+    const plant = plants.value.find(p => p.id === inst.plantId)
     if (!plant) continue
     const overdue = entries.filter(e =>
       LOGGABLE_ACTIONS.has(e.action) &&
       e.plannedDateEnd < todayStr &&
-      !isPlanEntryDone(plantId, e)
+      !isPlanEntryDone(instanceId, e)
     )
-    if (overdue.length) result.push({ plant, entries: overdue })
+    if (overdue.length) result.push({ plant, instanceId, entries: overdue })
   }
   return result
 })
@@ -214,15 +253,17 @@ const weekPlanEntries = computed(() => {
   const weekStart = new Date(year, ws.weekStartMonth - 1, ws.weekStartDay)
   const weekEnd   = new Date(year, ws.weekEndMonth   - 1, ws.weekEndDay)
   const result = []
-  for (const [plantId, entries] of Object.entries(plantPlan.value)) {
-    const plant = plants.value.find(p => p.id === plantId)
+  for (const [instanceId, entries] of Object.entries(plantPlan.value)) {
+    const inst  = instances.value.find(i => i.id === instanceId)
+    if (!inst) continue
+    const plant = plants.value.find(p => p.id === inst.plantId)
     if (!plant) continue
     const matching = entries.filter(e => {
       const start = new Date(e.plannedDateStart + 'T00:00:00')
       const end   = new Date(e.plannedDateEnd   + 'T00:00:00')
       return start <= weekEnd && end >= weekStart
     })
-    if (matching.length) result.push({ plant, entries: matching })
+    if (matching.length) result.push({ plant, instanceId, entries: matching })
   }
   return result
 })
@@ -240,11 +281,13 @@ const weekTransitions = computed(() => {
   const weekStart = new Date(year, ws.weekStartMonth - 1, ws.weekStartDay)
   const weekEnd   = new Date(year, ws.weekEndMonth   - 1, ws.weekEndDay)
   const result = []
-  for (const [plantId, lc] of Object.entries(lifecycle.value)) {
+  for (const [instanceId, lc] of Object.entries(lifecycle.value)) {
     if (!lc.nextState) continue
-    const plant = plants.value.find(p => p.id === plantId)
+    const inst  = instances.value.find(i => i.id === instanceId)
+    if (!inst) continue
+    const plant = plants.value.find(p => p.id === inst.plantId)
     if (!plant) continue
-    const planEntries = plantPlan.value[plantId] ?? []
+    const planEntries = plantPlan.value[instanceId] ?? []
     const triggeringEntry = planEntries.find(e => {
       const triggeredState = PLAN_ACTION_TO_NEXT_STATE[e.action]
       if (triggeredState !== lc.nextState) return false
@@ -371,7 +414,7 @@ onMounted(async () => {
   if (suggestionsRes.ok) suggestions.value = await suggestionsRes.json()
   if (weekRes.ok)        weekSummary.value = await weekRes.json()
   loading.value = false
-  await Promise.all([fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
+  await Promise.all([fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
 })
 </script>
 
@@ -445,10 +488,10 @@ onMounted(async () => {
                   <span class="plant-emoji">{{ plant.emoji ?? '🌱' }}</span>
                   <span>{{ plantName(plant) }}</span>
                   <span
-                    v-if="lifecycle[plant.id]"
+                    v-if="lcForPlant(plant.id)"
                     class="lifecycle-badge"
-                    :class="'lc-' + lifecycle[plant.id].state"
-                  >{{ te(`garden.lifecycle.${lifecycle[plant.id].state}`) ? t(`garden.lifecycle.${lifecycle[plant.id].state}`) : lifecycle[plant.id].state }}</span>
+                    :class="'lc-' + lcForPlant(plant.id).state"
+                  >{{ te(`garden.lifecycle.${lcForPlant(plant.id).state}`) ? t(`garden.lifecycle.${lcForPlant(plant.id).state}`) : lcForPlant(plant.id).state }}</span>
                 </td>
                 <td
                   v-for="m in 12"
@@ -585,8 +628,8 @@ onMounted(async () => {
             </div>
           </div>
           <div
-            v-for="{ plant, entries } in weekPlanEntries"
-            :key="'plan-' + plant.id"
+            v-for="{ plant, instanceId, entries } in weekPlanEntries"
+            :key="'plan-' + instanceId"
             class="week-action"
             role="button"
             tabindex="0"
@@ -601,19 +644,19 @@ onMounted(async () => {
                   <span class="week-action-badge" :class="'plan-' + entry.action">
                     {{ te(`garden.planAction.${entry.action}`) ? t(`garden.planAction.${entry.action}`) : entry.action }}
                   </span>
-                  <span v-if="isPlanEntryDone(plant.id, entry)" class="plan-done-badge">✓</span>
+                  <span v-if="isPlanEntryDone(instanceId, entry)" class="plan-done-badge">✓</span>
                   <button
                     v-else-if="LOGGABLE_ACTIONS.has(entry.action)"
                     class="log-action-btn"
-                    @click.stop="openActionModal(plant, entry.action)"
+                    @click.stop="openActionModal(plant, entry.action, instanceId)"
                   >{{ t('garden.logDone') }}</button>
                 </template>
               </div>
             </div>
           </div>
           <div
-            v-for="{ plant, entries } in overdueEntries"
-            :key="'overdue-' + plant.id"
+            v-for="{ plant, instanceId, entries } in overdueEntries"
+            :key="'overdue-' + instanceId"
             class="week-action week-action--overdue"
             role="button"
             tabindex="0"
@@ -631,7 +674,7 @@ onMounted(async () => {
                   </span>
                   <button
                     class="log-action-btn"
-                    @click.stop="openActionModal(plant, entry.action)"
+                    @click.stop="openActionModal(plant, entry.action, instanceId)"
                   >{{ t('garden.logDone') }}</button>
                 </template>
               </div>
@@ -649,7 +692,7 @@ onMounted(async () => {
                 <span class="week-action-badge" :class="'lc-badge-' + lc.nextState">
                   {{ te(`garden.lifecycle.${lc.nextState}`) ? t(`garden.lifecycle.${lc.nextState}`) : lc.nextState }}
                 </span>
-                <button class="advance-btn" @click.stop="advanceLifecycle(plant.id)">
+                <button class="advance-btn" @click.stop="advanceLifecycle(lc.instanceId)">
                   {{ t('garden.advanceStage') }}
                 </button>
               </div>
