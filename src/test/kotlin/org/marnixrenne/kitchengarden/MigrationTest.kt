@@ -16,15 +16,15 @@ class MigrationTest : IntegrationTestBase() {
             "SELECT COUNT(*) FROM flyway_schema_history WHERE success = true",
             Int::class.java
         )!!
-        // V1 through V60 (no V32)
-        assertEquals(59, count, "Expected 59 successful migrations")
+        // V1 through V61 (no V32)
+        assertEquals(60, count, "Expected 60 successful migrations")
     }
 
     @Test
     fun `plants table contains all seeded records`() {
         val count = jdbc.queryForObject("SELECT COUNT(*) FROM pts_plants", Int::class.java)!!
-        // 24 (V2) + 45 (V12) + 1 (V13) + 87 (V14) + 9 (V33) + 3 (V34) + 12 (V44) = 181
-        assertEquals(181, count, "Expected 181 plants total")
+        // 24 (V2) + 45 (V12) + 1 (V13) + 87 (V14) + 9 (V33) + 3 (V34) + 12 (V44) + 2 (V61) = 183
+        assertEquals(183, count, "Expected 183 plants total")
     }
 
     @Test

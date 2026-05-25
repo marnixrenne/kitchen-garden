@@ -96,6 +96,8 @@ export default {
       Chamomile:            'Oogst bloemen zodra ze volledig opengaan door ze zachtjes van de stelen te wrijven. Regelmatig plukken om de paar dagen houdt de plant in volle bloei en voorkomt zaadvorming als u zelfzaai wilt beperken.',
       Elderflower:          'Knip in de late winter een derde van de oudste stelen tot op de grond om de struik productief en goed in vorm te houden. Knip de overige stelen licht bij na het bloeien. Hard renovatiesnoeien om de paar jaar verjongt een oude of te grote plant.',
       Rose:                 'Verwijder uitgebloeide bloemen door de stengel terug te knippen tot het eerste naar buiten gerichte blad met vijf blaadjes, om herhaalde bloei te bevorderen. Snoei in de late winter alle stengels een derde in naar een naar buiten gericht oog, en verwijder dood of kruisend hout volledig.',
+      Grape:                'Snoei in de late winter (januari–februari) terwijl de plant volledig in rust is om bloeden van sap te voorkomen. Knoei bij het spoorsysteem elke vruchtzijtak terug tot 2–3 knoppen. Bij het stoksysteem houdt u één of twee krachtige nieuwe stokken horizontaal aangebonden en verwijdert u alle andere. Verwijder dood, kruisend of ziek hout volledig.',
+      Hops:                 'Knip alle ranken in de herfst na de oogst tot op de grond terug, met een stronk van 5 cm boven de wortelkroon. Laat in het voorjaar 3–4 krachtige scheuten per plant uitgroeien en leid deze omhoog langs de steun; verwijder alle overige scheuten aan de basis. Deze jaarlijkse terugknip houdt de plant productief en beheersbaar.',
     },
   },
   fertilizer: {
@@ -185,6 +187,8 @@ export default {
       Chamomile:            'Kamille gedijt op arme, magere grond en produceert zijn meest aromatische bloemen zonder extra voeding. Bemesting produceert weelderige maar minder geurige groei. Geen extra voeding nodig.',
       Elderflower:          'Breng in het vroege voorjaar bij het begin van de groei een gebalanceerde korrelmeststof aan. Geef na de bloei een laag goed verteerde compost voor de ontwikkeling van het hout van het volgende jaar. Vermijd stikstofrijke meststoffen aan het einde van de zomer.',
       Rose:                 'Breng in het vroege voorjaar als de groei hervat een gebalanceerde korrelrozemeststof aan en nogmaals na de eerste bloeigolf. Geef elke 4–6 weken gedurende de zomer een vloeibare rozemeststof met kalium en magnesium. Stop met voeden aan het einde van de zomer zodat het hout kan verharden voor de winter.',
+      Grape:                'Breng in het vroege voorjaar als de knoppen beginnen te zwellen een gebalanceerde korrelmeststof aan. Zodra de vruchten gezet zijn, overstap op een kaliumrijke vloeibare meststof elke 2–3 weken voor de rijping. Vermijd stikstofrijke meststoffen tijdens het groeiseizoen — overtollig stikstof bevordert weelderige bladgroei ten koste van vruchtwaliteit en suikerontwikkeling.',
+      Hops:                 'Breng in het vroege voorjaar als de eerste scheuten uitkomen een stikstofrijke meststof aan voor een krachtige vroege groei. Schakel over op een gebalanceerde of kaliumrijke meststof zodra de ranken volgroeid zijn om de hopbel-ontwikkeling te ondersteunen. Planten op dezelfde plek gedurende meerdere jaren profiteren van een jaarlijkse compostlaag in de herfst.',
       Strawberry:           'Breng in het vroege voorjaar als de groei hervat een gebalanceerde korrelmeststof aan. Zodra de bloei begint, overstap op een kaliumrijke vloeibare meststof elke 2 weken voor maximale vruchtenproductie. Stop na de oogst en laat de plant afharden voor de winter.',
       Raspberry:            'Breng in het vroege voorjaar voor de groei begint een gebalanceerde korrelmeststof of goed verteerde mest aan. Geef na de vruchtzetting een kaliumrijke meststof voor de ontwikkeling van nieuwe scheuten voor het volgende seizoen. Vermijd stikstofrijke meststoffen aan het einde van de zomer.',
       Blackberry:           'Breng in het vroege voorjaar voor de groei begint een gebalanceerde korrelmeststof of goed verteerde mest aan. Geef na de vruchtzetting een kaliumrijke meststof voor de ontwikkeling van nieuwe scheuten voor het volgende seizoen. Vermijd stikstofrijke meststoffen aan het einde van de zomer.',
@@ -585,6 +589,9 @@ export default {
     Nopal: 'Cactusblad',
     'Welsh Onion': 'Stengelui',
     'Wild Leek': 'Daslook',
+    // Fruit & Herb (V61)
+    Grape:        'Druif',
+    Hops:         'Hop',
     // Fruit (V44)
     Strawberry:   'Aardbei',
     Raspberry:    'Framboos',
@@ -778,6 +785,9 @@ export default {
     Nopal:                'De eetbare pads van de vijgcactus, een Mexicaans basisproduct gegrild, rauw of gepekeld gegeten.',
     'Welsh Onion':        'Een vaste prei-ui die nooit een bol vormt. Zowel stelen als groen worden in de keuken gebruikt.',
     'Wild Leek':          'Ook daslook genaamd, deze bosplant heeft een sterke knoflooksmaak. Alleen blaadjes plukken in de lente.',
+    // Fruit & Herb (V61)
+    Grape:                'Een klimmende wijnstok die trossen zoete of licht zure vruchten produceert. Leid langs draden op een warme, zonnige plek. Snoei elk jaar flink terug in de winter voor de beste vruchtkwaliteit.',
+    Hops:                 'Een krachtige vaste klimmer die wordt gekweekt voor zijn aromatische, kegelvormige hopbellen voor het brouwen van bier. De ranken kunnen in één groeiseizoen tot 6 meter worden en hebben stevige steun nodig.',
     // Fruit (V44)
     Strawberry:           'Zoet, laaggroeiend fruit dat zich verspreidt via uitlopers. Oogst in de vroege zomer en plant nieuwe uitlopers elke herfst voor het volgende jaar.',
     Raspberry:            'Stelen die vruchten dragen in de zomer of herfst, afhankelijk van de variëteit. Plant kale wortelstekken in de winter; ze dragen vrucht het jaar erna.',

@@ -96,6 +96,8 @@ export default {
       Chamomile:            'Harvest flowers as soon as they fully open by gently rubbing them off the stems. Picking every few days keeps the plant in full bloom and prevents seed set if you want to limit self-seeding.',
       Elderflower:          'In late winter cut back one third of the oldest stems to ground level to keep the shrub productive and well-shaped. Lightly trim the remaining stems after flowering. Hard renovation pruning every few years will rejuvenate an old or overgrown plant.',
       Rose:                 'Remove spent blooms by cutting the stem back to the first outward-facing leaf with five leaflets to encourage repeat flowering. In late winter, prune all stems back by a third, cutting to an outward-facing bud, and remove dead or crossing wood entirely.',
+      Grape:                'Prune in late winter (January–February) while the plant is fully dormant to avoid sap bleeding. For the spur system, cut each fruiting lateral back to 2–3 buds. For the cane system, retain one or two vigorous new canes tied horizontally and remove all others. Remove dead, crossing, or diseased wood entirely.',
+      Hops:                 'Cut all bines back to ground level in autumn after harvest, leaving a 5 cm stub above the crown. In spring, allow 3–4 strong shoots to develop from each crown and train these up the support structure, rubbing out all remaining shoots at the base. This annual cut-back keeps the plant productive and manageable.',
     },
   },
   fertilizer: {
@@ -185,6 +187,8 @@ export default {
       Chamomile:            'Chamomile thrives in poor, lean soil and produces its most aromatic flowers without additional feeding. Fertilising produces lush but less fragrant growth. No supplementary feeding is needed.',
       Elderflower:          'Apply a balanced granular fertiliser in early spring as growth begins. After flowering, top-dress with well-rotted compost to support the development of the following year\'s wood. Avoid high-nitrogen feeds in late summer as they produce soft growth vulnerable to frost.',
       Rose:                 'Apply a balanced granular rose fertiliser in early spring as growth resumes and again after the first flush of flowers. Feed every 4–6 weeks through summer with a liquid rose fertiliser containing potassium and magnesium. Stop feeding in late summer to allow wood to harden before winter.',
+      Grape:                'Apply a balanced granular fertiliser in early spring as buds begin to swell. Once fruit has set, switch to a high-potassium liquid feed every 2–3 weeks to support ripening. Avoid high-nitrogen feeds during the growing season — excess nitrogen produces lush leafy growth at the expense of fruit quality and sugar development.',
+      Hops:                 'Apply a nitrogen-rich fertiliser in early spring as the first shoots emerge to fuel rapid early-season growth. Switch to a balanced or high-potassium feed once the bines reach full height to support cone development. Plants growing in the same spot for several years benefit from an annual top-dress of well-rotted compost in autumn.',
       Strawberry:           'Apply a balanced granular fertiliser in early spring as growth resumes. Once flowering begins, switch to a high-potassium liquid feed every 2 weeks to maximise fruit production. Stop feeding after harvest and allow the plant to harden off before winter.',
       Raspberry:            'Apply a balanced granular fertiliser or well-rotted manure in early spring before growth begins. Top-dress with a potassium-rich feed after fruiting to support new cane development for the following season. Avoid high-nitrogen feeds in late summer.',
       Blackberry:           'Apply a balanced granular fertiliser or well-rotted manure in early spring before growth begins. Top-dress with a potassium-rich feed after fruiting to support new cane development for the following season. Avoid high-nitrogen feeds in late summer.',
@@ -585,6 +589,9 @@ export default {
     Nopal: 'Nopal',
     'Welsh Onion': 'Welsh Onion',
     'Wild Leek': 'Wild Leek',
+    // Fruit & Herb (V61)
+    Grape:        'Grape',
+    Hops:         'Hops',
     // Fruit (V44)
     Strawberry:   'Strawberry',
     Raspberry:    'Raspberry',
@@ -815,6 +822,9 @@ export default {
     Nopal:                'The edible pads of the prickly pear cactus, a Mexican staple eaten grilled, raw, or pickled.',
     'Welsh Onion':        'A perennial bunching onion that never forms a bulb. Both stalks and greens are used in cooking.',
     'Wild Leek':          'Also called ramsons, this woodland plant has a strong garlic flavor. Harvest leaves only in spring.',
+    // Fruit & Herb (V61)
+    Grape:                'A climbing vine producing clusters of sweet or tangy fruit. Train along wires or a trellis in a warm, sunny spot. Prune hard each winter to control size and maximise fruit quality.',
+    Hops:                 'A vigorous perennial climbing vine grown for its aromatic cone-like flowers used to flavour and preserve beer. Bines can reach 6 m in a single season and need strong support.',
     // Fruit (V44)
     Strawberry:           'Sweet, low-growing fruit that spreads by runners. Harvest in early summer and plant new runners each autumn for next year.',
     Raspberry:            'Canes that fruit in summer or autumn depending on variety. Plant bare-root canes in winter and they will fruit the following year.',

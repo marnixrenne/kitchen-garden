@@ -94,6 +94,8 @@ export default {
       Chamomile:            'Cosecha las flores en cuanto se abran completamente frotándolas suavemente de los tallos. Recoger cada pocos días mantiene la planta en plena floración y evita la formación de semillas si quieres limitar el autosembro.',
       Elderflower:          'A finales de invierno, corta hasta el nivel del suelo un tercio de los tallos más viejos para mantener el arbusto productivo y bien formado. Recorta ligeramente los tallos restantes tras la floración. Una poda de renovación enérgica cada pocos años rejuvenecerá una planta vieja o desbordada.',
       Rose:                 'Retira las flores marchitas cortando el tallo hasta la primera hoja exterior con cinco folíolos para estimular la floración repetida. A finales de invierno, poda todos los tallos en un tercio cortando hasta una yema exterior, y elimina completamente la madera muerta o los tallos que se cruzan.',
+      Grape:                'Poda a finales de invierno (enero–febrero) mientras la planta esté completamente en reposo para evitar el sangrado de savia. Con el sistema de espolón, corta cada lateral fructífero hasta 2–3 yemas. Con el sistema de vara, conserva una o dos varas vigorosas atadas horizontalmente y elimina las demás. Retira completamente la madera muerta, cruzada o enferma.',
+      Hops:                 'Corta todos los tallos hasta el suelo en otoño tras la cosecha, dejando un tocón de 5 cm sobre la corona. En primavera, deja crecer 3–4 brotes fuertes por planta y guíalos hacia arriba por el soporte, eliminando todos los demás brotes en la base. Esta poda anual mantiene la planta productiva y manejable.',
     },
   },
   fertilizer: {
@@ -183,6 +185,8 @@ export default {
       Chamomile:            'La manzanilla prospera en suelo pobre y produce sus flores más aromáticas sin abonado adicional. El abonado produce un crecimiento lozano pero menos fragante. No se necesita abonado suplementario.',
       Elderflower:          'Aplica un abono granulado equilibrado a principios de primavera cuando comience el crecimiento. Tras la floración, cubre con compost bien descompuesto para apoyar el desarrollo de la madera del año siguiente. Evita los abonos ricos en nitrógeno a finales de verano ya que producen un crecimiento blando vulnerable a las heladas.',
       Rose:                 'Aplica un abono granulado equilibrado para rosas a principios de primavera cuando se reanude el crecimiento y de nuevo tras la primera oleada de flores. Abona cada 4–6 semanas durante el verano con un abono líquido para rosas con potasio y magnesio. Deja de abonar a finales de verano para que la madera se endurezca antes del invierno.',
+      Grape:                'Aplica un abono granulado equilibrado a principios de primavera cuando los brotes comiencen a hincharse. Una vez cuajado el fruto, cambia a un abono líquido rico en potasio cada 2–3 semanas para favorecer la maduración. Evita los abonos ricos en nitrógeno durante la temporada de crecimiento — el exceso de nitrógeno produce un follaje exuberante a expensas de la calidad del fruto y el desarrollo del azúcar.',
+      Hops:                 'Aplica un abono rico en nitrógeno a principios de primavera cuando emerjan los primeros brotes para impulsar el rápido crecimiento inicial. Cambia a un abono equilibrado o rico en potasio cuando los tallos alcancen su altura máxima para favorecer el desarrollo de los conos. Las plantas que llevan varios años en el mismo lugar se benefician de una capa anual de compost bien descompuesto en otoño.',
       Strawberry:           'Aplica un abono granulado equilibrado a principios de primavera cuando se reanude el crecimiento. Una vez iniciada la floración, cambia a un abono líquido rico en potasio cada 2 semanas para maximizar la producción de frutos. Deja de abonar tras la cosecha y permite que la planta se endurezca antes del invierno.',
       Raspberry:            'Aplica un abono granulado equilibrado o estiércol bien descompuesto a principios de primavera antes de que comience el crecimiento. Abona con un abono rico en potasio tras la fructificación para apoyar el desarrollo de nuevos tallos para la temporada siguiente. Evita los abonos ricos en nitrógeno a finales de verano.',
       Blackberry:           'Aplica un abono granulado equilibrado o estiércol bien descompuesto a principios de primavera antes de que comience el crecimiento. Abona con un abono rico en potasio tras la fructificación para apoyar el desarrollo de nuevos tallos para la temporada siguiente. Evita los abonos ricos en nitrógeno a finales de verano.',
@@ -583,6 +587,9 @@ export default {
     Nopal: 'Nopal',
     'Welsh Onion': 'Cebolla china',
     'Wild Leek': 'Ajo de oso',
+    // Fruit & Herb (V61)
+    Grape:      'Uva',
+    Hops:       'Lúpulo',
     // Fruit (V44)
     Strawberry: 'Fresa',
     Raspberry: 'Frambuesa',
@@ -813,6 +820,9 @@ export default {
     Nopal:                'Las paletas comestibles del cactus de tuna, básico en la cocina mexicana, consumido a la plancha, crudo o en escabeche.',
     'Welsh Onion':        'Una cebolla perenne en mazo que nunca forma bulbo. Tanto los tallos como las hojas se usan en la cocina.',
     'Wild Leek':          'También llamado ajo de oso; esta planta de bosque tiene un intenso sabor a ajo. Cosecha solo las hojas en primavera.',
+    // Fruit & Herb (V61)
+    Grape:                'Una vid trepadora que produce racimos de frutos dulces o ácidos. Guíala sobre alambres o enrejados en una ubicación cálida y soleada. Poda enérgicamente cada invierno para controlar el tamaño y maximizar la calidad del fruto.',
+    Hops:                 'Una planta trepadora perenne y vigorosa cultivada por sus aromáticas flores en forma de cono para elaborar cerveza. Los tallos pueden alcanzar los 6 m en una sola temporada y necesitan un soporte resistente.',
     // Fruit (V44)
     Strawberry:           'Fruta dulce y de porte bajo que se extiende mediante estolones. Cosecha a principios de verano y planta nuevos estolones cada otoño para la temporada siguiente.',
     Raspberry:            'Las cañas fructifican en verano o otoño según la variedad. Planta cañas de raíz desnuda en invierno y fructificarán al año siguiente.',
