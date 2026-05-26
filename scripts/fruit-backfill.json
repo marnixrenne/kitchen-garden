@@ -1,0 +1,521 @@
+{
+  "migrationDescription": "backfill_fruit_plant_data",
+
+  "plants": [
+    {
+      "name":      "Strawberry",
+      "category":  "Fruit",
+      "emoji":     "🍓",
+      "latinName": "Fragaria × ananassa",
+      "sowing": {
+        "method":            "direct",
+        "spacingCm":         30,
+        "daysToMaturityMin": 60,
+        "daysToMaturityMax": 90,
+        "frostTolerance":    "hardy"
+      },
+      "heightCm": { "min": 15, "max": 30 },
+      "pruning": {
+        "type": "cutting_back",
+        "tip":  "After harvest, cut back all foliage to 10 cm above the crown and remove any runners not needed for propagation. Replant rooted runners into fresh ground every 3–4 years as fruit production declines with age."
+      },
+      "fertilizer": {
+        "type": "moderate_feeder",
+        "tip":  "Apply a balanced granular fertiliser in early spring as growth resumes. Once flowering begins, switch to a high-potassium liquid feed every 2 weeks to maximise fruit production. Stop feeding after harvest and allow the plant to harden off before winter."
+      },
+      "i18n": {
+        "en": {
+          "name":          "Strawberry",
+          "description":   "Sweet, low-growing fruit that spreads by runners. Harvest in early summer and plant new runners each autumn for next year.",
+          "pruningTip":    "After harvest, cut back all foliage to 10 cm above the crown and remove any runners not needed for propagation. Replant rooted runners into fresh ground every 3–4 years as fruit production declines with age.",
+          "fertilizerTip": "Apply a balanced granular fertiliser in early spring as growth resumes. Once flowering begins, switch to a high-potassium liquid feed every 2 weeks to maximise fruit production. Stop feeding after harvest and allow the plant to harden off before winter."
+        },
+        "nl": {
+          "name":          "Aardbei",
+          "description":   "Zoet, laaggroeiend fruit dat zich verspreidt via uitlopers. Oogst in de vroege zomer en plant nieuwe uitlopers elke herfst voor het volgende jaar.",
+          "pruningTip":    "Knip na de oogst al het blad terug tot 10 cm boven de kroon en verwijder uitlopers die niet nodig zijn voor vermeerdering. Herplant gewortelde uitlopers in verse grond elke 3–4 jaar naarmate de vruchtproductie afneemt met de leeftijd.",
+          "fertilizerTip": "Breng in het vroege voorjaar als de groei hervat een gebalanceerde korrelmeststof aan. Zodra de bloei begint, overstap op een kaliumrijke vloeibare meststof elke 2 weken voor maximale vruchtenproductie. Stop na de oogst en laat de plant afharden voor de winter."
+        },
+        "es": {
+          "name":          "Fresa",
+          "description":   "Fruta dulce y de porte bajo que se extiende mediante estolones. Cosecha a principios de verano y planta nuevos estolones cada otoño para la temporada siguiente.",
+          "pruningTip":    "Tras la cosecha, corta todo el follaje a 10 cm por encima de la corona y elimina los estolones que no necesites para propagación. Replanta los estolones enraizados en tierra fresca cada 3–4 años cuando la producción disminuya con la edad.",
+          "fertilizerTip": "Aplica un abono granulado equilibrado a principios de primavera cuando se reanude el crecimiento. Una vez iniciada la floración, cambia a un abono líquido rico en potasio cada 2 semanas para maximizar la producción de frutos. Deja de abonar tras la cosecha y permite que la planta se endurezca antes del invierno."
+        }
+      }
+    },
+
+    {
+      "name":      "Raspberry",
+      "category":  "Fruit",
+      "emoji":     "🍓",
+      "latinName": "Rubus idaeus",
+      "sowing": {
+        "method":            "direct",
+        "spacingCm":         45,
+        "daysToMaturityMin": 270,
+        "daysToMaturityMax": 365,
+        "frostTolerance":    "hardy"
+      },
+      "heightCm": { "min": 150, "max": 200 },
+      "pruning": {
+        "type": "cutting_back",
+        "tip":  "For summer-fruiting varieties, cut all canes that have fruited to ground level immediately after harvest and tie in the strongest 6–8 new canes. For autumn-fruiting varieties, cut all canes to ground level in February."
+      },
+      "fertilizer": {
+        "type": "moderate_feeder",
+        "tip":  "Apply a balanced granular fertiliser or well-rotted manure in early spring before growth begins. Top-dress with a potassium-rich feed after fruiting to support new cane development for the following season. Avoid high-nitrogen feeds in late summer."
+      },
+      "i18n": {
+        "en": {
+          "name":          "Raspberry",
+          "description":   "Canes that fruit in summer or autumn depending on variety. Plant bare-root canes in winter and they will fruit the following year.",
+          "pruningTip":    "For summer-fruiting varieties, cut all canes that have fruited to ground level immediately after harvest and tie in the strongest 6–8 new canes. For autumn-fruiting varieties, cut all canes to ground level in February.",
+          "fertilizerTip": "Apply a balanced granular fertiliser or well-rotted manure in early spring before growth begins. Top-dress with a potassium-rich feed after fruiting to support new cane development for the following season. Avoid high-nitrogen feeds in late summer."
+        },
+        "nl": {
+          "name":          "Framboos",
+          "description":   "Stelen die vruchten dragen in de zomer of herfst, afhankelijk van de variëteit. Plant kale wortelstekken in de winter; ze dragen vrucht het jaar erna.",
+          "pruningTip":    "Snijd bij zomervruchtdragende variëteiten alle gedragen stelen direct na de oogst tot op de grond en bind de 6–8 sterkste nieuwe stelen aan de steun. Snijd bij herfstvariëteiten alle stelen in februari tot op de grond.",
+          "fertilizerTip": "Breng in het vroege voorjaar voor de groei begint een gebalanceerde korrelmeststof of goed verteerde mest aan. Geef na de vruchtzetting een kaliumrijke meststof voor de ontwikkeling van nieuwe scheuten voor het volgende seizoen. Vermijd stikstofrijke meststoffen aan het einde van de zomer."
+        },
+        "es": {
+          "name":          "Frambuesa",
+          "description":   "Las cañas fructifican en verano o otoño según la variedad. Planta cañas de raíz desnuda en invierno y fructificarán al año siguiente.",
+          "pruningTip":    "En las variedades de verano, corta a ras de suelo todos los tallos que hayan dado fruto inmediatamente después de la cosecha y ata los 6–8 tallos nuevos más vigorosos al soporte. En las variedades de otoño, corta todos los tallos a ras de suelo en febrero.",
+          "fertilizerTip": "Aplica un abono granulado equilibrado o estiércol bien descompuesto a principios de primavera antes de que comience el crecimiento. Abona con un abono rico en potasio tras la fructificación para apoyar el desarrollo de nuevos tallos para la temporada siguiente. Evita los abonos ricos en nitrógeno a finales de verano."
+        }
+      }
+    },
+
+    {
+      "name":      "Blackberry",
+      "category":  "Fruit",
+      "emoji":     "🫐",
+      "latinName": "Rubus fruticosus",
+      "sowing": {
+        "method":            "direct",
+        "spacingCm":         300,
+        "daysToMaturityMin": 365,
+        "daysToMaturityMax": 730,
+        "frostTolerance":    "hardy"
+      },
+      "heightCm": { "min": 200, "max": 300 },
+      "pruning": {
+        "type": "cutting_back",
+        "tip":  "Cut all canes that fruited this season to ground level after harvest. Tie in 6–8 of the strongest new canes and remove the rest. Tip new canes at approximately 1.8 m in winter to encourage fruiting side shoots the following year."
+      },
+      "fertilizer": {
+        "type": "moderate_feeder",
+        "tip":  "Apply a balanced granular fertiliser or well-rotted manure in early spring before growth begins. Top-dress with a potassium-rich feed after fruiting to support new cane development for the following season. Avoid high-nitrogen feeds in late summer."
+      },
+      "i18n": {
+        "en": {
+          "name":          "Blackberry",
+          "description":   "Vigorous, thorny canes that produce abundantly in late summer. Train along a fence or wall; thornless varieties are easier to manage.",
+          "pruningTip":    "Cut all canes that fruited this season to ground level after harvest. Tie in 6–8 of the strongest new canes and remove the rest. Tip new canes at approximately 1.8 m in winter to encourage fruiting side shoots the following year.",
+          "fertilizerTip": "Apply a balanced granular fertiliser or well-rotted manure in early spring before growth begins. Top-dress with a potassium-rich feed after fruiting to support new cane development for the following season. Avoid high-nitrogen feeds in late summer."
+        },
+        "nl": {
+          "name":          "Braam",
+          "description":   "Krachtige, doornige stelen die overvloedig vrucht dragen in de late zomer. Leiden langs een hek of muur; doornloze variëteiten zijn gemakkelijker te beheren.",
+          "pruningTip":    "Snijd na de oogst alle gedragen stelen van dit seizoen tot op de grond. Bind de 6–8 sterkste nieuwe stelen in en verwijder de rest. Knip de toppen van nieuwe stelen in de winter op circa 1,8 m om vruchtzijscheuten het volgende jaar te bevorderen.",
+          "fertilizerTip": "Breng in het vroege voorjaar voor de groei begint een gebalanceerde korrelmeststof of goed verteerde mest aan. Geef na de vruchtzetting een kaliumrijke meststof voor de ontwikkeling van nieuwe scheuten voor het volgende seizoen. Vermijd stikstofrijke meststoffen aan het einde van de zomer."
+        },
+        "es": {
+          "name":          "Mora",
+          "description":   "Cañas vigorosas y espinosas que producen abundantemente a finales de verano. Condúcelas a lo largo de una valla o muro; las variedades sin espinas son más fáciles de manejar.",
+          "pruningTip":    "Tras la cosecha, corta a ras de suelo todos los tallos que dieron fruto esta temporada. Ata los 6–8 tallos nuevos más vigorosos y elimina el resto. Despunta los tallos nuevos en invierno a unos 1,8 m para estimular los brotes laterales fructíferos del año siguiente.",
+          "fertilizerTip": "Aplica un abono granulado equilibrado o estiércol bien descompuesto a principios de primavera antes de que comience el crecimiento. Abona con un abono rico en potasio tras la fructificación para apoyar el desarrollo de nuevos tallos para la temporada siguiente. Evita los abonos ricos en nitrógeno a finales de verano."
+        }
+      }
+    },
+
+    {
+      "name":      "Blueberry",
+      "category":  "Fruit",
+      "emoji":     "🫐",
+      "latinName": "Vaccinium corymbosum",
+      "sowing": {
+        "method":            "direct",
+        "spacingCm":         150,
+        "daysToMaturityMin": 730,
+        "daysToMaturityMax": 1095,
+        "frostTolerance":    "hardy"
+      },
+      "heightCm": { "min": 100, "max": 200 },
+      "pruning": {
+        "type": "cutting_back",
+        "tip":  "For the first two years, remove all flowers to let the plant establish. From year three onward, prune in late winter: remove dead and crossing branches, and cut one quarter of the oldest stems to ground level annually to encourage productive new growth."
+      },
+      "fertilizer": {
+        "type": "moderate_feeder",
+        "tip":  "Blueberries require acidic soil (pH 4.5–5.5) and must be fed with an ericaceous (acid-loving plant) fertiliser in early spring. Avoid lime-based or high-phosphorus fertilisers, and never add wood ash near blueberries as it raises soil pH."
+      },
+      "i18n": {
+        "en": {
+          "name":          "Blueberry",
+          "description":   "Needs acidic soil (pH 4.5–5.5). Plant two varieties for good pollination. Berries take several years to produce well but are very long-lived.",
+          "pruningTip":    "For the first two years, remove all flowers to let the plant establish. From year three onward, prune in late winter: remove dead and crossing branches, and cut one quarter of the oldest stems to ground level annually to encourage productive new growth.",
+          "fertilizerTip": "Blueberries require acidic soil (pH 4.5–5.5) and must be fed with an ericaceous (acid-loving plant) fertiliser in early spring. Avoid lime-based or high-phosphorus fertilisers, and never add wood ash near blueberries as it raises soil pH."
+        },
+        "nl": {
+          "name":          "Bosbes",
+          "description":   "Heeft zure grond nodig (pH 4,5–5,5). Plant twee variëteiten voor goede bestuiving. Bessen duren een paar jaar om goed te produceren, maar de plant is zeer langlevend.",
+          "pruningTip":    "Verwijder in de eerste twee jaar alle bloemen om de plant te laten vestigen. Vanaf jaar drie snoeit u in de late winter: verwijder dood en kruisend hout en snijd elk jaar een kwart van de oudste stelen tot op de grond om productieve nieuwe groei te stimuleren.",
+          "fertilizerTip": "Bosbessen hebben zure grond nodig (pH 4,5–5,5) en moeten in het vroege voorjaar worden bemest met een ericaceousmeststof (voor zuurgevoelige planten). Vermijd kalkrijke of fosfaatrijke meststoffen en voeg nooit houtsas toe bij bosbessen."
+        },
+        "es": {
+          "name":          "Arándano",
+          "description":   "Necesita un suelo ácido (pH 4,5–5,5). Planta dos variedades para una buena polinización. Los frutos tardan varios años en producir bien, pero la planta es muy longeva.",
+          "pruningTip":    "Durante los dos primeros años, elimina todas las flores para que la planta se establezca. A partir del tercer año, poda a finales de invierno: retira las ramas muertas y las que se cruzan, y corta a ras de suelo una cuarta parte de los tallos más viejos cada año para estimular nuevo crecimiento productivo.",
+          "fertilizerTip": "Los arándanos requieren suelo ácido (pH 4,5–5,5) y deben abonarse con un abono para plantas acidófilas (ericáceas) a principios de primavera. Evita los abonos ricos en calcio o fósforo y nunca añadas ceniza de madera cerca de los arándanos ya que sube el pH del suelo."
+        }
+      }
+    },
+
+    {
+      "name":      "Gooseberry",
+      "category":  "Fruit",
+      "emoji":     "🍈",
+      "latinName": "Ribes uva-crispa",
+      "sowing": {
+        "method":            "direct",
+        "spacingCm":         120,
+        "daysToMaturityMin": 365,
+        "daysToMaturityMax": 730,
+        "frostTolerance":    "hardy"
+      },
+      "heightCm": { "min": 100, "max": 150 },
+      "pruning": {
+        "type": "cutting_back",
+        "tip":  "Prune in late winter into an open goblet shape to improve airflow and reduce powdery mildew. Remove one third of the oldest stems to ground level annually. Shorten all main branches by a quarter and reduce side shoots to 2–3 buds."
+      },
+      "fertilizer": {
+        "type": "moderate_feeder",
+        "tip":  "Apply a balanced granular fertiliser in early spring before bud burst. A light top-dressing of well-rotted compost in autumn helps maintain soil structure and provides nutrition for the following season."
+      },
+      "i18n": {
+        "en": {
+          "name":          "Gooseberry",
+          "description":   "One of the earliest soft fruits of the year. Plant bare-root bushes in winter and prune into an open goblet shape to improve airflow.",
+          "pruningTip":    "Prune in late winter into an open goblet shape to improve airflow and reduce powdery mildew. Remove one third of the oldest stems to ground level annually. Shorten all main branches by a quarter and reduce side shoots to 2–3 buds.",
+          "fertilizerTip": "Apply a balanced granular fertiliser in early spring before bud burst. A light top-dressing of well-rotted compost in autumn helps maintain soil structure and provides nutrition for the following season."
+        },
+        "nl": {
+          "name":          "Kruisbes",
+          "description":   "Een van de vroegste zachte vruchten van het jaar. Plant kale wortelstruiken in de winter en snoei in een open komvorm voor betere luchtcirculatie.",
+          "pruningTip":    "Snoei in de late winter tot een open komvorm om de luchtcirculatie te verbeteren en meeldauw te verminderen. Verwijder jaarlijks een derde van de oudste stelen tot op de grond. Knip alle hoofdtakken een kwart in en kortwieken zijscheuten tot 2–3 knoppen.",
+          "fertilizerTip": "Breng in het vroege voorjaar voor het uitlopen een gebalanceerde korrelmeststof aan. Een lichte compostlaag in de herfst helpt de grondstructuur te onderhouden en voorziet in voeding voor het volgende seizoen."
+        },
+        "es": {
+          "name":          "Grosella espinosa",
+          "description":   "Una de las primeras frutas blandas del año. Planta arbusto de raíz desnuda en invierno y poda con forma de cáliz abierto para mejorar la circulación del aire.",
+          "pruningTip":    "Poda a finales de invierno con forma de cáliz abierto para mejorar la circulación de aire y reducir el oídio. Elimina anualmente un tercio de los tallos más viejos a ras de suelo. Acorta todas las ramas principales en una cuarta parte y reduce los brotes laterales a 2–3 yemas.",
+          "fertilizerTip": "Aplica un abono granulado equilibrado a principios de primavera antes de que broten las yemas. Una ligera capa de compost bien descompuesto en otoño ayuda a mantener la estructura del suelo y aporta nutrición para la temporada siguiente."
+        }
+      }
+    },
+
+    {
+      "name":      "Redcurrant",
+      "category":  "Fruit",
+      "emoji":     "🍓",
+      "latinName": "Ribes rubrum",
+      "sowing": {
+        "method":            "direct",
+        "spacingCm":         150,
+        "daysToMaturityMin": 365,
+        "daysToMaturityMax": 730,
+        "frostTolerance":    "hardy"
+      },
+      "heightCm": { "min": 100, "max": 150 },
+      "pruning": {
+        "type": "cutting_back",
+        "tip":  "In late winter, shorten all new side shoots to one bud from the main branch and reduce the main leaders by a quarter. Redcurrants fruit on old wood — maintain the permanent framework and only remove dead, diseased, or crossing stems."
+      },
+      "fertilizer": {
+        "type": "moderate_feeder",
+        "tip":  "Apply a balanced granular fertiliser in early spring before bud burst. A light top-dressing of well-rotted compost in autumn helps maintain soil structure and provides nutrition for the following season."
+      },
+      "i18n": {
+        "en": {
+          "name":          "Redcurrant",
+          "description":   "Productive and reliable, even in partial shade. Harvest whole trusses of bright red berries in midsummer. Great for jellies and summer puddings.",
+          "pruningTip":    "In late winter, shorten all new side shoots to one bud from the main branch and reduce the main leaders by a quarter. Redcurrants fruit on old wood — maintain the permanent framework and only remove dead, diseased, or crossing stems.",
+          "fertilizerTip": "Apply a balanced granular fertiliser in early spring before bud burst. A light top-dressing of well-rotted compost in autumn helps maintain soil structure and provides nutrition for the following season."
+        },
+        "nl": {
+          "name":          "Rode Bes",
+          "description":   "Productief en betrouwbaar, zelfs in gedeeltelijke schaduw. Oogst hele trossen heldere rode bessen in midzomer. Uitstekend voor gelei en zomerpudding.",
+          "pruningTip":    "Knip in de late winter alle nieuwe zijscheuten in tot één knop van de hoofdtak en kortwieken de hoofdloten een kwart. Rode bessen dragen op oud hout — behoud het permanente raamwerk en verwijder alleen dood, ziek of kruisend hout.",
+          "fertilizerTip": "Breng in het vroege voorjaar voor het uitlopen een gebalanceerde korrelmeststof aan. Een lichte compostlaag in de herfst helpt de grondstructuur te onderhouden en voorziet in voeding voor het volgende seizoen."
+        },
+        "es": {
+          "name":          "Grosella roja",
+          "description":   "Productiva y fiable, incluso en semisombra. Cosecha racimos enteros de brillantes bayas rojas a mediados de verano. Excelente para jaleas y pudines de verano.",
+          "pruningTip":    "A finales de invierno, acorta todos los brotes laterales nuevos a una yema de la rama principal y reduce los líderes principales en una cuarta parte. Las grosellas rojas fructifican en madera vieja — mantén el marco permanente y elimina solo los tallos muertos, enfermos o cruzados.",
+          "fertilizerTip": "Aplica un abono granulado equilibrado a principios de primavera antes de que broten las yemas. Una ligera capa de compost bien descompuesto en otoño ayuda a mantener la estructura del suelo y aporta nutrición para la temporada siguiente."
+        }
+      }
+    },
+
+    {
+      "name":      "Blackcurrant",
+      "category":  "Fruit",
+      "emoji":     "🫐",
+      "latinName": "Ribes nigrum",
+      "sowing": {
+        "method":            "direct",
+        "spacingCm":         150,
+        "daysToMaturityMin": 365,
+        "daysToMaturityMax": 730,
+        "frostTolerance":    "hardy"
+      },
+      "heightCm": { "min": 100, "max": 180 },
+      "pruning": {
+        "type": "cutting_back",
+        "tip":  "Cut one third of the oldest, darkest stems to ground level each year immediately after fruiting. Unlike redcurrants, blackcurrants produce their best fruit on young wood — removing old wood annually keeps the plant productive."
+      },
+      "fertilizer": {
+        "type": "moderate_feeder",
+        "tip":  "Apply a balanced granular fertiliser in early spring before bud burst. A light top-dressing of well-rotted compost in autumn helps maintain soil structure and provides nutrition for the following season."
+      },
+      "i18n": {
+        "en": {
+          "name":          "Blackcurrant",
+          "description":   "Very productive once established. Prune out a third of the oldest stems each year after fruiting to keep new wood coming through.",
+          "pruningTip":    "Cut one third of the oldest, darkest stems to ground level each year immediately after fruiting. Unlike redcurrants, blackcurrants produce their best fruit on young wood — removing old wood annually keeps the plant productive.",
+          "fertilizerTip": "Apply a balanced granular fertiliser in early spring before bud burst. A light top-dressing of well-rotted compost in autumn helps maintain soil structure and provides nutrition for the following season."
+        },
+        "nl": {
+          "name":          "Zwarte Bes",
+          "description":   "Zeer productief eenmaal gevestigd. Snoei elk jaar na de oogst een derde van de oudste stelen weg om nieuw hout te stimuleren.",
+          "pruningTip":    "Snijd elk jaar direct na de oogst een derde van de oudste, donkerste stelen tot op de grond. In tegenstelling tot rode bessen draagt zwarte bes de beste vruchten op jong hout — oud hout jaarlijks verwijderen houdt de plant productief.",
+          "fertilizerTip": "Breng in het vroege voorjaar voor het uitlopen een gebalanceerde korrelmeststof aan. Een lichte compostlaag in de herfst helpt de grondstructuur te onderhouden en voorziet in voeding voor het volgende seizoen."
+        },
+        "es": {
+          "name":          "Grosella negra",
+          "description":   "Muy productiva una vez establecida. Poda un tercio de los tallos más viejos cada año tras la fructificación para favorecer la aparición de madera nueva.",
+          "pruningTip":    "Corta a ras de suelo un tercio de los tallos más viejos y oscuros cada año, inmediatamente después de la fructificación. A diferencia de las grosellas rojas, las grosellas negras producen sus mejores frutos en madera joven — eliminar madera vieja cada año mantiene la planta productiva.",
+          "fertilizerTip": "Aplica un abono granulado equilibrado a principios de primavera antes de que broten las yemas. Una ligera capa de compost bien descompuesto en otoño ayuda a mantener la estructura del suelo y aporta nutrición para la temporada siguiente."
+        }
+      }
+    },
+
+    {
+      "name":      "Apple",
+      "category":  "Fruit",
+      "emoji":     "🍎",
+      "latinName": "Malus domestica",
+      "sowing": {
+        "method":            "direct",
+        "spacingCm":         400,
+        "daysToMaturityMin": 1095,
+        "daysToMaturityMax": 1825,
+        "frostTolerance":    "hardy"
+      },
+      "heightCm": { "min": 200, "max": 500 },
+      "pruning": {
+        "type": "cutting_back",
+        "tip":  "Prune in winter while the tree is fully dormant. In the first three years, build a balanced framework of main branches. On established trees, remove dead, diseased, and crossing wood, shorten new side shoots to 4–6 buds, and reduce older laterals to spurs. Thin fruit clusters to one fruit per spur in June."
+      },
+      "fertilizer": {
+        "type": "moderate_feeder",
+        "tip":  "Apply a balanced granular fertiliser in early spring around the drip line of the tree. Avoid high-nitrogen feeds after early summer — this promotes soft late-season growth that is vulnerable to frost, fire blight, and other diseases."
+      },
+      "i18n": {
+        "en": {
+          "name":          "Apple",
+          "description":   "A garden staple available in hundreds of varieties. Choose one on a dwarfing rootstock for small spaces; most need a compatible pollinator nearby.",
+          "pruningTip":    "Prune in winter while the tree is fully dormant. In the first three years, build a balanced framework of main branches. On established trees, remove dead, diseased, and crossing wood, shorten new side shoots to 4–6 buds, and reduce older laterals to spurs. Thin fruit clusters to one fruit per spur in June.",
+          "fertilizerTip": "Apply a balanced granular fertiliser in early spring around the drip line of the tree. Avoid high-nitrogen feeds after early summer — this promotes soft late-season growth that is vulnerable to frost, fire blight, and other diseases."
+        },
+        "nl": {
+          "name":          "Appel",
+          "description":   "Een tuinstaple in honderden variëteiten. Kies een op een zwakke onderstam voor kleine ruimtes; de meeste hebben een geschikte bestuiver nodig.",
+          "pruningTip":    "Snoei in de winter terwijl de boom volledig in rust is. Bouw in de eerste drie jaar een evenwichtig raamwerk van hoofdtakken. Verwijder bij volwassen bomen dood, ziek en kruisend hout, knip nieuwe zijscheuten in tot 4–6 knoppen en kortwieken oudere zijloten tot sporen. Dun vruchtentrossen in juni tot één vrucht per spoor.",
+          "fertilizerTip": "Breng in het vroege voorjaar een gebalanceerde korrelmeststof aan rondom de druppellijn van de boom. Vermijd stikstofrijke meststoffen na het begin van de zomer — dit bevordert zachte laat-seizoengroei die kwetsbaar is voor vorst en ziektes."
+        },
+        "es": {
+          "name":          "Manzana",
+          "description":   "Un básico del jardín disponible en cientos de variedades. Elige una sobre un portainjerto enano para espacios pequeños; la mayoría necesita un polinizador compatible cerca.",
+          "pruningTip":    "Poda en invierno con el árbol en pleno reposo. Durante los tres primeros años construye un marco equilibrado de ramas principales. En árboles establecidos, retira madera muerta, enferma y la que se cruza, acorta los brotes laterales nuevos a 4–6 yemas y reduce los más viejos a espolones. Aclara los racimos de frutos a uno por espolón en junio.",
+          "fertilizerTip": "Aplica un abono granulado equilibrado a principios de primavera alrededor de la línea de goteo del árbol. Evita los abonos ricos en nitrógeno después de principios de verano — esto favorece un crecimiento tardío blando vulnerable a las heladas, el fuego bacteriano y otras enfermedades."
+        }
+      }
+    },
+
+    {
+      "name":      "Pear",
+      "category":  "Fruit",
+      "emoji":     "🍐",
+      "latinName": "Pyrus communis",
+      "sowing": {
+        "method":            "direct",
+        "spacingCm":         400,
+        "daysToMaturityMin": 1095,
+        "daysToMaturityMax": 1825,
+        "frostTolerance":    "hardy"
+      },
+      "heightCm": { "min": 200, "max": 500 },
+      "pruning": {
+        "type": "cutting_back",
+        "tip":  "Prune in winter while the tree is fully dormant. Pears fruit on spurs on older wood — maintain a permanent framework. In summer, shorten new laterals to 6 leaves; in winter cut these back to 2–3 buds. Avoid hard pruning, which stimulates leafy water shoots that do not fruit."
+      },
+      "fertilizer": {
+        "type": "moderate_feeder",
+        "tip":  "Apply a balanced granular fertiliser in early spring around the drip line of the tree. Avoid high-nitrogen feeds after early summer — this promotes soft late-season growth that is vulnerable to frost, fire blight, and other diseases."
+      },
+      "i18n": {
+        "en": {
+          "name":          "Pear",
+          "description":   "Similar to apple in care but needs a sheltered, sunny spot to ripen well. Harvest just before fully ripe and let them ripen indoors.",
+          "pruningTip":    "Prune in winter while the tree is fully dormant. Pears fruit on spurs on older wood — maintain a permanent framework. In summer, shorten new laterals to 6 leaves; in winter cut these back to 2–3 buds. Avoid hard pruning, which stimulates leafy water shoots that do not fruit.",
+          "fertilizerTip": "Apply a balanced granular fertiliser in early spring around the drip line of the tree. Avoid high-nitrogen feeds after early summer — this promotes soft late-season growth that is vulnerable to frost, fire blight, and other diseases."
+        },
+        "nl": {
+          "name":          "Peer",
+          "description":   "Vergelijkbaar met appel in onderhoud, maar heeft een beschutte, zonnige plek nodig om goed te rijpen. Oogst net vóór volledig rijp en laat binnenshuis narijpen.",
+          "pruningTip":    "Snoei in de winter terwijl de boom volledig in rust is. Peren dragen op sporen op oud hout — behoud een permanent raamwerk. Knip in de zomer nieuwe zijloten in tot 6 bladeren; snoei deze in de winter terug tot 2–3 knoppen. Vermijd hard snoeien, dat niet-vruchtdragende waterscheuten produceert.",
+          "fertilizerTip": "Breng in het vroege voorjaar een gebalanceerde korrelmeststof aan rondom de druppellijn van de boom. Vermijd stikstofrijke meststoffen na het begin van de zomer — dit bevordert zachte laat-seizoengroei die kwetsbaar is voor vorst en ziektes."
+        },
+        "es": {
+          "name":          "Pera",
+          "description":   "Los cuidados son similares a los del manzano, pero necesita un lugar abrigado y soleado para madurar bien. Cosecha justo antes de que estén completamente maduras y deja que maduren en interior.",
+          "pruningTip":    "Poda en invierno con el árbol en pleno reposo. Los perales fructifican en espolones sobre madera vieja — mantén un marco permanente. En verano, acorta los brotes laterales nuevos a 6 hojas; en invierno córtalos a 2–3 yemas. Evita una poda severa que produce brotes vegetativos no fructíferos.",
+          "fertilizerTip": "Aplica un abono granulado equilibrado a principios de primavera alrededor de la línea de goteo del árbol. Evita los abonos ricos en nitrógeno después de principios de verano — esto favorece un crecimiento tardío blando vulnerable a las heladas, el fuego bacteriano y otras enfermedades."
+        }
+      }
+    },
+
+    {
+      "name":      "Cherry",
+      "category":  "Fruit",
+      "emoji":     "🍒",
+      "latinName": "Prunus avium",
+      "sowing": {
+        "method":            "direct",
+        "spacingCm":         500,
+        "daysToMaturityMin": 1095,
+        "daysToMaturityMax": 1825,
+        "frostTolerance":    "hardy"
+      },
+      "heightCm": { "min": 200, "max": 600 },
+      "pruning": {
+        "type": "cutting_back",
+        "tip":  "Prune cherries in late spring or summer only — cuts made in autumn or winter risk silver leaf disease and canker. Remove dead, diseased, and crossing branches. On fan-trained trees, tie in new growth and remove shoots growing directly toward or away from the wall."
+      },
+      "fertilizer": {
+        "type": "moderate_feeder",
+        "tip":  "Apply a balanced granular fertiliser in early spring around the drip line of the tree. Avoid high-nitrogen feeds after early summer — this promotes soft late-season growth that is vulnerable to frost, fire blight, and other diseases."
+      },
+      "i18n": {
+        "en": {
+          "name":          "Cherry",
+          "description":   "Sweet cherries need space and a pollinator; acid cherries like Morello thrive on a north wall. Net against birds before the fruits ripen.",
+          "pruningTip":    "Prune cherries in late spring or summer only — cuts made in autumn or winter risk silver leaf disease and canker. Remove dead, diseased, and crossing branches. On fan-trained trees, tie in new growth and remove shoots growing directly toward or away from the wall.",
+          "fertilizerTip": "Apply a balanced granular fertiliser in early spring around the drip line of the tree. Avoid high-nitrogen feeds after early summer — this promotes soft late-season growth that is vulnerable to frost, fire blight, and other diseases."
+        },
+        "nl": {
+          "name":          "Kers",
+          "description":   "Zoete kersen hebben ruimte en een bestuiver nodig; zure kersen zoals Morel gedijen goed tegen een noordmuur. Net afdekken voor de vogels de vruchten pikken.",
+          "pruningTip":    "Snoei kersen uitsluitend in de late lente of zomer — sneden in herfst of winter brengen risico op zilverblad en kanker. Verwijder dood, ziek en kruisend hout. Bind bij leifruit nieuwe groei aan en verwijder scheuten die direct naar of weg van de muur groeien.",
+          "fertilizerTip": "Breng in het vroege voorjaar een gebalanceerde korrelmeststof aan rondom de druppellijn van de boom. Vermijd stikstofrijke meststoffen na het begin van de zomer — dit bevordert zachte laat-seizoengroei die kwetsbaar is voor vorst en ziektes."
+        },
+        "es": {
+          "name":          "Cereza",
+          "description":   "Los cerezos dulces necesitan espacio y un polinizador; las guindas como la Morello prosperan en una pared norte. Cubre la planta con una malla antes de que maduren los frutos para protegerlos de los pájaros.",
+          "pruningTip":    "Poda los cerezos solo a finales de primavera o en verano — los cortes en otoño o invierno arriesgan el plomo de plata y el cancro. Elimina ramas muertas, enfermas y las que se cruzan. En árboles en espaldera, ata el nuevo crecimiento y elimina los brotes que crecen directamente hacia la pared o alejándose de ella.",
+          "fertilizerTip": "Aplica un abono granulado equilibrado a principios de primavera alrededor de la línea de goteo del árbol. Evita los abonos ricos en nitrógeno después de principios de verano — esto favorece un crecimiento tardío blando vulnerable a las heladas, el fuego bacteriano y otras enfermedades."
+        }
+      }
+    },
+
+    {
+      "name":      "Plum",
+      "category":  "Fruit",
+      "emoji":     "🍑",
+      "latinName": "Prunus domestica",
+      "sowing": {
+        "method":            "direct",
+        "spacingCm":         400,
+        "daysToMaturityMin": 1095,
+        "daysToMaturityMax": 1460,
+        "frostTolerance":    "hardy"
+      },
+      "heightCm": { "min": 200, "max": 500 },
+      "pruning": {
+        "type": "cutting_back",
+        "tip":  "Prune in summer only — never in winter, as silver leaf disease enters through cuts made in cold, wet conditions. Remove dead, diseased, and crossing branches. Thin heavy crops by hand in June to prevent branch breakage. Remove any suckers that appear from the base."
+      },
+      "fertilizer": {
+        "type": "moderate_feeder",
+        "tip":  "Apply a balanced granular fertiliser in early spring around the drip line of the tree. Avoid high-nitrogen feeds after early summer — this promotes soft late-season growth that is vulnerable to frost, fire blight, and other diseases."
+      },
+      "i18n": {
+        "en": {
+          "name":          "Plum",
+          "description":   "Reliable and heavy-cropping in a good year. Thin heavy crops to prevent branch breakage. Prune only in summer to reduce the risk of silver leaf disease.",
+          "pruningTip":    "Prune in summer only — never in winter, as silver leaf disease enters through cuts made in cold, wet conditions. Remove dead, diseased, and crossing branches. Thin heavy crops by hand in June to prevent branch breakage. Remove any suckers that appear from the base.",
+          "fertilizerTip": "Apply a balanced granular fertiliser in early spring around the drip line of the tree. Avoid high-nitrogen feeds after early summer — this promotes soft late-season growth that is vulnerable to frost, fire blight, and other diseases."
+        },
+        "nl": {
+          "name":          "Pruim",
+          "description":   "Betrouwbaar en zwaar dragend in een goed jaar. Dunnen bij zware oogst om takbreuk te voorkomen. Snoei alleen in de zomer om zilverbladziekre te beperken.",
+          "pruningTip":    "Snoei uitsluitend in de zomer — nooit in de winter, want zilverblad treedt binnen via sneden bij koud, nat weer. Verwijder dood, ziek en kruisend hout. Dun in juni zware oogsten met de hand uit om takbreuk te voorkomen. Verwijder zuigers die aan de basis verschijnen.",
+          "fertilizerTip": "Breng in het vroege voorjaar een gebalanceerde korrelmeststof aan rondom de druppellijn van de boom. Vermijd stikstofrijke meststoffen na het begin van de zomer — dit bevordert zachte laat-seizoengroei die kwetsbaar is voor vorst en ziektes."
+        },
+        "es": {
+          "name":          "Ciruela",
+          "description":   "Fiable y de gran producción en un buen año. Aclara las cosechas abundantes para evitar que las ramas se rompan. Poda solo en verano para reducir el riesgo de plomo de plata.",
+          "pruningTip":    "Poda solo en verano — nunca en invierno, ya que el plomo de plata penetra por los cortes realizados en condiciones frías y húmedas. Elimina ramas muertas, enfermas y las que se cruzan. Aclara las cosechas abundantes a mano en junio para evitar que las ramas se rompan. Elimina los retoños que aparezcan en la base.",
+          "fertilizerTip": "Aplica un abono granulado equilibrado a principios de primavera alrededor de la línea de goteo del árbol. Evita los abonos ricos en nitrógeno después de principios de verano — esto favorece un crecimiento tardío blando vulnerable a las heladas, el fuego bacteriano y otras enfermedades."
+        }
+      }
+    },
+
+    {
+      "name":      "Rhubarb",
+      "category":  "Fruit",
+      "emoji":     "🌿",
+      "latinName": "Rheum × hybridum",
+      "sowing": {
+        "method":            "direct",
+        "spacingCm":         90,
+        "daysToMaturityMin": 365,
+        "daysToMaturityMax": 730,
+        "frostTolerance":    "hardy"
+      },
+      "heightCm": { "min": 60, "max": 120 },
+      "pruning": {
+        "type": "cutting_back",
+        "tip":  "Remove any flowering stems as soon as they appear — allowing rhubarb to flower significantly reduces the following year's yield. Cut back all dead foliage to ground level in autumn. To force early stems, cover crowns with a pot or upturned bucket in late winter."
+      },
+      "fertilizer": {
+        "type": "moderate_feeder",
+        "tip":  "Apply a balanced granular fertiliser or well-rotted manure each spring as growth resumes. A second top-dressing of compost in midsummer helps sustain production through the main harvest period. Do not feed or harvest in the first year after planting to allow the crown to establish."
+      },
+      "i18n": {
+        "en": {
+          "name":          "Rhubarb",
+          "description":   "A perennial vegetable grown as fruit. Plant crowns in winter and avoid harvesting in the first year to let the plant establish. Force for earlier, more tender stalks.",
+          "pruningTip":    "Remove any flowering stems as soon as they appear — allowing rhubarb to flower significantly reduces the following year's yield. Cut back all dead foliage to ground level in autumn. To force early stems, cover crowns with a pot or upturned bucket in late winter.",
+          "fertilizerTip": "Apply a balanced granular fertiliser or well-rotted manure each spring as growth resumes. A second top-dressing of compost in midsummer helps sustain production through the main harvest period. Do not feed or harvest in the first year after planting to allow the crown to establish."
+        },
+        "nl": {
+          "name":          "Rabarber",
+          "description":   "Een vaste plant die als fruit wordt gegeten. Plant kroontjes in de winter en oogst niet in het eerste jaar. Forceer voor eerdere, malse stelen.",
+          "pruningTip":    "Verwijder bloemstelen zodra ze verschijnen — als rabarber mag bloeien neemt de oogst van het volgende jaar aanzienlijk af. Knip al het dode blad in de herfst tot op de grond. Dek voor vroege stelen de kronen in de late winter af met een pot of omgekeerde emmer.",
+          "fertilizerTip": "Breng elke lente als de groei hervat een gebalanceerde korrelmeststof of goed verteerde mest aan. Een tweede compostlaag halverwege de zomer ondersteunt de productie tijdens het oogstseizoen. Voer niet en oogst niet in het eerste jaar na het planten zodat de kroon zich kan vestigen."
+        },
+        "es": {
+          "name":          "Ruibarbo",
+          "description":   "Un vegetal perenne cultivado como fruta. Planta coronas en invierno y evita cosechar el primer año para que la planta se establezca. Fórzalo para obtener tallos más tempranos y tiernos.",
+          "pruningTip":    "Elimina los tallos florales en cuanto aparezcan — permitir que el ruibarbo florezca reduce significativamente el rendimiento del año siguiente. Corta todo el follaje muerto a ras de suelo en otoño. Para obtener tallos tempranos, cubre las coronas con una maceta o cubo invertido a finales de invierno.",
+          "fertilizerTip": "Aplica un abono granulado equilibrado o estiércol bien descompuesto cada primavera cuando se reanude el crecimiento. Una segunda capa de compost a mediados de verano ayuda a sostener la producción durante el período principal de cosecha. No abones ni coseches en el primer año tras la plantación para dejar que la corona se establezca."
+        }
+      }
+    }
+  ]
+}
