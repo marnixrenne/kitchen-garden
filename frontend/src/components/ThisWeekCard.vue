@@ -21,6 +21,13 @@ const seedModal    = ref({ open: false, plant: null, instanceId: null, method: '
 const actionModal  = ref({ open: false, plant: null, instanceId: null, action: '', date: '', comment: '', saving: false, error: '' })
 const advanceModal = ref({ open: false, item: null, date: '', comment: '', saving: false, error: '' })
 
+const collapsedGroups = ref(new Set())
+function toggleGroup(action) {
+  if (collapsedGroups.value.has(action)) collapsedGroups.value.delete(action)
+  else collapsedGroups.value.add(action)
+  collapsedGroups.value = new Set(collapsedGroups.value)
+}
+
 function todayIso() { return new Date().toISOString().slice(0, 10) }
 
 function formatDate(d) {
@@ -296,9 +303,12 @@ async function submitAction() {
 }
 
 onMounted(fetchAll)
+
+defineOptions({ inheritAttrs: false })
 </script>
 
 <template>
+  <div v-bind="$attrs">
   <div v-if="loading" class="week-loading">{{ t('loading') }}</div>
 
   <div v-else-if="weekSummary" class="week-card">
@@ -313,63 +323,69 @@ onMounted(fetchAll)
 
     <template v-else>
       <div v-for="group in actionGroups" :key="group.action" class="week-group">
-        <div class="week-group-header">
+        <div class="week-group-header" @click="toggleGroup(group.action)">
           <span class="week-group-icon">{{ group.icon }}</span>
           <span class="week-group-label">{{ group.label }}</span>
+          <button class="week-group-toggle" :aria-expanded="!collapsedGroups.has(group.action)" tabindex="-1">
+            <span class="toggle-chevron" :class="{ collapsed: collapsedGroups.has(group.action) }">▾</span>
+          </button>
         </div>
 
-        <!-- Seeding: no seed date or date range column -->
-        <template v-if="group.action === 'seeding'">
-          <div v-for="(item, i) in group.items" :key="i" class="week-item week-item--seed">
-            <span class="wi-emoji">{{ item.plant.emoji ?? '🌱' }}</span>
-            <div class="wi-seed-body">
-              <a class="wi-name" @click.prevent="router.push(`/plant/${item.plant.id}`)">{{ pName(item.plant) }}</a>
-              <span v-if="hintsFor(item.sowAction).length" class="wi-hints">
-                {{ hintsFor(item.sowAction).join(' · ') }}
-              </span>
+        <template v-if="!collapsedGroups.has(group.action)">
+          <!-- Seeding: no seed date or date range column -->
+          <template v-if="group.action === 'seeding'">
+            <div v-for="(item, i) in group.items" :key="i" class="week-item week-item--seed">
+              <span class="wi-emoji">{{ item.plant.emoji ?? '🌱' }}</span>
+              <div class="wi-seed-body">
+                <a class="wi-name" @click.prevent="router.push(`/plant/${item.plant.id}`)">{{ pName(item.plant) }}</a>
+                <span v-if="hintsFor(item.sowAction).length" class="wi-hints">
+                  {{ hintsFor(item.sowAction).join(' · ') }}
+                </span>
+              </div>
+              <button
+                class="wi-btn wi-btn--seed"
+                :disabled="!item.instanceId"
+                @click.stop="openSeedModal(item.plant, item.instanceId)"
+              >🌱 {{ t('garden.seedNow') }}</button>
             </div>
-            <button
-              class="wi-btn wi-btn--seed"
-              :disabled="!item.instanceId"
-              @click="openSeedModal(item.plant, item.instanceId)"
-            >🌱 {{ t('garden.seedNow') }}</button>
-          </div>
-        </template>
+          </template>
 
-        <!-- All other groups: seed date + date range columns -->
-        <template v-else>
-          <div
-            v-for="(item, i) in group.items"
-            :key="i"
-            class="week-item"
-          >
-            <span class="wi-emoji">{{ item.plant.emoji ?? '🌱' }}</span>
-            <a class="wi-name" @click.prevent="router.push(`/plant/${item.plant.id}`)">
-              {{ pName(item.plant) }}
-              <span v-if="item.seedDate" class="wi-seeded-on"> – {{ item.seedAction === 'planting' ? t('garden.plantedOn', { date: item.seedDate }) : t('garden.seededOn', { date: item.seedDate }) }}</span>
-            </a>
-            <span class="wi-date">
-              <span v-if="item.dateRange" class="wi-daterange">{{ item.dateRange }}</span>
-            </span>
-            <div class="wi-action">
-              <template v-if="item.lc">
-                <button class="wi-btn wi-btn--advance" @click="openAdvanceModal(item)">
-                  {{ t(`garden.advanceLabel.${item.lc.nextState}`, t('garden.advanceStage')) }}
-                </button>
-              </template>
-              <template v-else-if="item.done">
-                <span class="wi-done-mark">✓</span>
-              </template>
-              <template v-else>
-                <button class="wi-btn wi-btn--log" :title="t('garden.logDone')" @click="openActionModal(item.plant, item.planEntry.action, item.instanceId)">
-                  ✓
-                </button>
-              </template>
+          <!-- All other groups: seed date + date range columns -->
+          <template v-else>
+            <div
+              v-for="(item, i) in group.items"
+              :key="i"
+              class="week-item"
+            >
+              <span class="wi-emoji">{{ item.plant.emoji ?? '🌱' }}</span>
+              <a class="wi-name" @click.prevent="router.push(`/plant/${item.plant.id}`)">
+                {{ pName(item.plant) }}
+                <span v-if="item.seedDate" class="wi-seeded-on"> – {{ item.seedAction === 'planting' ? t('garden.plantedOn', { date: item.seedDate }) : t('garden.seededOn', { date: item.seedDate }) }}</span>
+              </a>
+              <span class="wi-date">
+                <span v-if="item.dateRange" class="wi-daterange">{{ item.dateRange }}</span>
+              </span>
+              <div class="wi-action">
+                <template v-if="item.lc">
+                  <button class="wi-btn wi-btn--advance" @click.stop="openAdvanceModal(item)">
+                    {{ t(`garden.advanceLabel.${item.lc.nextState}`, t('garden.advanceStage')) }}
+                  </button>
+                </template>
+                <template v-else-if="item.done">
+                  <span class="wi-done-mark">✓</span>
+                </template>
+                <template v-else>
+                  <button class="wi-btn wi-btn--log" :title="t('garden.logDone')" @click.stop="openActionModal(item.plant, item.planEntry.action, item.instanceId)">
+                    ✓
+                  </button>
+                </template>
+              </div>
             </div>
-          </div>
+          </template>
         </template>
       </div>
     </template>
+  </div>
   </div>
 
   <!-- Seed modal -->
@@ -584,6 +600,12 @@ onMounted(fetchAll)
   padding: 0.45rem 1.25rem;
   background: var(--bg);
   border-bottom: 1px solid var(--green-pale);
+  cursor: pointer;
+  user-select: none;
+}
+
+.week-group-header:hover {
+  background: var(--green-pale);
 }
 
 .week-group-icon {
@@ -596,6 +618,26 @@ onMounted(fetchAll)
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+
+.week-group-toggle {
+  margin-left: auto;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.toggle-chevron {
+  display: inline-block;
+  font-size: 1rem;
+  transition: transform 0.15s ease;
+}
+
+.toggle-chevron.collapsed {
+  transform: rotate(-90deg);
 }
 
 /* Items */
