@@ -55,6 +55,13 @@ class GardenService(
         return repository.createGarden(resolveUserId(authentication), name)
     }
 
+    fun renameGarden(authentication: Authentication, gardenId: UUID, name: String) {
+        if (name.isBlank()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Garden name cannot be blank")
+        if (name.length > 100) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Garden name must be at most 100 characters")
+        val renamed = repository.renameGarden(gardenId, resolveUserId(authentication), name)
+        if (!renamed) throw ResponseStatusException(HttpStatus.NOT_FOUND)
+    }
+
     fun deleteGarden(authentication: Authentication, gardenId: UUID) {
         val deleted = repository.deleteGarden(gardenId, resolveUserId(authentication))
         if (!deleted) throw ResponseStatusException(HttpStatus.NOT_FOUND)

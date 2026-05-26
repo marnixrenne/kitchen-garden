@@ -24,6 +24,17 @@ class GardenController(private val gardenService: GardenService) {
         return ResponseEntity.status(201).body(garden)
     }
 
+    @PatchMapping("/gardens/{gardenId}")
+    fun renameGarden(
+        @PathVariable gardenId: UUID,
+        @RequestBody body: Map<String, String>,
+        authentication: Authentication,
+    ): ResponseEntity<GardenSummary> {
+        val name = body["name"] ?: return ResponseEntity.badRequest().build()
+        gardenService.renameGarden(authentication, gardenId, name)
+        return ResponseEntity.ok(GardenSummary(gardenId, name))
+    }
+
     @DeleteMapping("/gardens/{gardenId}")
     fun deleteGarden(
         @PathVariable gardenId: UUID,

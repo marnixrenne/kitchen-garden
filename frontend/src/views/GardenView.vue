@@ -279,6 +279,32 @@ async function onWeekRefresh() {
   await Promise.all([fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
 }
 
+// ── Rename garden ─────────────────────────────────────────────────────────────
+
+const editModal = ref({ open: false, name: '', saving: false })
+
+function openEditModal() {
+  editModal.value.name = activeGardenName.value ?? ''
+  editModal.value.open = true
+}
+
+async function confirmRenameGarden() {
+  const id = activeGardenId.value
+  if (!id) return
+  editModal.value.saving = true
+  const res = await fetch(`/api/garden/gardens/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+    body: JSON.stringify({ name: editModal.value.name.trim() }),
+  })
+  editModal.value.saving = false
+  if (!res.ok) return
+  const updated = await res.json()
+  const idx = gardens.value.findIndex(g => g.id === id)
+  if (idx !== -1) gardens.value[idx] = updated
+  editModal.value.open = false
+}
+
 // ── Delete garden ─────────────────────────────────────────────────────────────
 
 const deleteModal = ref({ open: false, deleting: false })
@@ -328,6 +354,12 @@ watch(activeGardenId, loadAll)
     <div class="page-header">
       <h2 class="page-title">{{ activeGardenName ?? t('myGarden') }}</h2>
       <div class="page-header-actions">
+        <button class="edit-garden-btn" @click="openEditModal" :title="t('garden.editGarden')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
         <button class="delete-garden-btn" @click="deleteModal.open = true" :title="t('garden.deleteGarden')">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3 6 5 6 21 6"/>
@@ -574,6 +606,32 @@ watch(activeGardenId, loadAll)
   </main>
 
   <Teleport to="body">
+    <div v-if="editModal.open" class="dg-backdrop" @click.self="editModal.open = false">
+      <div class="dg-modal" role="dialog" aria-modal="true">
+        <div class="eg-header">{{ t('garden.editGarden') }}</div>
+        <div class="dg-body">
+          <input
+            v-model="editModal.name"
+            class="eg-input"
+            :placeholder="t('garden.editGardenPlaceholder')"
+            maxlength="100"
+            @keydown.enter="confirmRenameGarden"
+            @keydown.esc="editModal.open = false"
+          />
+          <div class="dg-actions">
+            <button class="dg-cancel" @click="editModal.open = false" :disabled="editModal.saving">
+              {{ t('garden.seedModal.cancel') }}
+            </button>
+            <button class="eg-save" @click="confirmRenameGarden" :disabled="editModal.saving || !editModal.name.trim()">
+              {{ t('garden.editGardenSave') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <Teleport to="body">
     <div v-if="deleteModal.open" class="dg-backdrop" @click.self="deleteModal.open = false">
       <div class="dg-modal" role="dialog" aria-modal="true">
         <div class="dg-header">{{ t('garden.deleteGarden') }}</div>
@@ -623,6 +681,21 @@ main {
   gap: 0.5rem;
 }
 
+.edit-garden-btn {
+  padding: 0.35rem 0.6rem;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--green-mid);
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
+}
+
+.edit-garden-btn:hover { background: var(--green-dark); }
+
 .delete-garden-btn {
   padding: 0.35rem 0.6rem;
   border: none;
@@ -637,6 +710,44 @@ main {
 }
 
 .delete-garden-btn:hover { background: #b91c1c; }
+
+/* Edit / rename garden modal */
+.eg-header {
+  padding: 0.85rem 1.25rem;
+  background: var(--green-pale);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--green-dark);
+}
+
+.eg-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1.5px solid var(--green-pale);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: var(--text);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.eg-input:focus { border-color: var(--green-mid); }
+
+.eg-save {
+  padding: 0.4rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--green-mid);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.eg-save:hover:not(:disabled) { background: var(--green-dark); }
+.eg-save:disabled { opacity: 0.5; cursor: default; }
 
 /* Delete garden modal */
 .dg-backdrop {

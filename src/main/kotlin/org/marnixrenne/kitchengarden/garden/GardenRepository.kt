@@ -83,6 +83,12 @@ class GardenRepository {
         return id
     }
 
+    fun renameGarden(gardenId: UUID, userId: UUID, name: String): Boolean = transaction {
+        Garden.update({ (Garden.id eq gardenId) and (Garden.userId eq userId) }) {
+            it[Garden.name] = name
+        } > 0
+    }
+
     fun deleteGarden(gardenId: UUID, userId: UUID): Boolean = transaction {
         // Include userId in the instance fetch so we only touch rows belonging to this user,
         // avoiding a window where PlantLog rows could be deleted before the ownership check.
