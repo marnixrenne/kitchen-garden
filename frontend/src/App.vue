@@ -106,12 +106,12 @@ async function submitNewGarden() {
           <RouterLink to="/home">{{ t('home') }}</RouterLink>
 
           <!-- Single garden: plain link -->
-          <RouterLink v-if="gardens.length <= 1" to="/garden">{{ t('myGarden') }}</RouterLink>
+          <RouterLink v-if="gardens.length <= 1" to="/garden" :class="{ 'router-link-active': $route.path.startsWith('/garden') }">{{ t('myGarden') }}</RouterLink>
 
           <!-- Multiple gardens: split button -->
           <div v-else class="nav-garden-dropdown" @click.stop>
-            <div class="nav-garden-split" :class="{ 'router-link-active': $route.path === '/garden' }">
-              <RouterLink class="nav-garden-label" to="/garden">{{ activeGardenDisplayName }}</RouterLink>
+            <div class="nav-garden-split" :class="{ 'router-link-active': $route.path.startsWith('/garden') }">
+              <RouterLink class="nav-garden-label" to="/garden" active-class="" exact-active-class="">{{ activeGardenDisplayName }}</RouterLink>
               <button class="nav-garden-caret-btn" @click="toggleDropdown" :title="t('garden.selectGarden')">▾</button>
             </div>
             <div v-if="dropdownOpen" class="nav-garden-menu">
@@ -178,11 +178,14 @@ async function submitNewGarden() {
   --radius:      10px;
 }
 
+html { overflow-y: scroll; }
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 header {

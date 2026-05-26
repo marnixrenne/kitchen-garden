@@ -360,6 +360,12 @@ export default {
       save: 'Guardar',
       cancel: 'Cancelar',
     },
+    calendarTab:  'Calendario',
+    logNav:       'Historial',
+    logTitle:     'Historial de actividad',
+    logSearch:    'Filtrar entradas…',
+    logEmpty:     'Aún no hay actividad registrada.',
+    logNoResults: 'No hay entradas que coincidan con "{query}".',
   },
   settings: {
     title: 'Ajustes',

@@ -362,6 +362,12 @@ export default {
       save: 'Save',
       cancel: 'Cancel',
     },
+    calendarTab:  'Calendar',
+    logNav:       'Log',
+    logTitle:     'Activity log',
+    logSearch:    'Filter entries…',
+    logEmpty:     'No activity logged yet.',
+    logNoResults: 'No entries matching "{query}".',
   },
   settings: {
     title: 'Settings',

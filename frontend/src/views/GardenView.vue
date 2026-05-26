@@ -1,12 +1,13 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ThisWeekCard from '../components/ThisWeekCard.vue'
 import { gardenParam, activeGardenName, activeGardenId, gardens, setActiveGarden } from '../stores/garden.js'
 import { csrfHeaders } from '../stores/auth.js'
 
 const router = useRouter()
+const route  = useRoute()
 const { t, tm, te, locale } = useI18n()
 
 function formatDate(isoDate) {
@@ -23,6 +24,58 @@ const plantLog       = ref({})   // keyed by instanceId
 const plantPlan      = ref({})   // keyed by instanceId
 const lifecycle      = ref({})   // keyed by instanceId
 const expandedPlants = ref(new Set())
+const activeTab      = ref(
+  route.query.tab === 'calendar' ? 'calendar' :
+  route.query.tab === 'log'      ? 'log'      : 'week'
+)
+
+watch(() => route.query.tab, (tab) => {
+  activeTab.value = tab === 'calendar' ? 'calendar' : tab === 'log' ? 'log' : 'week'
+})
+
+function setTab(tab) {
+  activeTab.value = tab
+  router.replace({ path: '/garden', query: tab === 'week' ? {} : { tab } })
+}
+
+const logFilter = ref('')
+
+function actionLabel(action) {
+  const key = `garden.loggedAction.${action}`
+  return te(key) ? t(key) : action
+}
+
+function formatLogDate(iso) {
+  return new Date(iso + 'T00:00:00').toLocaleDateString(locale.value, {
+    day: 'numeric', month: 'short', year: 'numeric',
+  })
+}
+
+const logEntries = computed(() => {
+  const plantById = {}
+  for (const p of plants.value) plantById[p.id] = p
+  const flat = []
+  for (const inst of instances.value) {
+    const plant = plantById[inst.plantId]
+    if (!plant) continue
+    const name = plantName(plant)
+    for (const e of (plantLog.value[inst.id] ?? [])) {
+      flat.push({ id: e.id, plantId: plant.id, plantName: name, emoji: plant.emoji ?? '🌱', action: e.action, date: e.date, comment: e.comment })
+    }
+  }
+  flat.sort((a, b) => b.date.localeCompare(a.date))
+  return flat
+})
+
+const filteredLogEntries = computed(() => {
+  const q = logFilter.value.trim().toLowerCase()
+  if (!q) return logEntries.value
+  return logEntries.value.filter(e =>
+    e.plantName.toLowerCase().includes(q) ||
+    actionLabel(e.action).toLowerCase().includes(q) ||
+    (e.comment ?? '').toLowerCase().includes(q)
+  )
+})
 
 const instancesByPlantId = computed(() => {
   const map = {}
@@ -286,7 +339,43 @@ watch(activeGardenId, loadAll)
       </div>
     </div>
 
+    <div class="garden-tabs">
+      <button class="garden-tab" :class="{ active: activeTab === 'week' }" @click="setTab('week')">{{ t('garden.thisWeek') }}</button>
+      <button class="garden-tab" :class="{ active: activeTab === 'calendar' }" @click="setTab('calendar')">{{ t('garden.calendarTab') }}</button>
+      <button class="garden-tab" :class="{ active: activeTab === 'log' }" @click="setTab('log')">{{ t('garden.logNav') }}</button>
+    </div>
+
     <div v-if="loading" class="loading">{{ t('loading') }}</div>
+
+    <template v-else-if="activeTab === 'log'">
+      <div class="log-filter-wrap">
+        <input
+          v-model="logFilter"
+          class="log-filter"
+          :placeholder="t('garden.logSearch')"
+          type="search"
+        />
+      </div>
+      <div v-if="logEntries.length === 0" class="empty">
+        {{ t('garden.logEmpty') }}
+      </div>
+      <div v-else-if="filteredLogEntries.length === 0" class="empty">
+        {{ t('garden.logNoResults', { query: logFilter }) }}
+      </div>
+      <ul v-else class="log-list">
+        <li v-for="entry in filteredLogEntries" :key="entry.id" class="log-entry-item">
+          <div class="log-entry-main">
+            <button class="log-plant-name" @click="router.push(`/plant/${entry.plantId}`)">
+              <span class="log-plant-emoji">{{ entry.emoji }}</span>
+              {{ entry.plantName }}
+            </button>
+            <span class="log-action-badge">{{ actionLabel(entry.action) }}</span>
+            <span class="log-date">{{ formatLogDate(entry.date) }}</span>
+          </div>
+          <p v-if="entry.comment" class="log-comment">{{ entry.comment }}</p>
+        </li>
+      </ul>
+    </template>
 
     <template v-else-if="sortedPlants.length === 0">
       <p class="empty">{{ t('garden.empty') }}</p>
@@ -294,14 +383,14 @@ watch(activeGardenId, loadAll)
 
     <template v-else>
       <!-- Legend -->
-      <div class="legend">
+      <div v-if="activeTab === 'calendar'" class="legend">
         <span class="legend-item"><span class="legend-swatch sow" />{{ t('garden.toSow') }}</span>
         <span class="legend-item"><span class="legend-swatch harvest" />{{ t('garden.toHarvest') }}</span>
         <span class="legend-item"><span class="legend-swatch both" />{{ t('garden.both') }}</span>
       </div>
 
       <!-- Calendar -->
-      <div class="calendar-wrap">
+      <div v-if="activeTab === 'calendar'" class="calendar-wrap">
         <table class="calendar">
           <thead>
             <tr>
@@ -391,7 +480,7 @@ watch(activeGardenId, loadAll)
       </div>
 
       <!-- Activity panel -->
-      <div v-if="selectedMonth !== null" class="activity">
+      <div v-if="activeTab === 'calendar' && selectedMonth !== null" class="activity">
         <div v-if="toSow.length === 0 && toHarvest.length === 0" class="nothing">
           {{ t('garden.nothingThisMonth') }}
         </div>
@@ -433,10 +522,10 @@ watch(activeGardenId, loadAll)
         </template>
       </div>
       <!-- This week -->
-      <ThisWeekCard class="this-week-card" @refresh="onWeekRefresh" />
+      <ThisWeekCard v-if="activeTab === 'week'" class="this-week-card" @refresh="onWeekRefresh" />
 
       <!-- Planting suggestions -->
-      <div v-if="suggestions && (suggestions.sunGroups.length > 0 || suggestions.conflicts.length > 0)" class="suggestions">
+      <div v-if="activeTab === 'calendar' && suggestions && (suggestions.sunGroups.length > 0 || suggestions.conflicts.length > 0)" class="suggestions">
         <h3 class="suggestions-title">{{ t('garden.suggestions') }}</h3>
         <p class="suggestions-hint">{{ t('garden.suggestionsHint') }}</p>
 
@@ -633,6 +722,33 @@ main {
   border-color: var(--green-mid);
   color: var(--green-dark);
 }
+
+.garden-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--green-pale);
+}
+
+.garden-tab {
+  display: inline-block;
+  padding: .5rem 1.1rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  background: none;
+  font: inherit;
+  font-size: .875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color .15s, border-color .15s;
+  white-space: nowrap;
+}
+
+.garden-tab:hover { color: var(--green-dark); }
+.garden-tab.active { color: var(--green-dark); border-bottom-color: var(--green-mid); }
 
 .loading, .empty {
   text-align: center;
@@ -1058,6 +1174,73 @@ main {
   border: 1px solid var(--warn-border);
   border-radius: 20px;
   padding: 0.15rem 0.55rem;
+}
+
+/* Log tab */
+.log-filter-wrap { margin-bottom: 1.25rem; }
+.log-filter {
+  width: 100%;
+  padding: .55rem .8rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  font-size: .95rem;
+  background: var(--card-bg);
+  color: inherit;
+}
+.log-filter:focus { outline: none; border-color: var(--green-mid); }
+
+.log-list { list-style: none; display: flex; flex-direction: column; gap: .5rem; }
+
+.log-entry-item {
+  background: var(--card-bg);
+  border: 1px solid #e4e4e4;
+  border-radius: 10px;
+  padding: .75rem 1rem;
+}
+
+.log-entry-main {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
+
+.log-plant-name {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--green-dark);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+.log-plant-name:hover { text-decoration: underline; }
+.log-plant-emoji { font-size: 1.1rem; }
+
+.log-action-badge {
+  font-size: .78rem;
+  font-weight: 600;
+  padding: .2rem .55rem;
+  border-radius: 20px;
+  background: var(--green-pale);
+  color: var(--green-dark);
+}
+
+.log-date {
+  margin-left: auto;
+  font-size: .85rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.log-comment {
+  margin-top: .45rem;
+  font-size: .88rem;
+  color: var(--text-muted);
+  padding-left: 1.6rem;
 }
 
 </style>

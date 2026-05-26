@@ -21,6 +21,7 @@ const router = createRouter({
     { path: '/verify',         component: VerifyView,          meta: { public: true } },
     { path: '/home',           component: HomeView,            meta: { requiresAuth: true, noAdmin: true } },
     { path: '/garden',         component: GardenView,          meta: { requiresAuth: true, noAdmin: true } },
+    { path: '/garden/log',    redirect: { path: '/garden', query: { tab: 'log' } } },
     { path: '/plant/:id',      component: PlantDetailView,     meta: { requiresAuth: true } },
     { path: '/admin',          component: AdminView,           meta: { requiresAuth: true, requiresAdmin: true } },
     { path: '/settings',       component: SettingsView,        meta: { requiresAuth: true } },

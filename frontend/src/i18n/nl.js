@@ -362,6 +362,12 @@ export default {
       save: 'Opslaan',
       cancel: 'Annuleren',
     },
+    calendarTab:  'Kalender',
+    logNav:       'Logboek',
+    logTitle:     'Activiteitenlog',
+    logSearch:    'Zoeken…',
+    logEmpty:     'Nog geen activiteiten geregistreerd.',
+    logNoResults: 'Geen registraties gevonden voor "{query}".',
   },
   settings: {
     title: 'Instellingen',
