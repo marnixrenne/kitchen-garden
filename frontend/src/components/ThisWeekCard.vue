@@ -361,8 +361,8 @@ onMounted(fetchAll)
                 <span class="wi-done-mark">✓</span>
               </template>
               <template v-else>
-                <button class="wi-btn wi-btn--log" @click="openActionModal(item.plant, item.planEntry.action, item.instanceId)">
-                  {{ t('garden.logDone') }}
+                <button class="wi-btn wi-btn--log" :title="t('garden.logDone')" @click="openActionModal(item.plant, item.planEntry.action, item.instanceId)">
+                  ✓
                 </button>
               </template>
             </div>
@@ -675,10 +675,17 @@ onMounted(fetchAll)
 }
 
 .wi-done-mark {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--green-mid);
+  color: #fff;
   font-size: 0.875rem;
   font-weight: 700;
-  color: var(--green-mid);
-  padding: 0 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 /* Seeding items */
@@ -739,13 +746,22 @@ onMounted(fetchAll)
 }
 
 .wi-btn--log {
-  border: 1.5px solid #0369a1;
+  border: 1.5px solid var(--green-mid);
   background: none;
-  color: #0369a1;
+  color: var(--green-mid);
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
 }
 
 .wi-btn--log:hover {
-  background: #e0f2fe;
+  background: var(--green-pale);
+  border-color: var(--green-dark);
+  color: var(--green-dark);
 }
 
 /* Modal */
