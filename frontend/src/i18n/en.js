@@ -282,6 +282,7 @@ export default {
     keepApart: 'Keep apart',
     suggestionsHint: 'Group plants with the same light requirement and plant good companions next to each other.',
     thisWeek: 'This week',
+    openActions: '{n} open action | {n} open actions',
     week: 'Week',
     nothingThisWeek: 'Nothing to sow or harvest in your garden this month.',
     actionSow: 'Sow',

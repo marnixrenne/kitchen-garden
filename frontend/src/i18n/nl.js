@@ -282,6 +282,7 @@ export default {
     keepApart: 'Houd gescheiden',
     suggestionsHint: 'Groepeer planten met dezelfde lichtbehoefte en plant goede buurplanten naast elkaar.',
     thisWeek: 'Deze week',
+    openActions: '{n} openstaande actie | {n} openstaande acties',
     week: 'Week',
     nothingThisWeek: 'Niets te zaaien of te oogsten in je tuin deze maand.',
     actionSow: 'Zaaien',

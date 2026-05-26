@@ -280,6 +280,7 @@ export default {
     keepApart: 'Mantener separadas',
     suggestionsHint: 'Agrupa las plantas con el mismo requisito de luz y coloca las buenas compañeras una al lado de la otra.',
     thisWeek: 'Esta semana',
+    openActions: '{n} acción pendiente | {n} acciones pendientes',
     week: 'Semana',
     nothingThisWeek: 'Nada que sembrar o cosechar en tu huerto este mes.',
     actionSow: 'Sembrar',

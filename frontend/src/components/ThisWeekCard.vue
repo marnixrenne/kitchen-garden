@@ -21,6 +21,10 @@ const seedModal    = ref({ open: false, plant: null, instanceId: null, method: '
 const actionModal  = ref({ open: false, plant: null, instanceId: null, action: '', date: '', comment: '', saving: false, error: '' })
 const advanceModal = ref({ open: false, item: null, date: '', comment: '', saving: false, error: '' })
 
+const openActionCount = computed(() =>
+  actionGroups.value.reduce((sum, g) => sum + g.items.filter(i => !i.done).length, 0)
+)
+
 const collapsedGroups = ref(new Set())
 function toggleGroup(action) {
   if (collapsedGroups.value.has(action)) collapsedGroups.value.delete(action)
@@ -313,7 +317,7 @@ defineOptions({ inheritAttrs: false })
 
   <div v-else-if="weekSummary" class="week-card">
     <div class="week-card-header">
-      <span class="week-card-title">{{ t('garden.thisWeek') }}</span>
+      <span class="week-card-title">{{ t('garden.openActions', openActionCount, { n: openActionCount }) }}</span>
       <span class="week-card-range">{{ weekRangeLabel() }}</span>
     </div>
 
