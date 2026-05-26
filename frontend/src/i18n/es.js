@@ -336,7 +336,7 @@ export default {
       title: 'Registrar inicio',
       methodLabel: 'Método',
       methodIndoor: 'Sembrar en interior',
-      methodDirect: 'Sembrar en exterior',
+      methodOutdoor: 'Sembrar en exterior',
       methodPlanted: 'Plantar directamente',
       spacing: 'Espaciado',
       seedDepth: 'Profundidad de siembra',

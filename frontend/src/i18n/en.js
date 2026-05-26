@@ -338,7 +338,7 @@ export default {
       title: 'Record start',
       methodLabel: 'Method',
       methodIndoor: 'Sow indoors',
-      methodDirect: 'Sow outdoors',
+      methodOutdoor: 'Sow outdoors',
       methodPlanted: 'Plant directly',
       spacing: 'Spacing',
       seedDepth: 'Seed depth',

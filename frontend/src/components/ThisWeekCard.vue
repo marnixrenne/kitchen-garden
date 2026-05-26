@@ -372,7 +372,7 @@ onMounted(fetchAll)
               </label>
               <label class="method-option" :class="{ active: seedModal.method === 'seeding_direct' }">
                 <input type="radio" v-model="seedModal.method" value="seeding_direct" />
-                {{ t('garden.seedModal.methodDirect') }}
+                {{ t('garden.seedModal.methodOutdoor') }}
               </label>
               <label class="method-option" :class="{ active: seedModal.method === 'planting' }">
                 <input type="radio" v-model="seedModal.method" value="planting" />

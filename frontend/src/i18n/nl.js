@@ -338,7 +338,7 @@ export default {
       title: 'Start registreren',
       methodLabel: 'Methode',
       methodIndoor: 'Binnen zaaien',
-      methodDirect: 'Buiten zaaien',
+      methodOutdoor: 'Buiten zaaien',
       methodPlanted: 'Direct planten',
       spacing: 'Plantafstand',
       seedDepth: 'Zaaidiepte',
