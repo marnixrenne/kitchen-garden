@@ -84,8 +84,11 @@ class GardenController(private val gardenService: GardenService) {
     ): List<PlantInstance> = gardenService.getInstances(authentication, gardenId)
 
     @GetMapping("/plant-log")
-    fun getPlantLog(authentication: Authentication): Map<UUID, List<LoggedEntry>> =
-        gardenService.getPlantLog(authentication)
+    fun getPlantLog(
+        @RequestParam(required = false) gardenId: UUID?,
+        authentication: Authentication,
+    ): Map<UUID, List<LoggedEntry>> =
+        gardenService.getPlantLog(authentication, gardenId)
 
     @GetMapping("/plan")
     fun getPlan(authentication: Authentication): Map<UUID, List<PlanEntry>> =

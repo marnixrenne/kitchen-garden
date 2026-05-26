@@ -126,6 +126,9 @@ class SignupService(
 
     private fun validatePassword(password: String) {
         require(password.length >= 8)              { "Password must be at least 8 characters" }
+        // BCrypt silently truncates input at 72 bytes; cap here so two distinct passwords
+        // can never produce the same hash and large inputs don't monopolise a thread.
+        require(password.length <= 72)             { "Password must be at most 72 characters" }
         require(password.any { it.isUpperCase() }) { "Password must contain an uppercase letter" }
         require(password.any { it.isLowerCase() }) { "Password must contain a lowercase letter" }
         require(password.any { it.isDigit() })     { "Password must contain a digit" }
@@ -133,22 +136,29 @@ class SignupService(
 
     private fun checkSignupRateLimit(email: String) {
         val now = System.currentTimeMillis()
-        val attempts = signupAttempts.getOrPut(email) { mutableListOf() }
-        synchronized(attempts) {
-            attempts.removeIf { it < now - rateLimitWindowMs }
-            if (attempts.size >= rateLimitMax)
-                throw IllegalArgumentException("Too many signup requests. Please try again later.")
-            attempts.add(now)
+        var limited = false
+        // compute() holds a bucket-level lock, making the trim + size-check + add atomic.
+        signupAttempts.compute(email) { _, list ->
+            val updated = list ?: mutableListOf()
+            updated.removeIf { it < now - rateLimitWindowMs }
+            if (updated.size >= rateLimitMax) {
+                limited = true
+            } else {
+                updated.add(now)
+            }
+            updated.ifEmpty { null }
         }
+        if (limited) throw IllegalArgumentException("Too many signup requests. Please try again later.")
         evictStaleRateLimitEntries(now)
     }
 
     private fun evictStaleRateLimitEntries(now: Long) {
         if (signupAttempts.size > 5_000) {
-            signupAttempts.entries.removeIf { (_, v) ->
-                synchronized(v) {
-                    v.removeIf { it < now - rateLimitWindowMs }
-                    v.isEmpty()
+            signupAttempts.keys.toList().forEach { key ->
+                signupAttempts.compute(key) { _, list ->
+                    if (list == null) return@compute null
+                    list.removeIf { it < now - rateLimitWindowMs }
+                    list.ifEmpty { null }
                 }
             }
         }

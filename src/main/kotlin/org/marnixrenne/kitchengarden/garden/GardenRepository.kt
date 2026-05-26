@@ -1,5 +1,6 @@
 package org.marnixrenne.kitchengarden.garden
 
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
@@ -83,9 +84,11 @@ class GardenRepository {
     }
 
     fun deleteGarden(gardenId: UUID, userId: UUID): Boolean = transaction {
-        val instanceIds = GardenPlantInstances
+        // Include userId in the instance fetch so we only touch rows belonging to this user,
+        // avoiding a window where PlantLog rows could be deleted before the ownership check.
+        val instanceIds = (GardenPlantInstances innerJoin Garden)
             .select(GardenPlantInstances.id)
-            .where { GardenPlantInstances.gardenId eq gardenId }
+            .where { (GardenPlantInstances.gardenId eq gardenId) and (Garden.userId eq userId) }
             .map { it[GardenPlantInstances.id] }
         if (instanceIds.isNotEmpty()) {
             PlantLog.deleteWhere { PlantLog.instanceId inList instanceIds }
@@ -102,17 +105,20 @@ class GardenRepository {
             .toSet()
     }
 
-    fun add(gardenId: UUID, plantId: UUID): Unit = transaction {
-        val exists = GardenPlantInstances.selectAll()
-            .where { (GardenPlantInstances.gardenId eq gardenId) and (GardenPlantInstances.plantId eq plantId) }
-            .count() > 0
-        if (!exists) {
-            GardenPlantInstances.insert {
-                it[GardenPlantInstances.id]        = UUID.randomUUID()
-                it[GardenPlantInstances.gardenId]  = gardenId
-                it[GardenPlantInstances.plantId]   = plantId
-                it[GardenPlantInstances.createdAt] = Instant.now()
+    fun add(gardenId: UUID, plantId: UUID): Unit {
+        try {
+            transaction {
+                GardenPlantInstances.insert {
+                    it[GardenPlantInstances.id]        = UUID.randomUUID()
+                    it[GardenPlantInstances.gardenId]  = gardenId
+                    it[GardenPlantInstances.plantId]   = plantId
+                    it[GardenPlantInstances.createdAt] = Instant.now()
+                }
             }
+        } catch (e: ExposedSQLException) {
+            val msg = e.message.orEmpty().lowercase()
+            if ("unique" !in msg && "duplicate" !in msg) throw e
+            // Already present (concurrent or duplicate request) — idempotent
         }
     }
 

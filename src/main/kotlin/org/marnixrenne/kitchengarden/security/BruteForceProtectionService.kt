@@ -8,22 +8,27 @@ class BruteForceProtectionService {
 
     private val failedAttempts = ConcurrentHashMap<String, MutableList<Long>>()
 
-    private val windowMs = 15 * 60 * 1_000L
+    private val windowMs    = 15 * 60 * 1_000L
     private val maxAttempts = 10
 
     fun recordFailure(username: String) {
         val now = System.currentTimeMillis()
-        val list = failedAttempts.getOrPut(username) { mutableListOf() }
-        synchronized(list) { list.add(now) }
+        // compute() holds a bucket-level lock, making the get-or-create + append atomic.
+        failedAttempts.compute(username) { _, list ->
+            (list ?: mutableListOf()).also { it.add(now) }
+        }
     }
 
     fun isBlocked(username: String): Boolean {
         val now = System.currentTimeMillis()
-        val list = failedAttempts[username] ?: return false
-        synchronized(list) {
+        var blocked = false
+        failedAttempts.compute(username) { _, list ->
+            if (list == null) return@compute null
             list.removeIf { it < now - windowMs }
-            return list.size >= maxAttempts
+            blocked = list.size >= maxAttempts
+            list.ifEmpty { null }
         }
+        return blocked
     }
 
     fun reset(username: String) {

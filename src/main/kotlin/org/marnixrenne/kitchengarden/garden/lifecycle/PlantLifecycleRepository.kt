@@ -40,11 +40,33 @@ class PlantLifecycleRepository {
         val date    = request?.date
         val comment = request?.comment?.takeIf { it.isNotBlank() }
 
-        PlantLog.update({ (PlantLog.userId eq userId) and (PlantLog.instanceId eq instanceId) }) {
+        // Include the expected current state in the WHERE clause so that two concurrent
+        // advance calls cannot both apply their transition — only one wins.
+        val updated = PlantLog.update({
+            (PlantLog.userId eq userId) and
+            (PlantLog.instanceId eq instanceId) and
+            (PlantLog.lifecycleState eq current.key)
+        }) {
             it[lifecycleState]     = next.key
             it[lifecycleUpdatedAt] = Instant.now()
             it[lifecycleDate]      = date
             it[lifecycleComment]   = comment
+        }
+
+        if (updated == 0) {
+            // A concurrent advance already moved the state forward — re-read and return it.
+            val currentRow = PlantLog.selectAll()
+                .where { (PlantLog.userId eq userId) and (PlantLog.instanceId eq instanceId) }
+                .firstOrNull() ?: return@transaction null
+            val currentState = LifecycleState.from(currentRow[PlantLog.lifecycleState])
+            return@transaction PlantLifecycle(
+                instanceId = instanceId,
+                plantId    = currentRow[PlantLog.plantId],
+                state      = currentState.key,
+                nextState  = currentState.next()?.key,
+                date       = currentRow[PlantLog.lifecycleDate],
+                comment    = currentRow[PlantLog.lifecycleComment],
+            )
         }
 
         PlantLifecycle(

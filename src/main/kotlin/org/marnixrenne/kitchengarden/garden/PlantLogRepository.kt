@@ -1,5 +1,6 @@
 package org.marnixrenne.kitchengarden.garden
 
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -10,7 +11,19 @@ import java.util.UUID
 @Repository
 class PlantLogRepository {
 
-    fun save(userId: UUID, request: PlantLogRequest): PlantLogResponse = transaction {
+    fun save(userId: UUID, request: PlantLogRequest): PlantLogResponse {
+        return try {
+            doSave(userId, request)
+        } catch (e: ExposedSQLException) {
+            val msg = e.message.orEmpty().lowercase()
+            if ("unique" !in msg && "duplicate" !in msg) throw e
+            // UNIQUE(user_id, plant_id) fired from a concurrent insert for the same instance.
+            // Retry in a fresh transaction: the PlantLog row now exists.
+            doSave(userId, request)
+        }
+    }
+
+    private fun doSave(userId: UUID, request: PlantLogRequest): PlantLogResponse = transaction {
         val instanceRow = (GardenPlantInstances innerJoin Garden)
             .select(GardenPlantInstances.plantId)
             .where { (GardenPlantInstances.id eq request.instanceId) and (Garden.userId eq userId) }
@@ -61,11 +74,24 @@ class PlantLogRepository {
         )
     }
 
-    fun findAllByUser(userId: UUID): Map<UUID, List<LoggedEntry>> = transaction {
-        (PlantLog innerJoin PlantLogEntry)
+    fun deleteEntry(entryId: UUID): Unit = transaction {
+        PlantLogEntry.deleteWhere { PlantLogEntry.id eq entryId }
+    }
+
+    fun findAllByUser(userId: UUID, gardenId: UUID? = null): Map<UUID, List<LoggedEntry>> = transaction {
+        val query = (PlantLog innerJoin PlantLogEntry)
             .selectAll()
             .where { (PlantLog.userId eq userId) and PlantLog.instanceId.isNotNull() }
-            .orderBy(PlantLogEntry.date, SortOrder.DESC)
+
+        if (gardenId != null) {
+            val instanceIds = GardenPlantInstances.selectAll()
+                .where { GardenPlantInstances.gardenId eq gardenId }
+                .map { it[GardenPlantInstances.id] }
+            if (instanceIds.isEmpty()) return@transaction emptyMap()
+            query.andWhere { PlantLog.instanceId inList instanceIds }
+        }
+
+        query.orderBy(PlantLogEntry.date, SortOrder.DESC)
             .groupBy({ it[PlantLog.instanceId]!! }, { row ->
                 LoggedEntry(
                     id      = row[PlantLogEntry.id],

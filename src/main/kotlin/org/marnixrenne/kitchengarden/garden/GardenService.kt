@@ -49,8 +49,11 @@ class GardenService(
     fun listGardens(authentication: Authentication): List<GardenSummary> =
         repository.findGardens(resolveUserId(authentication))
 
-    fun createGarden(authentication: Authentication, name: String): GardenSummary =
-        repository.createGarden(resolveUserId(authentication), name)
+    fun createGarden(authentication: Authentication, name: String): GardenSummary {
+        if (name.isBlank()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Garden name cannot be blank")
+        if (name.length > 100) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Garden name must be at most 100 characters")
+        return repository.createGarden(resolveUserId(authentication), name)
+    }
 
     fun deleteGarden(authentication: Authentication, gardenId: UUID) {
         val deleted = repository.deleteGarden(gardenId, resolveUserId(authentication))
@@ -83,13 +86,19 @@ class GardenService(
     fun logAction(authentication: Authentication, request: PlantLogRequest): PlantLogResponse {
         val entry = plantLogRepository.save(resolveUserId(authentication), request)
         if (request.action in setOf("seeding_indoor", "seeding_direct", "planting")) {
-            plantPlanService.generateAndSave(entry.id, entry.plantId, request.date)
+            try {
+                plantPlanService.generateAndSave(entry.id, entry.plantId, request.date)
+            } catch (e: Exception) {
+                // Roll back the orphaned log entry so the client can safely retry.
+                plantLogRepository.deleteEntry(entry.id)
+                throw e
+            }
         }
         return entry
     }
 
-    fun getPlantLog(authentication: Authentication): Map<UUID, List<LoggedEntry>> =
-        plantLogRepository.findAllByUser(resolveUserId(authentication))
+    fun getPlantLog(authentication: Authentication, gardenId: UUID? = null): Map<UUID, List<LoggedEntry>> =
+        plantLogRepository.findAllByUser(resolveUserId(authentication), gardenId)
 
     fun getPlan(authentication: Authentication): Map<UUID, List<PlanEntry>> =
         plantPlanService.findByUser(resolveUserId(authentication))
