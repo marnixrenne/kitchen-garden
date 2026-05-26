@@ -276,7 +276,7 @@ export default {
     toHarvest: 'Te oogsten',
     nothingThisMonth: 'Niets te doen in je tuin deze maand.',
     both: 'Zaaien & oogsten',
-    addToCalendar: 'Exporteer naar kalender',
+    addToCalendar: 'Kalender downloaden',
     suggestions: 'Plantgroepen',
     goodTogether: 'Goede combinaties',
     keepApart: 'Houd gescheiden',

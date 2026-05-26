@@ -328,14 +328,14 @@ watch(activeGardenId, loadAll)
     <div class="page-header">
       <h2 class="page-title">{{ activeGardenName ?? t('myGarden') }}</h2>
       <div class="page-header-actions">
-        <button
-          v-if="sortedPlants.length > 0"
-          class="ical-btn"
-          @click="downloadIcal"
-        >
-          📅 {{ t('garden.addToCalendar') }}
+        <button class="delete-garden-btn" @click="deleteModal.open = true" :title="t('garden.deleteGarden')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            <line x1="10" y1="11" x2="10" y2="17"/>
+            <line x1="14" y1="11" x2="14" y2="17"/>
+          </svg>
         </button>
-        <button class="delete-garden-btn" @click="deleteModal.open = true" :title="t('garden.deleteGarden')">🗑</button>
       </div>
     </div>
 
@@ -382,6 +382,13 @@ watch(activeGardenId, loadAll)
     </template>
 
     <template v-else>
+      <!-- Calendar download -->
+      <div v-if="activeTab === 'calendar'" class="calendar-top-bar">
+        <button v-if="sortedPlants.length > 0" class="ical-btn" @click="downloadIcal">
+          📅 {{ t('garden.addToCalendar') }}
+        </button>
+      </div>
+
       <!-- Legend -->
       <div v-if="activeTab === 'calendar'" class="legend">
         <span class="legend-item"><span class="legend-swatch sow" />{{ t('garden.toSow') }}</span>
@@ -618,16 +625,18 @@ main {
 
 .delete-garden-btn {
   padding: 0.35rem 0.6rem;
-  border: 1.5px solid #fca5a5;
+  border: none;
   border-radius: var(--radius);
-  background: #fff;
-  color: #b91c1c;
+  background: #dc2626;
+  color: #fff;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
 }
 
-.delete-garden-btn:hover { background: #fee2e2; border-color: #ef4444; }
+.delete-garden-btn:hover { background: #b91c1c; }
 
 /* Delete garden modal */
 .dg-backdrop {
@@ -759,6 +768,13 @@ main {
 .this-week-card {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
+}
+
+/* Calendar top bar */
+.calendar-top-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
 }
 
 /* Legend */

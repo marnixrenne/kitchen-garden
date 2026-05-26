@@ -276,7 +276,7 @@ export default {
     toHarvest: 'To harvest',
     nothingThisMonth: 'Nothing to do in your garden this month.',
     both: 'Sow & harvest',
-    addToCalendar: 'Add to calendar',
+    addToCalendar: 'Download calendar',
     suggestions: 'Planting suggestions',
     goodTogether: 'Good together',
     keepApart: 'Keep apart',

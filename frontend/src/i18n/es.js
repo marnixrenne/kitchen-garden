@@ -274,7 +274,7 @@ export default {
     toHarvest: 'Para cosechar',
     nothingThisMonth: 'Nada que hacer en tu huerto este mes.',
     both: 'Sembrar y cosechar',
-    addToCalendar: 'Añadir al calendario',
+    addToCalendar: 'Descargar calendario',
     suggestions: 'Sugerencias de siembra',
     goodTogether: 'Buenas compañeras',
     keepApart: 'Mantener separadas',
