@@ -1,0 +1,17 @@
+{
+  "migrationDescription": "grape_hops_images",
+  "plants": [
+    {
+      "name":        "Grape",
+      "category":    "Fruit",
+      "emoji":       "🍇",
+      "wikipediaPage": "Vitis vinifera"
+    },
+    {
+      "name":        "Hops",
+      "category":    "Herb",
+      "emoji":       "🌿",
+      "wikipediaPage": "Humulus lupulus"
+    }
+  ]
+}
