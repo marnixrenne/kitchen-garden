@@ -223,9 +223,9 @@ export default {
     height: 'Altura',
     method: {
       label: 'Método de siembra',
-      indoor: '🏠 Iniciar en interior',
-      direct: '🌱 Siembra directa',
-      both:   '🔄 Interior o directa',
+      indoor:  '🏠 Iniciar en interior',
+      outdoor: '🌱 Siembra directa',
+      both:    '🔄 Interior o exterior',
     },
     frost: {
       label:       'Resistencia a las heladas',
@@ -287,7 +287,7 @@ export default {
     actionBoth: 'Sembrar y cosechar',
     hintIndoor: 'Iniciar en interior',
     hintDirect: 'Sembrar directamente en exterior',
-    hintBoth: 'Interior o directa',
+    hintBoth: 'Interior o exterior',
     hintGermination: 'Germina en {min}–{max} días',
     hintHarvest: 'Lista para cosechar este mes',
     seedNow: 'Sembrar ahora',

@@ -225,9 +225,9 @@ export default {
     height: 'Hoogte',
     method: {
       label: 'Zaaimetode',
-      indoor: '🏠 Binnen starten',
-      direct: '🌱 Direct zaaien',
-      both:   '🔄 Binnen of buiten',
+      indoor:  '🏠 Binnen starten',
+      outdoor: '🌱 Direct zaaien',
+      both:    '🔄 Binnen of buiten',
     },
     frost: {
       label:       'Vorstbestendigheid',

@@ -13,7 +13,7 @@ data class LoggedEntry(
 data class WeekAction(
     val type: String,              // "sow", "harvest", "both"
     val plant: SimpleVeg,
-    val sowingMethod: String?,     // "indoor", "direct", "both"
+    val sowingMethod: String?,     // "indoor", "outdoor", "both"
     val germinationDaysMin: Int?,
     val germinationDaysMax: Int?,
     val logEntries: List<LoggedEntry>,

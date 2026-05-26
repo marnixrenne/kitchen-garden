@@ -100,7 +100,7 @@ function hintsFor(action) {
   const hints = []
   if (action.type !== 'harvest') {
     if (action.sowingMethod === 'indoor')      hints.push(t('garden.hintIndoor'))
-    else if (action.sowingMethod === 'direct') hints.push(t('garden.hintDirect'))
+    else if (action.sowingMethod === 'outdoor') hints.push(t('garden.hintDirect'))
     else if (action.sowingMethod === 'both')   hints.push(t('garden.hintBoth'))
     if (action.germinationDaysMin)
       hints.push(t('garden.hintGermination', { min: action.germinationDaysMin, max: action.germinationDaysMax }))

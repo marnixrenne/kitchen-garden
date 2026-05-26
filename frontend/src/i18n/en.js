@@ -225,9 +225,9 @@ export default {
     height: 'Height',
     method: {
       label: 'Sowing method',
-      indoor: '🏠 Start indoors',
-      direct: '🌱 Direct sow',
-      both:   '🔄 Indoors or direct',
+      indoor:  '🏠 Start indoors',
+      outdoor: '🌱 Direct sow',
+      both:    '🔄 Indoors or outdoor',
     },
     frost: {
       label:       'Frost tolerance',
@@ -289,7 +289,7 @@ export default {
     actionBoth: 'Sow & harvest',
     hintIndoor: 'Start indoors',
     hintDirect: 'Sow directly outside',
-    hintBoth: 'Indoors or direct',
+    hintBoth: 'Indoors or outdoor',
     hintGermination: 'Germinates in {min}–{max} days',
     hintHarvest: 'Ready to harvest this month',
     seedNow: 'Seed now',
