@@ -293,7 +293,7 @@ export default {
     seedNow: 'Sembrar ahora',
     seededOn: 'Sembrado el {date}',
     plantedOn: 'Plantado el {date}',
-    advanceStage: 'Avanzar fase',
+    advanceStage: 'Siguiente fase',
     advanceModal: {
       nextStateLabel: 'Avanzar a',
     },

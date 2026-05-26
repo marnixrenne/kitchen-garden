@@ -295,7 +295,7 @@ export default {
     seedNow: 'Seed now',
     seededOn: 'Seeded {date}',
     plantedOn: 'Planted {date}',
-    advanceStage: 'Advance stage',
+    advanceStage: 'Next stage',
     advanceModal: {
       nextStateLabel: 'Advance to',
     },

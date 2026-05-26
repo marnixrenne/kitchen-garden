@@ -295,7 +295,7 @@ export default {
     seedNow: 'Nu zaaien',
     seededOn: 'Gezaaid {date}',
     plantedOn: 'Geplant {date}',
-    advanceStage: 'Fase vooruitgang',
+    advanceStage: 'Volgende fase',
     advanceModal: {
       nextStateLabel: 'Doorsturen naar',
     },
