@@ -1,11 +1,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { csrfHeaders } from '../stores/auth.js'
 import { gardenParam } from '../stores/garden.js'
 
 const emit = defineEmits(['refresh'])
 const { t, te, tm, locale } = useI18n()
+const router = useRouter()
 
 const weekSummary = ref(null)
 const instances   = ref([])
@@ -303,7 +305,7 @@ onMounted(fetchAll)
           <div v-for="(item, i) in group.items" :key="i" class="week-item week-item--seed">
             <span class="wi-emoji">{{ item.plant.emoji ?? '🌱' }}</span>
             <div class="wi-seed-body">
-              <span class="wi-name">{{ pName(item.plant) }}</span>
+              <a class="wi-name" @click.prevent="router.push(`/plant/${item.plant.id}`)">{{ pName(item.plant) }}</a>
               <span v-if="hintsFor(item.sowAction).length" class="wi-hints">
                 {{ hintsFor(item.sowAction).join(' · ') }}
               </span>
@@ -324,10 +326,10 @@ onMounted(fetchAll)
             class="week-item"
           >
             <span class="wi-emoji">{{ item.plant.emoji ?? '🌱' }}</span>
-            <span class="wi-name">
+            <a class="wi-name" @click.prevent="router.push(`/plant/${item.plant.id}`)">
               {{ pName(item.plant) }}
               <span v-if="item.seedDate" class="wi-seeded-on"> – {{ item.seedAction === 'planting' ? t('garden.plantedOn', { date: item.seedDate }) : t('garden.seededOn', { date: item.seedDate }) }}</span>
-            </span>
+            </a>
             <span class="wi-date">
               <span v-if="item.dateRange" class="wi-daterange">{{ item.dateRange }}</span>
             </span>
@@ -572,6 +574,8 @@ onMounted(fetchAll)
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--green-dark);
+  cursor: pointer;
+  text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
