@@ -52,7 +52,7 @@ async function setCountry(code) {
 
 <template>
   <main>
-    <button class="back-btn" @click="window.history.state?.back ? router.back() : router.push('/home')">{{ t('back') }}</button>
+    <button class="back-btn" @click="window.history.state?.back ? router.back() : router.push('/garden')">{{ t('back') }}</button>
 
     <div class="settings-card">
       <h2>{{ t('settings.title') }}</h2>

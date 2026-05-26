@@ -297,7 +297,7 @@ async function confirmDeleteGarden() {
   const remaining = gardens.value.filter(g => g.id !== id)
   setActiveGarden(remaining.length > 0 ? remaining[0].id : null)
   gardens.value = remaining
-  router.push(remaining.length > 0 ? '/garden' : '/home')
+  router.push(remaining.length > 0 ? '/garden' : '/discover')
 }
 
 async function loadAll() {

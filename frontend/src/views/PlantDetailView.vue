@@ -89,7 +89,7 @@ async function loadPlant(id) {
 
 function goBack() {
   if (window.history.state?.back) router.back()
-  else router.push('/home')
+  else router.push('/garden')
 }
 
 onMounted(() => loadPlant(route.params.id))

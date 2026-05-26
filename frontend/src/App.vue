@@ -103,8 +103,6 @@ async function submitNewGarden() {
       <h1>🌱 Kitchen Garden</h1>
       <nav class="header-nav">
         <template v-if="!user?.roles?.includes('ROLE_ADMIN')">
-          <RouterLink to="/home">{{ t('home') }}</RouterLink>
-
           <!-- Single garden: plain link -->
           <RouterLink v-if="gardens.length <= 1" to="/garden" :class="{ 'router-link-active': $route.path.startsWith('/garden') }">{{ t('myGarden') }}</RouterLink>
 
@@ -125,6 +123,7 @@ async function submitNewGarden() {
             </div>
           </div>
 
+          <RouterLink to="/discover">{{ t('home') }}</RouterLink>
           <button class="new-garden-btn" :title="t('garden.newGarden')" @click="openNewGardenModal">+</button>
         </template>
         <RouterLink v-if="user?.roles?.includes('ROLE_ADMIN')" to="/admin">Admin</RouterLink>
