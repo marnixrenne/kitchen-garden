@@ -16,6 +16,7 @@ export default {
     full_sun:      '☀️ Full sun',
     partial_shade: '🌤️ Partial shade',
     shade:         '🌥️ Shade',
+    unknown:       'Unknown',
   },
   companions: {
     title: 'Companion planting',

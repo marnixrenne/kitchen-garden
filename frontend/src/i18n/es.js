@@ -16,6 +16,7 @@ export default {
     full_sun:      '☀️ Pleno sol',
     partial_shade: '🌤️ Media sombra',
     shade:         '🌥️ Sombra',
+    unknown:       'Desconocido',
   },
   companions: {
     title: 'Plantas compañeras',

@@ -16,6 +16,7 @@ export default {
     full_sun:      '☀️ Volle zon',
     partial_shade: '🌤️ Halfschaduw',
     shade:         '🌥️ Schaduw',
+    unknown:       'Onbekend',
   },
   companions: {
     title: 'Combinatieteelt',
