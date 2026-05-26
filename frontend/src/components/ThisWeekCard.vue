@@ -17,8 +17,9 @@ const lifecycle   = ref({})
 const plants      = ref([])
 const loading     = ref(true)
 
-const seedModal   = ref({ open: false, plant: null, instanceId: null, method: 'seeding_indoor', date: '', comment: '', saving: false })
-const actionModal = ref({ open: false, plant: null, instanceId: null, action: '', date: '', comment: '', saving: false })
+const seedModal    = ref({ open: false, plant: null, instanceId: null, method: 'seeding_indoor', date: '', comment: '', saving: false })
+const actionModal  = ref({ open: false, plant: null, instanceId: null, action: '', date: '', comment: '', saving: false })
+const advanceModal = ref({ open: false, item: null, date: '', comment: '', saving: false })
 
 function todayIso() { return new Date().toISOString().slice(0, 10) }
 
@@ -224,14 +225,27 @@ async function fetchAll() {
   loading.value = false
 }
 
-async function advanceLifecycle(instanceId) {
-  const res = await fetch(`/api/garden/lifecycle/${instanceId}/advance`, {
-    method: 'PUT',
-    headers: csrfHeaders(),
-  })
-  if (res.ok) {
-    lifecycle.value = { ...lifecycle.value, [instanceId]: await res.json() }
-    emit('refresh')
+function openAdvanceModal(item) {
+  advanceModal.value = { open: true, item, date: todayIso(), comment: '', saving: false }
+}
+
+async function submitAdvance() {
+  if (advanceModal.value.saving) return
+  advanceModal.value.saving = true
+  try {
+    const { item, date, comment } = advanceModal.value
+    const res = await fetch(`/api/garden/lifecycle/${item.instanceId}/advance`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+      body: JSON.stringify({ date, comment: comment || null }),
+    })
+    if (res.ok) {
+      lifecycle.value = { ...lifecycle.value, [item.instanceId]: await res.json() }
+      advanceModal.value.open = false
+      emit('refresh')
+    }
+  } finally {
+    advanceModal.value.saving = false
   }
 }
 
@@ -335,8 +349,8 @@ onMounted(fetchAll)
             </span>
             <div class="wi-action">
               <template v-if="item.lc">
-                <button class="wi-btn wi-btn--advance" @click="advanceLifecycle(item.instanceId)">
-                  {{ t('garden.advanceStage') }}
+                <button class="wi-btn wi-btn--advance" @click="openAdvanceModal(item)">
+                  {{ t(`garden.advanceLabel.${item.lc.nextState}`, t('garden.advanceStage')) }}
                 </button>
               </template>
               <template v-else-if="item.done">
@@ -429,6 +443,40 @@ onMounted(fetchAll)
           <div class="modal-actions">
             <button type="button" class="modal-cancel" @click="seedModal.open = false">{{ t('garden.seedModal.cancel') }}</button>
             <button type="submit" class="modal-save" :disabled="seedModal.saving">{{ t('garden.seedModal.save') }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- Advance lifecycle modal -->
+  <Teleport to="body">
+    <div v-if="advanceModal.open" class="modal-backdrop" @click.self="advanceModal.open = false">
+      <div class="modal" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <span class="modal-title">{{ t('garden.advanceStage') }}</span>
+          <span v-if="advanceModal.item?.plant" class="modal-plant">
+            {{ advanceModal.item.plant.emoji ?? '🌱' }} {{ pName(advanceModal.item.plant) }}
+          </span>
+        </div>
+        <form class="modal-body" @submit.prevent="submitAdvance">
+          <div class="form-row">
+            <label class="form-label">{{ t('garden.advanceModal.nextStateLabel') }}</label>
+            <span class="form-value">
+              {{ advanceModal.item?.lc ? t(`garden.advanceLabel.${advanceModal.item.lc.nextState}`, advanceModal.item.lc.nextState) : '' }}
+            </span>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="tw-advance-date">{{ t('garden.seedModal.dateLabel') }}</label>
+            <input id="tw-advance-date" v-model="advanceModal.date" type="date" class="form-input" required />
+          </div>
+          <div class="form-row form-row--col">
+            <label class="form-label" for="tw-advance-comment">{{ t('garden.seedModal.commentLabel') }}</label>
+            <textarea id="tw-advance-comment" v-model="advanceModal.comment" class="form-textarea" :placeholder="t('garden.seedModal.commentPlaceholder')" rows="2" />
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="modal-cancel" @click="advanceModal.open = false">{{ t('garden.seedModal.cancel') }}</button>
+            <button type="submit" class="modal-save" :disabled="advanceModal.saving">{{ t('garden.seedModal.save') }}</button>
           </div>
         </form>
       </div>

@@ -296,6 +296,9 @@ export default {
     seededOn: 'Gezaaid {date}',
     plantedOn: 'Geplant {date}',
     advanceStage: 'Fase vooruitgang',
+    advanceModal: {
+      nextStateLabel: 'Doorsturen naar',
+    },
     lifecycle: {
       seeded_indoor:     'Binnengezaaid',
       seeded_direct:     'Buitengezaaid',
@@ -306,6 +309,14 @@ export default {
       growing:           'Aan het groeien',
       ready_to_harvest:  'Oogstklaar',
       harvested:         'Geoogst',
+    },
+    advanceLabel: {
+      germinating_indoor: 'Gekiemd',
+      germinating_direct: 'Gekiemd',
+      transplanted:       'Overpoten',
+      growing:            'Aan het groeien',
+      ready_to_harvest:   'Oogstklaar',
+      harvested:          'Geoogst',
     },
     loggedAction: {
       seeding_indoor: 'Binnengezaaid',

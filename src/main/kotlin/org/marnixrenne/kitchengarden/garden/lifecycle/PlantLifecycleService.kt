@@ -16,7 +16,7 @@ class PlantLifecycleService(
     fun getAll(authentication: Authentication): Map<UUID, PlantLifecycle> =
         repository.findAllByUser(gardenService.resolveUserId(authentication))
 
-    fun advance(authentication: Authentication, instanceId: UUID): PlantLifecycle =
-        repository.advance(gardenService.resolveUserId(authentication), instanceId)
+    fun advance(authentication: Authentication, instanceId: UUID, request: AdvanceRequest?): PlantLifecycle =
+        repository.advance(gardenService.resolveUserId(authentication), instanceId, request)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
 }

@@ -1,5 +1,6 @@
 package org.marnixrenne.kitchengarden.garden.lifecycle
 
+import java.time.LocalDate
 import java.util.UUID
 
 enum class LifecycleState(val key: String) {
@@ -36,4 +37,11 @@ data class PlantLifecycle(
     val plantId: UUID,
     val state: String,
     val nextState: String?,
+    val date: LocalDate? = null,
+    val comment: String? = null,
+)
+
+data class AdvanceRequest(
+    val date: LocalDate?,
+    val comment: String?,
 )

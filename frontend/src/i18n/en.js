@@ -296,6 +296,9 @@ export default {
     seededOn: 'Seeded {date}',
     plantedOn: 'Planted {date}',
     advanceStage: 'Advance stage',
+    advanceModal: {
+      nextStateLabel: 'Advance to',
+    },
     lifecycle: {
       seeded_indoor:     'Seeded indoors',
       seeded_direct:     'Seeded outside',
@@ -306,6 +309,14 @@ export default {
       growing:           'Growing',
       ready_to_harvest:  'Ready to harvest',
       harvested:         'Harvested',
+    },
+    advanceLabel: {
+      germinating_indoor: 'Germinated',
+      germinating_direct: 'Germinated',
+      transplanted:       'Transplanted',
+      growing:            'Growing',
+      ready_to_harvest:   'Ready to harvest',
+      harvested:          'Harvested',
     },
     loggedAction: {
       seeding_indoor: 'Seeded indoors',

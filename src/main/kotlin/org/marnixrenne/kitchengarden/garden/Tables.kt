@@ -31,6 +31,8 @@ object PlantLog : Table("pts_plant_log") {
     val instanceId          = uuid("instance_id").nullable()
     val lifecycleState      = varchar("lifecycle_state", 30).default("seeded_direct")
     val lifecycleUpdatedAt  = timestamp("lifecycle_updated_at").nullable()
+    val lifecycleDate       = date("lifecycle_date").nullable()
+    val lifecycleComment    = text("lifecycle_comment").nullable()
     val createdAt           = timestamp("created_at")
 
     override val primaryKey = PrimaryKey(id)

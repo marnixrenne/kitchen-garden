@@ -15,6 +15,7 @@ class PlantLifecycleController(private val service: PlantLifecycleService) {
     @PutMapping("/{instanceId}/advance")
     fun advance(
         @PathVariable instanceId: UUID,
+        @RequestBody(required = false) request: AdvanceRequest?,
         authentication: Authentication,
-    ): PlantLifecycle = service.advance(authentication, instanceId)
+    ): PlantLifecycle = service.advance(authentication, instanceId, request)
 }
