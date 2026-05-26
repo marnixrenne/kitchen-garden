@@ -3,12 +3,12 @@
 
   "plants": [
     {
-      "name": "Lemon Balm",
-      "category": "Herb",
-      "emoji": "🌿",
+      "name":      "Lemon Balm",
+      "category":  "Herb",
+      "emoji":     "🌿",
       "latinName": "Melissa officinalis",
 
-      "seedingMonths": [3, 4, 5],
+      "seedingMonths":   [3, 4, 5],
       "harvestingMonths": [6, 7, 8, 9],
 
       "countries": ["NL", "BE", "DE", "FR", "GB", "AT", "CH", "DK", "PL", "SE"],
@@ -42,16 +42,29 @@
         "tip":  "Cut back by half after the first flush of growth to keep the plant bushy. Divide clumps every 2–3 years in spring."
       },
 
+      "fertilizer": {
+        "type": "light_feeder",
+        "tip":  "Incorporate compost before planting. A dilute liquid feed monthly during active growth keeps leaves productive, but avoid high-nitrogen fertilisers which produce soft, flavourless growth."
+      },
+
       "i18n": {
         "en": {
-          "name":        "Lemon Balm",
-          "description": "A lemon-scented perennial herb that is easy to grow and very attractive to bees. Can become invasive — grow in a pot or divide regularly.",
-          "pruningTip":  "Cut back by half after the first flush of growth to keep the plant bushy. Divide clumps every 2–3 years in spring."
+          "name":          "Lemon Balm",
+          "description":   "A lemon-scented perennial herb that is easy to grow and very attractive to bees. Can become invasive — grow in a pot or divide regularly.",
+          "pruningTip":    "Cut back by half after the first flush of growth to keep the plant bushy. Divide clumps every 2–3 years in spring.",
+          "fertilizerTip": "Incorporate compost before planting. A dilute liquid feed monthly during active growth keeps leaves productive, but avoid high-nitrogen fertilisers which produce soft, flavourless growth."
         },
         "nl": {
-          "name":        "Citroenmelisse",
-          "description": "Een citroengeurig vaste-plantenkruid dat eenvoudig te kweken is en bijen aantrekt. Kan invasief worden — kweek in een pot of deel regelmatig.",
-          "pruningTip":  "Knip halverwege na de eerste groeipuls om de plant struikachtig te houden. Deel de pol elke 2–3 jaar in het voorjaar."
+          "name":          "Citroenmelisse",
+          "description":   "Een citroengeurig vaste-plantenkruid dat eenvoudig te kweken is en bijen aantrekt. Kan invasief worden — kweek in een pot of deel regelmatig.",
+          "pruningTip":    "Knip halverwege na de eerste groeipuls om de plant struikachtig te houden. Deel de pol elke 2–3 jaar in het voorjaar.",
+          "fertilizerTip": "Verwerk compost voor het planten. Een verdunde vloeibare meststof maandelijks tijdens actieve groei houdt de plant productief, maar vermijd stikstofrijke meststoffen die zacht en smaakloos blad produceren."
+        },
+        "es": {
+          "name":          "Melisa",
+          "description":   "Una hierba perenne con aroma a limón, fácil de cultivar y muy atractiva para las abejas. Puede volverse invasiva — cultívala en maceta o divídela con regularidad.",
+          "pruningTip":    "Corta por la mitad tras el primer brote vigoroso para mantener la planta compacta. Divide las matas cada 2–3 años en primavera.",
+          "fertilizerTip": "Incorpora compost antes de plantar. Un abono líquido diluido mensualmente durante el crecimiento activo mantiene las hojas productivas, pero evita fertilizantes ricos en nitrógeno que producen un crecimiento blando y sin sabor."
         }
       }
     }
