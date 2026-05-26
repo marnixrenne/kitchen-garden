@@ -324,11 +324,11 @@ defineOptions({ inheritAttrs: false })
     <template v-else>
       <div v-for="group in actionGroups" :key="group.action" class="week-group">
         <div class="week-group-header" @click="toggleGroup(group.action)">
+          <button class="week-group-toggle" :aria-expanded="!collapsedGroups.has(group.action)" tabindex="-1">
+            {{ collapsedGroups.has(group.action) ? '+' : '−' }}
+          </button>
           <span class="week-group-icon">{{ group.icon }}</span>
           <span class="week-group-label">{{ group.label }}</span>
-          <button class="week-group-toggle" :aria-expanded="!collapsedGroups.has(group.action)" tabindex="-1">
-            <span class="toggle-chevron" :class="{ collapsed: collapsedGroups.has(group.action) }">▾</span>
-          </button>
         </div>
 
         <template v-if="!collapsedGroups.has(group.action)">
@@ -621,23 +621,17 @@ defineOptions({ inheritAttrs: false })
 }
 
 .week-group-toggle {
-  margin-left: auto;
   background: none;
   border: none;
   padding: 0;
   cursor: pointer;
   line-height: 1;
-  color: var(--text-muted);
-}
-
-.toggle-chevron {
-  display: inline-block;
   font-size: 1rem;
-  transition: transform 0.15s ease;
-}
-
-.toggle-chevron.collapsed {
-  transform: rotate(-90deg);
+  font-weight: 600;
+  color: var(--text-muted);
+  width: 1rem;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 /* Items */
