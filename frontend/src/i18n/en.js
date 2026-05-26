@@ -337,9 +337,9 @@ export default {
     seedModal: {
       title: 'Record start',
       methodLabel: 'Method',
-      methodIndoor: 'Indoors',
-      methodDirect: 'Directly outside',
-      methodPlanted: 'Planted (bought)',
+      methodIndoor: 'Sow indoors',
+      methodDirect: 'Sow outdoors',
+      methodPlanted: 'Plant directly',
       spacing: 'Spacing',
       seedDepth: 'Seed depth',
       plantNear: 'Plant near',

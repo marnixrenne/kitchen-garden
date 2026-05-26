@@ -337,9 +337,9 @@ export default {
     seedModal: {
       title: 'Start registreren',
       methodLabel: 'Methode',
-      methodIndoor: 'Binnen',
-      methodDirect: 'Direct buiten',
-      methodPlanted: 'Geplant (gekocht)',
+      methodIndoor: 'Binnen zaaien',
+      methodDirect: 'Buiten zaaien',
+      methodPlanted: 'Direct planten',
       spacing: 'Plantafstand',
       seedDepth: 'Zaaidiepte',
       plantNear: 'Plant naast',

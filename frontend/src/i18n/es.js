@@ -335,9 +335,9 @@ export default {
     seedModal: {
       title: 'Registrar inicio',
       methodLabel: 'Método',
-      methodIndoor: 'En interior',
-      methodDirect: 'Directamente en exterior',
-      methodPlanted: 'Plantado (comprado)',
+      methodIndoor: 'Sembrar en interior',
+      methodDirect: 'Sembrar en exterior',
+      methodPlanted: 'Plantar directamente',
       spacing: 'Espaciado',
       seedDepth: 'Profundidad de siembra',
       plantNear: 'Plantar cerca de',
