@@ -17,9 +17,9 @@ const lifecycle   = ref({})
 const plants      = ref([])
 const loading     = ref(true)
 
-const seedModal    = ref({ open: false, plant: null, instanceId: null, method: 'seeding_indoor', date: '', comment: '', saving: false })
-const actionModal  = ref({ open: false, plant: null, instanceId: null, action: '', date: '', comment: '', saving: false })
-const advanceModal = ref({ open: false, item: null, date: '', comment: '', saving: false })
+const seedModal    = ref({ open: false, plant: null, instanceId: null, method: 'seeding_indoor', date: '', comment: '', saving: false, error: '' })
+const actionModal  = ref({ open: false, plant: null, instanceId: null, action: '', date: '', comment: '', saving: false, error: '' })
+const advanceModal = ref({ open: false, item: null, date: '', comment: '', saving: false, error: '' })
 
 function todayIso() { return new Date().toISOString().slice(0, 10) }
 
@@ -226,12 +226,13 @@ async function fetchAll() {
 }
 
 function openAdvanceModal(item) {
-  advanceModal.value = { open: true, item, date: todayIso(), comment: '', saving: false }
+  advanceModal.value = { open: true, item, date: todayIso(), comment: '', saving: false, error: '' }
 }
 
 async function submitAdvance() {
   if (advanceModal.value.saving) return
   advanceModal.value.saving = true
+  advanceModal.value.error = ''
   try {
     const { item, date, comment } = advanceModal.value
     const res = await fetch(`/api/garden/lifecycle/${item.instanceId}/advance`, {
@@ -239,22 +240,21 @@ async function submitAdvance() {
       headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
       body: JSON.stringify({ date, comment: comment || null }),
     })
-    if (res.ok) {
-      lifecycle.value = { ...lifecycle.value, [item.instanceId]: await res.json() }
-      advanceModal.value.open = false
-      emit('refresh')
-    }
+    if (!res.ok) { advanceModal.value.error = `Error ${res.status}`; return }
+    lifecycle.value = { ...lifecycle.value, [item.instanceId]: await res.json() }
+    advanceModal.value.open = false
+    emit('refresh')
   } finally {
     advanceModal.value.saving = false
   }
 }
 
 function openSeedModal(plant, instanceId) {
-  seedModal.value = { open: true, plant, instanceId, method: 'seeding_indoor', date: todayIso(), comment: '', saving: false }
+  seedModal.value = { open: true, plant, instanceId, method: 'seeding_indoor', date: todayIso(), comment: '', saving: false, error: '' }
 }
 
 function openActionModal(plant, action, instanceId) {
-  actionModal.value = { open: true, plant, instanceId, action, date: todayIso(), comment: '', saving: false }
+  actionModal.value = { open: true, plant, instanceId, action, date: todayIso(), comment: '', saving: false, error: '' }
 }
 
 async function postAction(instanceId, action, date, comment) {
@@ -268,8 +268,10 @@ async function postAction(instanceId, action, date, comment) {
 async function submitSeed() {
   if (seedModal.value.saving) return
   seedModal.value.saving = true
+  seedModal.value.error = ''
   try {
-    await postAction(seedModal.value.instanceId, seedModal.value.method, seedModal.value.date, seedModal.value.comment)
+    const res = await postAction(seedModal.value.instanceId, seedModal.value.method, seedModal.value.date, seedModal.value.comment)
+    if (!res.ok) { seedModal.value.error = `Error ${res.status}`; return }
     seedModal.value.open = false
     await fetchAll()
     emit('refresh')
@@ -281,8 +283,10 @@ async function submitSeed() {
 async function submitAction() {
   if (actionModal.value.saving) return
   actionModal.value.saving = true
+  actionModal.value.error = ''
   try {
-    await postAction(actionModal.value.instanceId, actionModal.value.action, actionModal.value.date, actionModal.value.comment)
+    const res = await postAction(actionModal.value.instanceId, actionModal.value.action, actionModal.value.date, actionModal.value.comment)
+    if (!res.ok) { actionModal.value.error = `Error ${res.status}`; return }
     actionModal.value.open = false
     await fetchAll()
     emit('refresh')
@@ -440,6 +444,7 @@ onMounted(fetchAll)
             <label class="form-label" for="tw-seed-comment">{{ t('garden.seedModal.commentLabel') }}</label>
             <textarea id="tw-seed-comment" v-model="seedModal.comment" class="form-textarea" :placeholder="t('garden.seedModal.commentPlaceholder')" rows="3" />
           </div>
+          <p v-if="seedModal.error" class="modal-error">{{ seedModal.error }}</p>
           <div class="modal-actions">
             <button type="button" class="modal-cancel" @click="seedModal.open = false">{{ t('garden.seedModal.cancel') }}</button>
             <button type="submit" class="modal-save" :disabled="seedModal.saving">{{ t('garden.seedModal.save') }}</button>
@@ -474,6 +479,7 @@ onMounted(fetchAll)
             <label class="form-label" for="tw-advance-comment">{{ t('garden.seedModal.commentLabel') }}</label>
             <textarea id="tw-advance-comment" v-model="advanceModal.comment" class="form-textarea" :placeholder="t('garden.seedModal.commentPlaceholder')" rows="2" />
           </div>
+          <p v-if="advanceModal.error" class="modal-error">{{ advanceModal.error }}</p>
           <div class="modal-actions">
             <button type="button" class="modal-cancel" @click="advanceModal.open = false">{{ t('garden.seedModal.cancel') }}</button>
             <button type="submit" class="modal-save" :disabled="advanceModal.saving">{{ t('garden.seedModal.save') }}</button>
@@ -508,6 +514,7 @@ onMounted(fetchAll)
             <label class="form-label" for="tw-action-comment">{{ t('garden.seedModal.commentLabel') }}</label>
             <textarea id="tw-action-comment" v-model="actionModal.comment" class="form-textarea" :placeholder="t('garden.seedModal.commentPlaceholder')" rows="2" />
           </div>
+          <p v-if="actionModal.error" class="modal-error">{{ actionModal.error }}</p>
           <div class="modal-actions">
             <button type="button" class="modal-cancel" @click="actionModal.open = false">{{ t('garden.seedModal.cancel') }}</button>
             <button type="submit" class="modal-save" :disabled="actionModal.saving">{{ t('garden.seedModal.save') }}</button>
@@ -855,6 +862,12 @@ onMounted(fetchAll)
   justify-content: flex-end;
   gap: 0.6rem;
   padding-top: 0.25rem;
+}
+
+.modal-error {
+  font-size: 0.8rem;
+  color: #b91c1c;
+  margin: 0;
 }
 
 .modal-cancel {

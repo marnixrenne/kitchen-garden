@@ -8,7 +8,7 @@ import { activeGardenId, activeGardenName, gardens, setActiveGarden } from './st
 const { t, locale } = useI18n()
 const router = useRouter()
 
-const localeFlag = { en: '🇬🇧', nl: '🇳🇱' }
+const localeFlag = { en: '🇬🇧', nl: '🇳🇱', es: '🇪🇸' }
 
 // ── Preferences ──────────────────────────────────────────────────────────────
 

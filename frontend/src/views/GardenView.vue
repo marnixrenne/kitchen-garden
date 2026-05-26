@@ -107,12 +107,14 @@ async function fetchLifecycle() {
   if (res.ok) lifecycle.value = await res.json()
 }
 
-function isPlanEntryDone(instanceId, entry) {
-  const logs = plantLog.value[instanceId] ?? []
-  return logs.some(log =>
-    log.action === entry.action &&
-    log.date >= entry.plannedDateStart &&
-    log.date <= entry.plannedDateEnd
+function isPlanEntryDone(plantId, entry) {
+  const iids = instancesByPlantId.value[plantId] ?? []
+  return iids.some(iid =>
+    (plantLog.value[iid] ?? []).some(log =>
+      log.action === entry.action &&
+      log.date >= entry.plannedDateStart &&
+      log.date <= entry.plannedDateEnd
+    )
   )
 }
 

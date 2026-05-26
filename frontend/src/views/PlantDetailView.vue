@@ -24,7 +24,8 @@ const localName = computed(() => {
 
 const description = computed(() => {
   if (!plant.value) return ''
-  return t(`descriptions.${plant.value.name}`)
+  const key = `descriptions.${plant.value.name}`
+  return te(key) ? t(key) : (plant.value.description ?? '')
 })
 
 const goodCompanions = computed(() => plant.value?.companions.filter(c => c.relationship === 'good') ?? [])
@@ -57,13 +58,14 @@ const fertilizerTipText = computed(() => {
 
 async function toggleGarden() {
   const method = inGarden.value ? 'DELETE' : 'PUT'
-  await fetch(`/api/garden/${route.params.id}${gardenParam()}`, { method, headers: csrfHeaders() })
-  inGarden.value = !inGarden.value
+  const res = await fetch(`/api/garden/${route.params.id}${gardenParam()}`, { method, headers: csrfHeaders() })
+  if (res.ok) inGarden.value = !inGarden.value
 }
 
 async function toggleCompanionGarden(id) {
   const inG = gardenIds.value.has(id)
-  await fetch(`/api/garden/${id}${gardenParam()}`, { method: inG ? 'DELETE' : 'PUT', headers: csrfHeaders() })
+  const res = await fetch(`/api/garden/${id}${gardenParam()}`, { method: inG ? 'DELETE' : 'PUT', headers: csrfHeaders() })
+  if (!res.ok) return
   const next = new Set(gardenIds.value)
   inG ? next.delete(id) : next.add(id)
   gardenIds.value = next
@@ -85,13 +87,18 @@ async function loadPlant(id) {
   loading.value = false
 }
 
+function goBack() {
+  if (window.history.state?.back) router.back()
+  else router.push('/home')
+}
+
 onMounted(() => loadPlant(route.params.id))
 watch(() => route.params.id, (id) => { if (id) loadPlant(id) })
 </script>
 
 <template>
   <main>
-    <button class="back-btn" @click="router.back()">{{ t('back') }}</button>
+    <button class="back-btn" @click="goBack">{{ t('back') }}</button>
 
     <div v-if="loading" class="loading">{{ t('loading') }}</div>
 

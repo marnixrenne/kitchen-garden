@@ -51,7 +51,7 @@ const filteredTotal = computed(() => grouped.value.reduce((sum, g) => sum + g.it
 
 async function fetchCounts() {
   const res = await fetch('/api/plants/counts')
-  counts.value = await res.json()
+  if (res.ok) counts.value = await res.json()
 }
 
 async function fetchGarden() {
