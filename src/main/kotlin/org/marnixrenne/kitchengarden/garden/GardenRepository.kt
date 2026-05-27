@@ -309,9 +309,7 @@ class GardenRepository {
                 imageUrl         = row[Plants.imageUrl],
                 sunRequirement   = row[Plants.sunRequirement],
                 pruningType      = null,
-                pruningTip       = null,
                 fertilizerType   = null,
-                fertilizerTip    = null,
                 sowingGuide      = SowingGuide(
                     method             = null,
                     seedDepthMm        = row[Plants.seedDepthMm],

@@ -46,14 +46,12 @@ function monthType(m) {
 
 const pruningTipText = computed(() => {
   if (!plant.value?.pruningType) return ''
-  const key = `pruning.tips.${plant.value.name}`
-  return te(key) ? t(key) : (plant.value.pruningTip ?? '')
+  return t(`pruning.tips.${plant.value.name}`)
 })
 
 const fertilizerTipText = computed(() => {
   if (!plant.value?.fertilizerType) return ''
-  const key = `fertilizer.tips.${plant.value.name}`
-  return te(key) ? t(key) : (plant.value.fertilizerTip ?? '')
+  return t(`fertilizer.tips.${plant.value.name}`)
 })
 
 async function toggleGarden() {
