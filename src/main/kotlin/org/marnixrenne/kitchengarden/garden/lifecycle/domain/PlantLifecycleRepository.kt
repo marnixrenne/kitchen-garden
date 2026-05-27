@@ -1,8 +1,10 @@
 package org.marnixrenne.kitchengarden.garden.lifecycle.domain
 
-import java.util.UUID
+import org.marnixrenne.kitchengarden.garden.domain.GardenId
+import org.marnixrenne.kitchengarden.garden.domain.PlantInstanceId
+import org.marnixrenne.kitchengarden.user.domain.UserId
 
 interface PlantLifecycleRepository {
-    fun findAllByUser(userId: UUID, gardenId: UUID): Map<UUID, PlantLifecycle>
-    fun advance(userId: UUID, instanceId: UUID, request: AdvanceRequest?): PlantLifecycle?
+    fun findAllByUser(userId: UserId, gardenId: GardenId): Map<PlantInstanceId, PlantLifecycle>
+    fun advance(userId: UserId, instanceId: PlantInstanceId, request: AdvanceRequest?): PlantLifecycle?
 }

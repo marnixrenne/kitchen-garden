@@ -1,10 +1,8 @@
 package org.marnixrenne.kitchengarden.plants.domain
 
-import java.util.UUID
-
 data class Country(val code: String, val name: String)
 
-data class CompanionPlant(val id: UUID, val name: String, val emoji: String?, val relationship: String)
+data class CompanionPlant(val id: PlantId, val name: String, val emoji: String?, val relationship: String)
 
 data class InsectAttraction(val name: String, val type: String)
 
@@ -20,7 +18,7 @@ data class SowingGuide(
 )
 
 data class PlantDetail(
-    val id: UUID,
+    val id: PlantId,
     val name: String,
     val latinName: String?,
     val category: String,

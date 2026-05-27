@@ -1,7 +1,7 @@
 package org.marnixrenne.kitchengarden.garden.domain
 
-import java.util.UUID
+import org.marnixrenne.kitchengarden.plants.domain.PlantId
 
-data class GardenSummary(val id: UUID, val name: String)
+data class GardenSummary(val id: GardenId, val name: String)
 data class CreateGardenRequest(val name: String)
-data class PlantInstance(val id: UUID, val plantId: UUID)
+data class PlantInstance(val id: PlantInstanceId, val plantId: PlantId)

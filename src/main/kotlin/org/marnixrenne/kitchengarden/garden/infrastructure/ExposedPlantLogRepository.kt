@@ -5,6 +5,8 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.marnixrenne.kitchengarden.garden.domain.*
+import org.marnixrenne.kitchengarden.plants.domain.PlantId
+import org.marnixrenne.kitchengarden.user.domain.UserId
 import org.springframework.stereotype.Repository
 import java.time.Instant
 import java.util.UUID
@@ -12,27 +14,25 @@ import java.util.UUID
 @Repository
 class ExposedPlantLogRepository : PlantLogRepository {
 
-    override fun save(userId: UUID, request: PlantLogRequest): PlantLogResponse {
+    override fun save(userId: UserId, request: PlantLogRequest): PlantLogResponse {
         return try {
             doSave(userId, request)
         } catch (e: ExposedSQLException) {
             val msg = e.message.orEmpty().lowercase()
             if ("unique" !in msg && "duplicate" !in msg) throw e
-            // UNIQUE(user_id, plant_id) fired from a concurrent insert for the same instance.
-            // Retry in a fresh transaction: the PlantLog row now exists.
             doSave(userId, request)
         }
     }
 
-    private fun doSave(userId: UUID, request: PlantLogRequest): PlantLogResponse = transaction {
+    private fun doSave(userId: UserId, request: PlantLogRequest): PlantLogResponse = transaction {
         val instanceRow = (GardenPlantInstances innerJoin Garden)
             .select(GardenPlantInstances.plantId)
-            .where { (GardenPlantInstances.id eq request.instanceId) and (Garden.userId eq userId) }
+            .where { (GardenPlantInstances.id eq request.instanceId.value) and (Garden.userId eq userId.value) }
             .firstOrNull() ?: error("Instance ${request.instanceId} not found for user")
         val plantId = instanceRow[GardenPlantInstances.plantId]
 
         val logId = PlantLog.selectAll()
-            .where { PlantLog.instanceId eq request.instanceId }
+            .where { PlantLog.instanceId eq request.instanceId.value }
             .map { it[PlantLog.id] }
             .firstOrNull()
             ?: run {
@@ -45,9 +45,9 @@ class ExposedPlantLogRepository : PlantLogRepository {
                 }
                 PlantLog.insert {
                     it[id]                  = newLogId
-                    it[PlantLog.userId]     = userId
+                    it[PlantLog.userId]     = userId.value
                     it[PlantLog.plantId]    = plantId
-                    it[PlantLog.instanceId] = request.instanceId
+                    it[PlantLog.instanceId] = request.instanceId.value
                     it[lifecycleState]      = initialState
                     it[createdAt]           = Instant.now()
                 }
@@ -65,37 +65,37 @@ class ExposedPlantLogRepository : PlantLogRepository {
         }
 
         PlantLogResponse(
-            id         = entryId,
-            logId      = logId,
+            id         = PlantLogEntryId(entryId),
+            logId      = PlantLogId(logId),
             instanceId = request.instanceId,
-            plantId    = plantId,
+            plantId    = PlantId(plantId),
             action     = request.action,
             date       = request.date,
             comment    = request.comment,
         )
     }
 
-    override fun deleteEntry(entryId: UUID): Unit = transaction {
-        PlantLogEntry.deleteWhere { PlantLogEntry.id eq entryId }
+    override fun deleteEntry(entryId: PlantLogEntryId): Unit = transaction {
+        PlantLogEntry.deleteWhere { PlantLogEntry.id eq entryId.value }
     }
 
-    override fun findAllByUser(userId: UUID, gardenId: UUID): Map<UUID, List<LoggedEntry>> = transaction {
+    override fun findAllByUser(userId: UserId, gardenId: GardenId): Map<PlantInstanceId, List<LoggedEntry>> = transaction {
         val instanceIds = GardenPlantInstances.selectAll()
-            .where { GardenPlantInstances.gardenId eq gardenId }
+            .where { GardenPlantInstances.gardenId eq gardenId.value }
             .map { it[GardenPlantInstances.id] }
         if (instanceIds.isEmpty()) return@transaction emptyMap()
 
         (PlantLog innerJoin PlantLogEntry)
             .selectAll()
             .where {
-                (PlantLog.userId eq userId) and
+                (PlantLog.userId eq userId.value) and
                 PlantLog.instanceId.isNotNull() and
                 (PlantLog.instanceId inList instanceIds)
             }
             .orderBy(PlantLogEntry.date, SortOrder.DESC)
-            .groupBy({ it[PlantLog.instanceId]!! }, { row ->
+            .groupBy({ PlantInstanceId(it[PlantLog.instanceId]!!) }, { row ->
                 LoggedEntry(
-                    id      = row[PlantLogEntry.id],
+                    id      = PlantLogEntryId(row[PlantLogEntry.id]),
                     action  = row[PlantLogEntry.action],
                     date    = row[PlantLogEntry.date],
                     comment = row[PlantLogEntry.comment],

@@ -1,7 +1,5 @@
 package org.marnixrenne.kitchengarden.user.domain
 
-import java.util.UUID
-
 interface UserRepository {
-    fun findIdByUsername(username: String): UUID?
+    fun findIdByUsername(username: String): UserId?
 }

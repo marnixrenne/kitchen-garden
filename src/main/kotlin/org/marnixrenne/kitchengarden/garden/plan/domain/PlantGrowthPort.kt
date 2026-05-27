@@ -1,6 +1,6 @@
 package org.marnixrenne.kitchengarden.garden.plan.domain
 
-import java.util.UUID
+import org.marnixrenne.kitchengarden.plants.domain.PlantId
 
 data class PlantGrowthData(
     val germinationDaysMin: Int?,
@@ -14,5 +14,5 @@ data class PlantGrowthData(
 )
 
 interface PlantGrowthPort {
-    fun loadGrowthData(plantId: UUID): PlantGrowthData?
+    fun loadGrowthData(plantId: PlantId): PlantGrowthData?
 }

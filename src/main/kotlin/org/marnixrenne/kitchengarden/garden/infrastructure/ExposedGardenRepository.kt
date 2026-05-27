@@ -8,6 +8,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.marnixrenne.kitchengarden.garden.domain.*
 import org.marnixrenne.kitchengarden.plants.domain.*
 import org.marnixrenne.kitchengarden.plants.infrastructure.*
+import org.marnixrenne.kitchengarden.user.domain.UserId
 import org.springframework.stereotype.Repository
 import java.time.Instant
 import java.time.LocalDate
@@ -51,16 +52,16 @@ class ExposedGardenRepository : GardenRepository {
 
     // ── Garden CRUD ──────────────────────────────────────────────────────────
 
-    override fun findGardens(userId: UUID): List<GardenSummary> = transaction {
+    override fun findGardens(userId: UserId): List<GardenSummary> = transaction {
         Garden.selectAll()
-            .where { Garden.userId eq userId }
+            .where { Garden.userId eq userId.value }
             .orderBy(Garden.createdAt)
-            .map { GardenSummary(it[Garden.id], it[Garden.name]) }
+            .map { GardenSummary(GardenId(it[Garden.id]), it[Garden.name]) }
     }
 
-    override fun createGarden(userId: UUID, name: String): GardenSummary = transaction {
-        val id = createGardenInTx(userId, name)
-        GardenSummary(id, name)
+    override fun createGarden(userId: UserId, name: String): GardenSummary = transaction {
+        val id = createGardenInTx(userId.value, name)
+        GardenSummary(GardenId(id), name)
     }
 
     private fun createGardenInTx(userId: UUID, name: String): UUID {
@@ -74,69 +75,66 @@ class ExposedGardenRepository : GardenRepository {
         return id
     }
 
-    override fun renameGarden(gardenId: UUID, userId: UUID, name: String): Boolean = transaction {
-        Garden.update({ (Garden.id eq gardenId) and (Garden.userId eq userId) }) {
+    override fun renameGarden(gardenId: GardenId, userId: UserId, name: String): Boolean = transaction {
+        Garden.update({ (Garden.id eq gardenId.value) and (Garden.userId eq userId.value) }) {
             it[Garden.name] = name
         } > 0
     }
 
-    override fun deleteGarden(gardenId: UUID, userId: UUID): Boolean = transaction {
-        // Include userId in the instance fetch so we only touch rows belonging to this user,
-        // avoiding a window where PlantLog rows could be deleted before the ownership check.
+    override fun deleteGarden(gardenId: GardenId, userId: UserId): Boolean = transaction {
         val instanceIds = (GardenPlantInstances innerJoin Garden)
             .select(GardenPlantInstances.id)
-            .where { (GardenPlantInstances.gardenId eq gardenId) and (Garden.userId eq userId) }
+            .where { (GardenPlantInstances.gardenId eq gardenId.value) and (Garden.userId eq userId.value) }
             .map { it[GardenPlantInstances.id] }
         if (instanceIds.isNotEmpty()) {
             PlantLog.deleteWhere { PlantLog.instanceId inList instanceIds }
         }
-        Garden.deleteWhere { (Garden.id eq gardenId) and (Garden.userId eq userId) } > 0
+        Garden.deleteWhere { (Garden.id eq gardenId.value) and (Garden.userId eq userId.value) } > 0
     }
 
     // ── Plant membership ─────────────────────────────────────────────────────
 
-    override fun findPlantIds(gardenId: UUID): Set<UUID> = transaction {
+    override fun findPlantIds(gardenId: GardenId): Set<PlantId> = transaction {
         GardenPlantInstances.selectAll()
-            .where { GardenPlantInstances.gardenId eq gardenId }
-            .map { it[GardenPlantInstances.plantId] }
+            .where { GardenPlantInstances.gardenId eq gardenId.value }
+            .map { PlantId(it[GardenPlantInstances.plantId]) }
             .toSet()
     }
 
-    override fun add(gardenId: UUID, plantId: UUID): Unit {
+    override fun add(gardenId: GardenId, plantId: PlantId) {
         try {
             transaction {
                 GardenPlantInstances.insert {
                     it[GardenPlantInstances.id]        = UUID.randomUUID()
-                    it[GardenPlantInstances.gardenId]  = gardenId
-                    it[GardenPlantInstances.plantId]   = plantId
+                    it[GardenPlantInstances.gardenId]  = gardenId.value
+                    it[GardenPlantInstances.plantId]   = plantId.value
                     it[GardenPlantInstances.createdAt] = Instant.now()
                 }
             }
         } catch (e: ExposedSQLException) {
             val msg = e.message.orEmpty().lowercase()
             if ("unique" !in msg && "duplicate" !in msg) throw e
-            // Already present (concurrent or duplicate request) — idempotent
         }
     }
 
-    override fun remove(gardenId: UUID, plantId: UUID): Unit = transaction {
+    override fun remove(gardenId: GardenId, plantId: PlantId): Unit = transaction {
         GardenPlantInstances.deleteWhere {
-            (GardenPlantInstances.gardenId eq gardenId) and (GardenPlantInstances.plantId eq plantId)
+            (GardenPlantInstances.gardenId eq gardenId.value) and (GardenPlantInstances.plantId eq plantId.value)
         }
     }
 
-    override fun findInstances(gardenId: UUID): List<PlantInstance> = transaction {
+    override fun findInstances(gardenId: GardenId): List<PlantInstance> = transaction {
         GardenPlantInstances.selectAll()
-            .where { GardenPlantInstances.gardenId eq gardenId }
+            .where { GardenPlantInstances.gardenId eq gardenId.value }
             .orderBy(GardenPlantInstances.createdAt)
-            .map { PlantInstance(it[GardenPlantInstances.id], it[GardenPlantInstances.plantId]) }
+            .map { PlantInstance(PlantInstanceId(it[GardenPlantInstances.id]), PlantId(it[GardenPlantInstances.plantId])) }
     }
 
     // ── Views ─────────────────────────────────────────────────────────────────
 
-    override fun findSuggestions(gardenId: UUID): PlantingSuggestions = transaction {
+    override fun findSuggestions(gardenId: GardenId): PlantingSuggestions = transaction {
         val ids = GardenPlantInstances.selectAll()
-            .where { GardenPlantInstances.gardenId eq gardenId }
+            .where { GardenPlantInstances.gardenId eq gardenId.value }
             .map { it[GardenPlantInstances.plantId] }
             .distinct()
 
@@ -146,7 +144,7 @@ class ExposedGardenRepository : GardenRepository {
             .where { Plants.id inList ids }
             .map { row ->
                 Triple(
-                    SimpleVeg(row[Plants.id], row[Plants.name], row[Plants.emoji]),
+                    SimpleVeg(PlantId(row[Plants.id]), row[Plants.name], row[Plants.emoji]),
                     row[Plants.sunRequirement],
                     row[Plants.id],
                 )
@@ -166,27 +164,27 @@ class ExposedGardenRepository : GardenRepository {
             .entries
             .sortedBy { SUN_ORDER.indexOf(it.key).takeIf { i -> i >= 0 } ?: Int.MAX_VALUE }
             .map { (sun, members) ->
-                val memberIds = members.map { it.first.id }.toSet()
+                val memberIds = members.map { it.third }.toSet()
                 val goodPairs = goodPairIds
                     .filter { (a, b) -> a in memberIds && b in memberIds }
                     .mapNotNull { (a, b) ->
-                        val va = vegById[a] ?: return@mapNotNull null
-                        val vb = vegById[b] ?: return@mapNotNull null
+                        val va = vegById[PlantId(a)] ?: return@mapNotNull null
+                        val vb = vegById[PlantId(b)] ?: return@mapNotNull null
                         VegPair(va, vb)
                     }
                 SunGroup(sun, members.map { it.first }.sortedBy { it.name }, goodPairs)
             }
 
         val conflicts = badPairIds.mapNotNull { (a, b) ->
-            val va = vegById[a] ?: return@mapNotNull null
-            val vb = vegById[b] ?: return@mapNotNull null
+            val va = vegById[PlantId(a)] ?: return@mapNotNull null
+            val vb = vegById[PlantId(b)] ?: return@mapNotNull null
             VegPair(va, vb)
         }
 
         PlantingSuggestions(sunGroups, conflicts)
     }
 
-    override fun findWeekSummary(gardenId: UUID, countryCode: String?): WeekSummary = transaction {
+    override fun findWeekSummary(gardenId: GardenId, countryCode: String?): WeekSummary = transaction {
         val today     = LocalDate.now()
         val month     = today.monthValue
         val week      = today.get(WeekFields.ISO.weekOfWeekBasedYear())
@@ -194,7 +192,7 @@ class ExposedGardenRepository : GardenRepository {
         val weekEnd   = weekStart.plusDays(6)
 
         val ids = GardenPlantInstances.selectAll()
-            .where { GardenPlantInstances.gardenId eq gardenId }
+            .where { GardenPlantInstances.gardenId eq gardenId.value }
             .map { it[GardenPlantInstances.plantId] }
             .distinct()
 
@@ -207,7 +205,7 @@ class ExposedGardenRepository : GardenRepository {
         if (activeIds.isEmpty()) return@transaction WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, emptyList())
 
         val userId = Garden.selectAll()
-            .where { Garden.id eq gardenId }
+            .where { Garden.id eq gardenId.value }
             .first()[Garden.userId]
 
         val actions = Plants.selectAll()
@@ -223,7 +221,7 @@ class ExposedGardenRepository : GardenRepository {
                 }
                 WeekAction(
                     type               = type,
-                    plant              = SimpleVeg(id, row[Plants.name], row[Plants.emoji]),
+                    plant              = SimpleVeg(PlantId(id), row[Plants.name], row[Plants.emoji]),
                     sowingMethod       = row[Plants.sowingMethod],
                     germinationDaysMin = row[Plants.germinationDaysMin],
                     germinationDaysMax = row[Plants.germinationDaysMax],
@@ -240,9 +238,9 @@ class ExposedGardenRepository : GardenRepository {
                 (PlantLogEntry.date lessEq weekEnd)
             }
             .orderBy(PlantLogEntry.date)
-            .groupBy({ it[PlantLog.plantId] }, { row ->
+            .groupBy({ PlantId(it[PlantLog.plantId]) }, { row ->
                 LoggedEntry(
-                    id      = row[PlantLogEntry.id],
+                    id      = PlantLogEntryId(row[PlantLogEntry.id]),
                     action  = row[PlantLogEntry.action],
                     date    = row[PlantLogEntry.date],
                     comment = row[PlantLogEntry.comment],
@@ -256,9 +254,9 @@ class ExposedGardenRepository : GardenRepository {
         WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, actionsWithEntries)
     }
 
-    override fun findDetails(gardenId: UUID, countryCode: String?): List<PlantDetail> = transaction {
+    override fun findDetails(gardenId: GardenId, countryCode: String?): List<PlantDetail> = transaction {
         val ids = GardenPlantInstances.selectAll()
-            .where { GardenPlantInstances.gardenId eq gardenId }
+            .where { GardenPlantInstances.gardenId eq gardenId.value }
             .map { it[GardenPlantInstances.plantId] }
             .distinct()
 
@@ -282,7 +280,7 @@ class ExposedGardenRepository : GardenRepository {
             .groupBy({ it[CompanionPlants.plantId] }, { row ->
                 val companionRow = plantRows[row[CompanionPlants.companionId]]
                 CompanionPlant(
-                    id           = row[CompanionPlants.companionId],
+                    id           = PlantId(row[CompanionPlants.companionId]),
                     name         = companionRow?.get(Plants.name) ?: "",
                     emoji        = companionRow?.get(Plants.emoji),
                     relationship = row[CompanionPlants.relationship],
@@ -292,7 +290,7 @@ class ExposedGardenRepository : GardenRepository {
         ids.mapNotNull { id ->
             val row = plantRows[id] ?: return@mapNotNull null
             PlantDetail(
-                id               = row[Plants.id],
+                id               = PlantId(id),
                 name             = row[Plants.name],
                 latinName        = row[Plants.latinName],
                 category         = row[Plants.category],

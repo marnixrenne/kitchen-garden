@@ -1,10 +1,9 @@
 package org.marnixrenne.kitchengarden.garden.domain
 
 import java.time.LocalDate
-import java.util.UUID
 
 data class LoggedEntry(
-    val id: UUID,
+    val id: PlantLogEntryId,
     val action: String,
     val date: LocalDate,
     val comment: String?,

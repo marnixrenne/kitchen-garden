@@ -1,7 +1,8 @@
 package org.marnixrenne.kitchengarden.garden.lifecycle.domain
 
+import org.marnixrenne.kitchengarden.garden.domain.PlantInstanceId
+import org.marnixrenne.kitchengarden.plants.domain.PlantId
 import java.time.LocalDate
-import java.util.UUID
 
 enum class LifecycleState(val key: String) {
     SEEDED_INDOOR("seeded_indoor"),
@@ -33,8 +34,8 @@ enum class LifecycleState(val key: String) {
 }
 
 data class PlantLifecycle(
-    val instanceId: UUID,
-    val plantId: UUID,
+    val instanceId: PlantInstanceId,
+    val plantId: PlantId,
     val state: String,
     val nextState: String?,
     val date: LocalDate? = null,

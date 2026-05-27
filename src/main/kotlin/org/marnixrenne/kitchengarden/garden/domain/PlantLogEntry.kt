@@ -1,20 +1,20 @@
 package org.marnixrenne.kitchengarden.garden.domain
 
+import org.marnixrenne.kitchengarden.plants.domain.PlantId
 import java.time.LocalDate
-import java.util.UUID
 
 data class PlantLogRequest(
-    val instanceId: UUID,
+    val instanceId: PlantInstanceId,
     val action: String,
     val date: LocalDate,
     val comment: String?,
 )
 
 data class PlantLogResponse(
-    val id: UUID,
-    val logId: UUID,
-    val instanceId: UUID,
-    val plantId: UUID,
+    val id: PlantLogEntryId,
+    val logId: PlantLogId,
+    val instanceId: PlantInstanceId,
+    val plantId: PlantId,
     val action: String,
     val date: LocalDate,
     val comment: String?,

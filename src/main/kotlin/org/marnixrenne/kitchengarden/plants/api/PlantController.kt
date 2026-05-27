@@ -3,10 +3,10 @@ package org.marnixrenne.kitchengarden.plants.api
 import org.marnixrenne.kitchengarden.plants.application.PlantQueryService
 import org.marnixrenne.kitchengarden.plants.domain.Plant
 import org.marnixrenne.kitchengarden.plants.domain.PlantDetail
+import org.marnixrenne.kitchengarden.plants.domain.PlantId
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-import java.util.UUID
 
 @RestController
 @RequestMapping("/api/plants")
@@ -27,7 +27,7 @@ class PlantController(private val plantService: PlantQueryService) {
     }
 
     @GetMapping("/{id}")
-    fun getById(@PathVariable id: UUID, authentication: Authentication?): ResponseEntity<PlantDetail> {
+    fun getById(@PathVariable id: PlantId, authentication: Authentication?): ResponseEntity<PlantDetail> {
         val plant = plantService.findById(id, authentication) ?: return ResponseEntity.notFound().build()
         return ResponseEntity.ok(plant)
     }

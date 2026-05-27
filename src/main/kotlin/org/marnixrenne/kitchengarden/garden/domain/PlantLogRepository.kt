@@ -1,9 +1,9 @@
 package org.marnixrenne.kitchengarden.garden.domain
 
-import java.util.UUID
+import org.marnixrenne.kitchengarden.user.domain.UserId
 
 interface PlantLogRepository {
-    fun save(userId: UUID, request: PlantLogRequest): PlantLogResponse
-    fun deleteEntry(entryId: UUID)
-    fun findAllByUser(userId: UUID, gardenId: UUID): Map<UUID, List<LoggedEntry>>
+    fun save(userId: UserId, request: PlantLogRequest): PlantLogResponse
+    fun deleteEntry(entryId: PlantLogEntryId)
+    fun findAllByUser(userId: UserId, gardenId: GardenId): Map<PlantInstanceId, List<LoggedEntry>>
 }

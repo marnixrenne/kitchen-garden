@@ -3,7 +3,6 @@ package org.marnixrenne.kitchengarden.plants.infrastructure
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.marnixrenne.kitchengarden.plants.domain.*
-import org.marnixrenne.kitchengarden.plants.domain.PlantRepository
 import org.springframework.stereotype.Repository
 import java.util.UUID
 
@@ -15,7 +14,7 @@ class ExposedPlantRepository : PlantRepository {
             .orderBy(Plants.category to SortOrder.ASC, Plants.name to SortOrder.ASC)
             .map { row ->
                 Plant(
-                    id       = row[Plants.id],
+                    id       = PlantId(row[Plants.id]),
                     name     = row[Plants.name],
                     category = row[Plants.category],
                     emoji    = row[Plants.emoji],
@@ -31,7 +30,7 @@ class ExposedPlantRepository : PlantRepository {
             .orderBy(Plants.category to SortOrder.ASC, Plants.name to SortOrder.ASC)
             .map { row ->
                 Plant(
-                    id       = row[Plants.id],
+                    id       = PlantId(row[Plants.id]),
                     name     = row[Plants.name],
                     category = row[Plants.category],
                     emoji    = row[Plants.emoji],
@@ -40,22 +39,22 @@ class ExposedPlantRepository : PlantRepository {
             }
     }
 
-    override fun findById(id: UUID, countryCode: String?): PlantDetail? = transaction {
+    override fun findById(id: PlantId, countryCode: String?): PlantDetail? = transaction {
         Plants.selectAll()
-            .where { Plants.id eq id }
+            .where { Plants.id eq id.value }
             .map { row ->
-                val seedingMonths    = resolvedMonthNums(SeedingMonths.plantId,   SeedingMonths.monthNum,   SeedingMonths.countryCode,   id, countryCode)
-                val harvestingMonths = resolvedMonthNums(HarvestingMonths.plantId, HarvestingMonths.monthNum, HarvestingMonths.countryCode, id, countryCode)
+                val seedingMonths    = resolvedMonthNums(SeedingMonths.plantId,   SeedingMonths.monthNum,   SeedingMonths.countryCode,   id.value, countryCode)
+                val harvestingMonths = resolvedMonthNums(HarvestingMonths.plantId, HarvestingMonths.monthNum, HarvestingMonths.countryCode, id.value, countryCode)
                 val countries = (PlantCountries innerJoin Countries)
                     .selectAll()
-                    .where { PlantCountries.plantId eq id }
+                    .where { PlantCountries.plantId eq id.value }
                     .map { Country(it[Countries.code], it[Countries.name]) }
                     .sortedBy { it.name }
                 val companions = run {
                     val pairs = CompanionPlants.selectAll()
-                        .where { (CompanionPlants.plantId eq id) or (CompanionPlants.companionId eq id) }
+                        .where { (CompanionPlants.plantId eq id.value) or (CompanionPlants.companionId eq id.value) }
                         .map { r ->
-                            val companionId = if (r[CompanionPlants.plantId] == id)
+                            val companionId = if (r[CompanionPlants.plantId] == id.value)
                                 r[CompanionPlants.companionId] else r[CompanionPlants.plantId]
                             companionId to r[CompanionPlants.relationship]
                         }
@@ -64,7 +63,7 @@ class ExposedPlantRepository : PlantRepository {
                         .associate { it[Plants.id] to it }
                     pairs.mapNotNull { (companionId, relationship) ->
                         val plant = plantMap[companionId] ?: return@mapNotNull null
-                        CompanionPlant(companionId, plant[Plants.name], plant[Plants.emoji], relationship)
+                        CompanionPlant(PlantId(companionId), plant[Plants.name], plant[Plants.emoji], relationship)
                     }.sortedWith(compareBy({ it.relationship }, { it.name }))
                 }
                 val sowingGuide = SowingGuide(
@@ -79,11 +78,11 @@ class ExposedPlantRepository : PlantRepository {
                 ).takeIf { it.method != null }
                 val typeOrder = mapOf("pollinator" to 0, "beneficial" to 1, "pest" to 2)
                 val insects = PlantInsects.selectAll()
-                    .where { PlantInsects.plantId eq id }
+                    .where { PlantInsects.plantId eq id.value }
                     .map { InsectAttraction(it[PlantInsects.insectName], it[PlantInsects.insectType]) }
                     .sortedWith(compareBy({ typeOrder[it.type] ?: 99 }, { it.name }))
                 PlantDetail(
-                    id               = row[Plants.id],
+                    id               = PlantId(row[Plants.id]),
                     name             = row[Plants.name],
                     latinName        = row[Plants.latinName],
                     category         = row[Plants.category],

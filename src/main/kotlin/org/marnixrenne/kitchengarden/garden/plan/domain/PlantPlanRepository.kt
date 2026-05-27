@@ -1,8 +1,11 @@
 package org.marnixrenne.kitchengarden.garden.plan.domain
 
-import java.util.UUID
+import org.marnixrenne.kitchengarden.garden.domain.GardenId
+import org.marnixrenne.kitchengarden.garden.domain.PlantInstanceId
+import org.marnixrenne.kitchengarden.garden.domain.PlantLogEntryId
+import org.marnixrenne.kitchengarden.user.domain.UserId
 
 interface PlantPlanRepository {
-    fun save(logEntryId: UUID, periods: List<PlanPeriod>)
-    fun findByUser(userId: UUID, gardenId: UUID): Map<UUID, List<PlanEntry>>
+    fun save(logEntryId: PlantLogEntryId, periods: List<PlanPeriod>)
+    fun findByUser(userId: UserId, gardenId: GardenId): Map<PlantInstanceId, List<PlanEntry>>
 }

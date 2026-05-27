@@ -7,20 +7,20 @@ import org.marnixrenne.kitchengarden.garden.infrastructure.FertilizingSchedules
 import org.marnixrenne.kitchengarden.garden.infrastructure.PruningSchedules
 import org.marnixrenne.kitchengarden.garden.infrastructure.WateringSchedules
 import org.marnixrenne.kitchengarden.garden.plan.domain.*
+import org.marnixrenne.kitchengarden.plants.domain.PlantId
 import org.marnixrenne.kitchengarden.plants.infrastructure.HarvestingMonths
 import org.marnixrenne.kitchengarden.plants.infrastructure.Plants
 import org.springframework.stereotype.Component
-import java.util.UUID
 
 @Component
 class ExposedPlantGrowthAdapter : PlantGrowthPort {
 
-    override fun loadGrowthData(plantId: UUID): PlantGrowthData? = transaction {
-        val plant = Plants.selectAll().where { Plants.id eq plantId }.firstOrNull()
+    override fun loadGrowthData(plantId: PlantId): PlantGrowthData? = transaction {
+        val plant = Plants.selectAll().where { Plants.id eq plantId.value }.firstOrNull()
             ?: return@transaction null
 
         val harvestMonths = HarvestingMonths.selectAll()
-            .where { (HarvestingMonths.plantId eq plantId) and HarvestingMonths.countryCode.isNull() }
+            .where { (HarvestingMonths.plantId eq plantId.value) and HarvestingMonths.countryCode.isNull() }
             .map { it[HarvestingMonths.monthNum] }
             .sorted()
 
