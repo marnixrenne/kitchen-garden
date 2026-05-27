@@ -13,6 +13,3 @@ export function setActiveGarden(id) {
   else localStorage.removeItem('activeGardenId')
 }
 
-export function gardenParam() {
-  return activeGardenId.value ? `?gardenId=${activeGardenId.value}` : ''
-}

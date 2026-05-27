@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { csrfHeaders } from '../stores/auth.js'
-import { gardenParam } from '../stores/garden.js'
+import { activeGardenId } from '../stores/garden.js'
 
 const emit = defineEmits(['refresh'])
 const { t, te, tm, locale } = useI18n()
@@ -218,14 +218,14 @@ const actionGroups = computed(() => {
 
 async function fetchAll() {
   loading.value = true
-  const p = gardenParam()
+  const gid = activeGardenId.value
   const [weekRes, instRes, logRes, planRes, lcRes, detailRes] = await Promise.all([
-    fetch(`/api/garden/week${p}`),
-    fetch(`/api/garden/instances${p}`),
-    fetch('/api/garden/plant-log'),
-    fetch('/api/garden/plan'),
-    fetch('/api/garden/lifecycle'),
-    fetch(`/api/garden/details${p}`),
+    fetch(`/api/gardens/${gid}/week`),
+    fetch(`/api/gardens/${gid}/instances`),
+    fetch(`/api/gardens/${gid}/plant-log`),
+    fetch(`/api/gardens/${gid}/plan`),
+    fetch(`/api/gardens/${gid}/lifecycle`),
+    fetch(`/api/gardens/${gid}/details`),
   ])
   if (weekRes.ok)   weekSummary.value = await weekRes.json()
   if (instRes.ok)   instances.value   = await instRes.json()
@@ -246,7 +246,7 @@ async function submitAdvance() {
   advanceModal.value.error = ''
   try {
     const { item, date, comment } = advanceModal.value
-    const res = await fetch(`/api/garden/lifecycle/${item.instanceId}/advance`, {
+    const res = await fetch(`/api/gardens/${activeGardenId.value}/lifecycle/${item.instanceId}/advance`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
       body: JSON.stringify({ date, comment: comment || null }),
@@ -269,7 +269,7 @@ function openActionModal(plant, action, instanceId) {
 }
 
 async function postAction(instanceId, action, date, comment) {
-  return fetch('/api/garden/plant-log', {
+  return fetch(`/api/gardens/${activeGardenId.value}/plant-log`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ instanceId, action, date, comment: comment || null }),

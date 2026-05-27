@@ -5,8 +5,8 @@ import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
-import org.marnixrenne.kitchengarden.garden.Garden
-import org.marnixrenne.kitchengarden.garden.GardenPlantInstances
+import org.marnixrenne.kitchengarden.garden.infrastructure.Garden
+import org.marnixrenne.kitchengarden.garden.infrastructure.GardenPlantInstances
 import org.marnixrenne.kitchengarden.security.Users
 import org.springframework.security.core.session.SessionRegistry
 import org.springframework.security.core.userdetails.UserDetails

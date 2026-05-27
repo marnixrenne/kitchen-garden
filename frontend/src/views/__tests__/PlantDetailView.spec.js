@@ -89,10 +89,10 @@ const PLANTS = {
 // ---------------------------------------------------------------------------
 function makeFetch(gardenIds = []) {
   return vi.fn(async (url, options) => {
-    if (url === '/api/garden' && (!options || options.method === undefined)) {
+    if (url.match(/^\/api\/gardens\/[^/]+$/) && (!options || options.method === undefined)) {
       return { ok: true, json: async () => gardenIds }
     }
-    if (url.startsWith('/api/garden/')) {
+    if (url.match(/^\/api\/gardens\//)) {
       return { ok: true, json: async () => ({}) }
     }
     const match = url.match(/^\/api\/plants\/(.+)$/)

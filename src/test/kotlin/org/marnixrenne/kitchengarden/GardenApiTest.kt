@@ -21,9 +21,19 @@ class GardenApiTest : IntegrationTestBase() {
     private fun tomatoId() =
         jdbc.queryForObject("SELECT id FROM pts_plants WHERE name = 'Tomato'", String::class.java)!!
 
+    private fun createGardenId(username: String = "admin", name: String = "Test-${System.nanoTime()}"): String {
+        mvc.post("/api/gardens") {
+            with(user(username)); with(csrf())
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"name":"$name"}"""
+        }.andExpect { status { isCreated() } }
+        return jdbc.queryForObject("SELECT id FROM pts_garden WHERE name = ?", String::class.java, name)!!
+    }
+
     @Test
     fun `authenticated user starts with empty garden`() {
-        mvc.get("/api/garden") {
+        val gardenId = createGardenId()
+        mvc.get("/api/gardens/$gardenId") {
             with(user("admin"))
         }.andExpect {
             status { isOk() }
@@ -33,26 +43,27 @@ class GardenApiTest : IntegrationTestBase() {
 
     @Test
     fun `user can add and remove a plant from garden`() {
+        val gardenId = createGardenId()
         val id = tomatoId()
 
-        mvc.put("/api/garden/$id") {
+        mvc.put("/api/gardens/$gardenId/plants/$id") {
             with(user("admin"))
             with(csrf())
         }.andExpect { status { isNoContent() } }
 
-        mvc.get("/api/garden") {
+        mvc.get("/api/gardens/$gardenId") {
             with(user("admin"))
         }.andExpect {
             status { isOk() }
             jsonPath("$") { value(hasItem(id)) }
         }
 
-        mvc.delete("/api/garden/$id") {
+        mvc.delete("/api/gardens/$gardenId/plants/$id") {
             with(user("admin"))
             with(csrf())
         }.andExpect { status { isNoContent() } }
 
-        mvc.get("/api/garden") {
+        mvc.get("/api/gardens/$gardenId") {
             with(user("admin"))
         }.andExpect {
             status { isOk() }
@@ -62,11 +73,12 @@ class GardenApiTest : IntegrationTestBase() {
 
     @Test
     fun `garden details returns full plant info including countries`() {
+        val gardenId = createGardenId()
         val id = tomatoId()
 
-        mvc.put("/api/garden/$id") { with(user("admin")); with(csrf()) }
+        mvc.put("/api/gardens/$gardenId/plants/$id") { with(user("admin")); with(csrf()) }
 
-        mvc.get("/api/garden/details") {
+        mvc.get("/api/gardens/$gardenId/details") {
             with(user("admin"))
         }.andExpect {
             status { isOk() }
@@ -75,26 +87,16 @@ class GardenApiTest : IntegrationTestBase() {
             jsonPath("$[?(@.name=='Tomato')].seedingMonths") { value(hasSize<Any>(greaterThan(0))) }
         }
 
-        mvc.delete("/api/garden/$id") { with(user("admin")); with(csrf()) }
+        mvc.delete("/api/gardens/$gardenId/plants/$id") { with(user("admin")); with(csrf()) }
     }
 
     @Test
     fun `deleting a garden removes all instances, log entries and plan entries`() {
         val tomatoId = tomatoId()
-
-        // Create a dedicated garden for this test
-        mvc.post("/api/garden/gardens") {
-            with(user("admin")); with(csrf())
-            contentType = MediaType.APPLICATION_JSON
-            content = """{"name":"Delete Cascade Test Garden"}"""
-        }.andExpect { status { isCreated() } }
-
-        val gardenId = jdbc.queryForObject(
-            "SELECT id FROM pts_garden WHERE name = 'Delete Cascade Test Garden'",
-            String::class.java)!!
+        val gardenId = createGardenId(name = "Delete Cascade Test Garden ${System.nanoTime()}")
 
         // Add tomato to the garden, creating an instance
-        mvc.put("/api/garden/$tomatoId?gardenId=$gardenId") {
+        mvc.put("/api/gardens/$gardenId/plants/$tomatoId") {
             with(user("admin")); with(csrf())
         }.andExpect { status { isNoContent() } }
 
@@ -103,7 +105,7 @@ class GardenApiTest : IntegrationTestBase() {
             String::class.java, gardenId)!!
 
         // Seed the plant — creates a plant log row and multiple plan entries
-        mvc.post("/api/garden/plant-log") {
+        mvc.post("/api/gardens/$gardenId/plant-log") {
             with(user("admin")); with(csrf())
             contentType = MediaType.APPLICATION_JSON
             content = """{"instanceId":"$instanceId","action":"seeding_direct","date":"2025-04-01","comment":null}"""
@@ -127,7 +129,7 @@ class GardenApiTest : IntegrationTestBase() {
         )
 
         // Delete the garden
-        mvc.delete("/api/garden/gardens/$gardenId") {
+        mvc.delete("/api/gardens/$gardenId") {
             with(user("admin")); with(csrf())
         }.andExpect { status { isNoContent() } }
 

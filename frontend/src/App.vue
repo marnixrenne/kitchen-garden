@@ -32,7 +32,7 @@ async function handleLogout() {
 // ── Gardens list ─────────────────────────────────────────────────────────────
 
 async function fetchGardens() {
-  const res = await fetch('/api/garden/gardens')
+  const res = await fetch('/api/gardens')
   if (res.ok) {
     gardens.value = await res.json()
     if (gardens.value.length > 0 && !activeGardenId.value) {
@@ -77,7 +77,7 @@ async function submitNewGarden() {
   newGardenModal.value.saving = true
   newGardenModal.value.error = ''
   try {
-    const res = await fetch('/api/garden/gardens', {
+    const res = await fetch('/api/gardens', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
       body: JSON.stringify({ name }),

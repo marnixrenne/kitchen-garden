@@ -3,10 +3,10 @@ package org.marnixrenne.kitchengarden
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.marnixrenne.kitchengarden.garden.plan.FertilizingConfig
-import org.marnixrenne.kitchengarden.garden.plan.PlantPlanCalculator
-import org.marnixrenne.kitchengarden.garden.plan.PruningConfig
-import org.marnixrenne.kitchengarden.garden.plan.WateringConfig
+import org.marnixrenne.kitchengarden.garden.plan.domain.FertilizingConfig
+import org.marnixrenne.kitchengarden.garden.plan.domain.PlantPlanCalculator
+import org.marnixrenne.kitchengarden.garden.plan.domain.PruningConfig
+import org.marnixrenne.kitchengarden.garden.plan.domain.WateringConfig
 import java.time.LocalDate
 
 class PlantPlanCalculatorTest {

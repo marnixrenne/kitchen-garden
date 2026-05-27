@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { gardenParam, activeGardenId, activeGardenName } from '../stores/garden.js'
+import { activeGardenId, activeGardenName } from '../stores/garden.js'
 
 const router = useRouter()
 const { t, te, locale } = useI18n()
@@ -35,11 +35,10 @@ const filtered = computed(() => {
 async function load() {
   loading.value = true
   allEntries.value = []
-  const param = gardenParam()
   const [detailsRes, instancesRes, logRes] = await Promise.all([
-    fetch(`/api/garden/details${param}`),
-    fetch(`/api/garden/instances${param}`),
-    fetch('/api/garden/plant-log'),
+    fetch(`/api/gardens/${activeGardenId.value}/details`),
+    fetch(`/api/gardens/${activeGardenId.value}/instances`),
+    fetch(`/api/gardens/${activeGardenId.value}/plant-log`),
   ])
   if (!detailsRes.ok || !instancesRes.ok || !logRes.ok) {
     loading.value = false

@@ -3,7 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ThisWeekCard from '../components/ThisWeekCard.vue'
-import { gardenParam, activeGardenName, activeGardenId, gardens, setActiveGarden } from '../stores/garden.js'
+import { activeGardenName, activeGardenId, gardens, setActiveGarden } from '../stores/garden.js'
 import { csrfHeaders } from '../stores/auth.js'
 
 const router = useRouter()
@@ -141,22 +141,22 @@ function hasExpandContent(plantId) {
 }
 
 async function fetchInstances() {
-  const res = await fetch(`/api/garden/instances${gardenParam()}`)
+  const res = await fetch(`/api/gardens/${activeGardenId.value}/instances`)
   if (res.ok) instances.value = await res.json()
 }
 
 async function fetchPlantLog() {
-  const res = await fetch('/api/garden/plant-log')
+  const res = await fetch(`/api/gardens/${activeGardenId.value}/plant-log`)
   if (res.ok) plantLog.value = await res.json()
 }
 
 async function fetchPlantPlan() {
-  const res = await fetch('/api/garden/plan')
+  const res = await fetch(`/api/gardens/${activeGardenId.value}/plan`)
   if (res.ok) plantPlan.value = await res.json()
 }
 
 async function fetchLifecycle() {
-  const res = await fetch('/api/garden/lifecycle')
+  const res = await fetch(`/api/gardens/${activeGardenId.value}/lifecycle`)
   if (res.ok) lifecycle.value = await res.json()
 }
 
@@ -292,7 +292,7 @@ async function confirmRenameGarden() {
   const id = activeGardenId.value
   if (!id) return
   editModal.value.saving = true
-  const res = await fetch(`/api/garden/gardens/${id}`, {
+  const res = await fetch(`/api/gardens/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ name: editModal.value.name.trim() }),
@@ -313,7 +313,7 @@ async function confirmDeleteGarden() {
   const id = activeGardenId.value
   if (!id) return
   deleteModal.value.deleting = true
-  const res = await fetch(`/api/garden/gardens/${id}`, {
+  const res = await fetch(`/api/gardens/${id}`, {
     method: 'DELETE',
     headers: csrfHeaders(),
   })
@@ -336,8 +336,8 @@ async function loadAll() {
   lifecycle.value = {}
   expandedPlants.value = new Set()
   const [detailsRes, suggestionsRes] = await Promise.all([
-    fetch(`/api/garden/details${gardenParam()}`),
-    fetch(`/api/garden/suggestions${gardenParam()}`),
+    fetch(`/api/gardens/${activeGardenId.value}/details`),
+    fetch(`/api/gardens/${activeGardenId.value}/suggestions`),
   ])
   if (detailsRes.ok)     plants.value      = await detailsRes.json()
   if (suggestionsRes.ok) suggestions.value = await suggestionsRes.json()
