@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.marnixrenne.kitchengarden.garden.domain.*
+import org.marnixrenne.kitchengarden.garden.lifecycle.domain.LifecycleState
 import org.marnixrenne.kitchengarden.plants.domain.PlantId
 import org.marnixrenne.kitchengarden.user.domain.UserId
 import org.springframework.stereotype.Repository
@@ -38,17 +39,17 @@ class ExposedPlantLogRepository : PlantLogRepository {
             ?: run {
                 val newLogId = UUID.randomUUID()
                 val initialState = when (request.action) {
-                    "seeding_indoor" -> "seeded_indoor"
-                    "seeding_direct" -> "seeded_direct"
-                    "planting"       -> "planted"
-                    else             -> "seeded_direct"
+                    LogAction.SEEDING_INDOOR -> LifecycleState.SEEDED_INDOOR
+                    LogAction.SEEDING_OUTDOOR -> LifecycleState.SEEDED_OUTDOOR
+                    LogAction.PLANTING       -> LifecycleState.PLANTED
+                    else                     -> LifecycleState.GROWING
                 }
                 PlantLog.insert {
                     it[id]                  = newLogId
                     it[PlantLog.userId]     = userId.value
                     it[PlantLog.plantId]    = plantId
                     it[PlantLog.instanceId] = request.instanceId.value
-                    it[lifecycleState]      = initialState
+                    it[lifecycleState]      = initialState.key
                     it[createdAt]           = Instant.now()
                 }
                 newLogId
@@ -58,7 +59,7 @@ class ExposedPlantLogRepository : PlantLogRepository {
         PlantLogEntry.insert {
             it[id]                  = entryId
             it[PlantLogEntry.logId] = logId
-            it[action]              = request.action
+            it[action]              = request.action.key
             it[date]                = request.date
             it[comment]             = request.comment
             it[createdAt]           = Instant.now()
@@ -96,7 +97,7 @@ class ExposedPlantLogRepository : PlantLogRepository {
             .groupBy({ PlantInstanceId(it[PlantLog.instanceId]!!) }, { row ->
                 LoggedEntry(
                     id      = PlantLogEntryId(row[PlantLogEntry.id]),
-                    action  = row[PlantLogEntry.action],
+                    action  = LogAction.from(row[PlantLogEntry.action]),
                     date    = row[PlantLogEntry.date],
                     comment = row[PlantLogEntry.comment],
                 )

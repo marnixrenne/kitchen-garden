@@ -303,10 +303,10 @@ export default {
     },
     lifecycle: {
       seeded_indoor:     'Seeded indoors',
-      seeded_direct:     'Seeded outside',
+      seeded_outdoor:     'Seeded outside',
       planted:           'Planted',
       germinating_indoor:'Germinating',
-      germinating_direct:'Germinating',
+      germinating_outdoor:'Germinating',
       transplanted:      'Transplanted',
       growing:           'Growing',
       ready_to_harvest:  'Ready to harvest',
@@ -314,7 +314,7 @@ export default {
     },
     advanceLabel: {
       germinating_indoor: 'Germinated',
-      germinating_direct: 'Germinated',
+      germinating_outdoor: 'Germinated',
       transplanted:       'Transplanted',
       growing:            'Growing',
       ready_to_harvest:   'Ready to harvest',
@@ -322,7 +322,7 @@ export default {
     },
     loggedAction: {
       seeding_indoor: 'Seeded indoors',
-      seeding_direct: 'Seeded outside',
+      seeding_outdoor: 'Seeded outside',
       planting:       'Planted',
       fertilizing:    'Fertilized',
       pruning:        'Pruned',

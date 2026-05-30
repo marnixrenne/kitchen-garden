@@ -303,10 +303,10 @@ export default {
     },
     lifecycle: {
       seeded_indoor:     'Binnengezaaid',
-      seeded_direct:     'Buitengezaaid',
+      seeded_outdoor:     'Buitengezaaid',
       planted:           'Geplant',
       germinating_indoor:'Aan het kiemen',
-      germinating_direct:'Aan het kiemen',
+      germinating_outdoor:'Aan het kiemen',
       transplanted:      'Overgepoot',
       growing:           'Aan het groeien',
       ready_to_harvest:  'Oogstklaar',
@@ -314,7 +314,7 @@ export default {
     },
     advanceLabel: {
       germinating_indoor: 'Gekiemd',
-      germinating_direct: 'Gekiemd',
+      germinating_outdoor: 'Gekiemd',
       transplanted:       'Overpoten',
       growing:            'Aan het groeien',
       ready_to_harvest:   'Oogstklaar',
@@ -322,7 +322,7 @@ export default {
     },
     loggedAction: {
       seeding_indoor: 'Binnengezaaid',
-      seeding_direct: 'Buitengezaaid',
+      seeding_outdoor: 'Buitengezaaid',
       planting:       'Geplant',
       fertilizing:    'Bemest',
       pruning:        'Gesnoeid',

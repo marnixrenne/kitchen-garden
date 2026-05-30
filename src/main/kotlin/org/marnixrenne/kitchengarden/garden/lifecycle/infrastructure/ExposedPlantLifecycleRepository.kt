@@ -33,8 +33,8 @@ class ExposedPlantLifecycleRepository : PlantLifecycleRepository {
                 instanceId to PlantLifecycle(
                     instanceId = instanceId,
                     plantId    = PlantId(row[PlantLog.plantId]),
-                    state      = state.key,
-                    nextState  = state.next()?.key,
+                    state      = state,
+                    nextState  = state.next(),
                     date       = row[PlantLog.lifecycleDate],
                     comment    = row[PlantLog.lifecycleComment],
                 )
@@ -71,8 +71,8 @@ class ExposedPlantLifecycleRepository : PlantLifecycleRepository {
             return@transaction PlantLifecycle(
                 instanceId = instanceId,
                 plantId    = PlantId(currentRow[PlantLog.plantId]),
-                state      = currentState.key,
-                nextState  = currentState.next()?.key,
+                state      = currentState,
+                nextState  = currentState.next(),
                 date       = currentRow[PlantLog.lifecycleDate],
                 comment    = currentRow[PlantLog.lifecycleComment],
             )
@@ -81,8 +81,8 @@ class ExposedPlantLifecycleRepository : PlantLifecycleRepository {
         PlantLifecycle(
             instanceId = instanceId,
             plantId    = PlantId(row[PlantLog.plantId]),
-            state      = next.key,
-            nextState  = next.next()?.key,
+            state      = next,
+            nextState  = next.next(),
             date       = date,
             comment    = comment,
         )

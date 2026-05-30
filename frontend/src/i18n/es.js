@@ -301,10 +301,10 @@ export default {
     },
     lifecycle: {
       seeded_indoor:     'Sembrado en interior',
-      seeded_direct:     'Sembrado en exterior',
+      seeded_outdoor:     'Sembrado en exterior',
       planted:           'Plantado',
       germinating_indoor:'Germinando',
-      germinating_direct:'Germinando',
+      germinating_outdoor:'Germinando',
       transplanted:      'Trasplantado',
       growing:           'Creciendo',
       ready_to_harvest:  'Listo para cosechar',
@@ -312,7 +312,7 @@ export default {
     },
     advanceLabel: {
       germinating_indoor: 'Germinado',
-      germinating_direct: 'Germinado',
+      germinating_outdoor: 'Germinado',
       transplanted:       'Trasplantado',
       growing:            'Creciendo',
       ready_to_harvest:   'Listo para cosechar',
@@ -320,7 +320,7 @@ export default {
     },
     loggedAction: {
       seeding_indoor: 'Sembrado en interior',
-      seeding_direct: 'Sembrado en exterior',
+      seeding_outdoor: 'Sembrado en exterior',
       planting:       'Plantado',
       fertilizing:    'Abonado',
       pruning:        'Podado',

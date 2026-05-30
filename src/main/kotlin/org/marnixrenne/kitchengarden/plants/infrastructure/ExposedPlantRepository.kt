@@ -63,11 +63,11 @@ class ExposedPlantRepository : PlantRepository {
                         .associate { it[Plants.id] to it }
                     pairs.mapNotNull { (companionId, relationship) ->
                         val plant = plantMap[companionId] ?: return@mapNotNull null
-                        CompanionPlant(PlantId(companionId), plant[Plants.name], plant[Plants.emoji], relationship)
-                    }.sortedWith(compareBy({ it.relationship }, { it.name }))
+                        CompanionPlant(PlantId(companionId), plant[Plants.name], plant[Plants.emoji], CompanionRelationship.from(relationship))
+                    }.sortedWith(compareBy({ it.relationship.key }, { it.name }))
                 }
                 val sowingGuide = SowingGuide(
-                    method             = row[Plants.sowingMethod],
+                    method             = row[Plants.sowingMethod]?.let { SowingMethod.from(it) },
                     seedDepthMm        = row[Plants.seedDepthMm],
                     spacingCm          = row[Plants.spacingCm],
                     germinationDaysMin = row[Plants.germinationDaysMin],

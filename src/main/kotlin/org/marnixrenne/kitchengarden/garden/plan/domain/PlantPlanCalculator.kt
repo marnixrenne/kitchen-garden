@@ -21,11 +21,11 @@ object PlantPlanCalculator {
 
         germinationDaysMin?.let { daysMin ->
             val daysMax = germinationDaysMax ?: daysMin
-            periods += PlanPeriod("germination", seedDate.plusDays(daysMin.toLong()), seedDate.plusDays(daysMax.toLong()))
+            periods += PlanPeriod(PlanAction.GERMINATION, seedDate.plusDays(daysMin.toLong()), seedDate.plusDays(daysMax.toLong()))
         }
 
         harvestPeriod?.let { (start, end) ->
-            periods += PlanPeriod("harvest", start, end)
+            periods += PlanPeriod(PlanAction.HARVEST, start, end)
         }
 
         if (pruningConfig != null && harvestPeriod != null) {
@@ -33,7 +33,7 @@ object PlantPlanCalculator {
             val pruningEnd   = harvestStart.minusWeeks(pruningConfig.weeksBeforeEnd.toLong())
             val pruningStart = harvestStart.minusWeeks(pruningConfig.weeksBeforeStart.toLong())
             if (pruningEnd.isAfter(seedDate)) {
-                periods += PlanPeriod("pruning", maxOf(pruningStart, seedDate.plusDays(1)), pruningEnd)
+                periods += PlanPeriod(PlanAction.PRUNING, maxOf(pruningStart, seedDate.plusDays(1)), pruningEnd)
             }
         }
 
@@ -42,7 +42,7 @@ object PlantPlanCalculator {
             var fertStart = seedDate.plusDays(fertilizingConfig.startDaysAfterSeed.toLong())
             var count = 0
             while (fertStart.isBefore(harvestStart) && count < fertilizingConfig.maxApplications) {
-                periods += PlanPeriod("fertilizing", fertStart, fertStart.plusDays(fertilizingConfig.windowDays.toLong()))
+                periods += PlanPeriod(PlanAction.FERTILIZING, fertStart, fertStart.plusDays(fertilizingConfig.windowDays.toLong()))
                 fertStart = fertStart.plusDays(fertilizingConfig.intervalDays.toLong())
                 count++
             }
@@ -52,7 +52,7 @@ object PlantPlanCalculator {
             val (harvestStart, _) = harvestPeriod
             var waterStart = seedDate.plusDays(wateringConfig.startDaysAfterSeed.toLong())
             while (waterStart.isBefore(harvestStart)) {
-                periods += PlanPeriod("watering", waterStart, waterStart.plusDays(wateringConfig.windowDays.toLong()))
+                periods += PlanPeriod(PlanAction.WATERING, waterStart, waterStart.plusDays(wateringConfig.windowDays.toLong()))
                 waterStart = waterStart.plusDays(wateringConfig.intervalDays.toLong())
             }
         }

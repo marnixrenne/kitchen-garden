@@ -215,14 +215,14 @@ class ExposedGardenRepository : GardenRepository {
                 val sows     = id in seedingIds
                 val harvests = id in harvestingIds
                 val type     = when {
-                    sows && harvests -> "both"
-                    sows             -> "sow"
-                    else             -> "harvest"
+                    sows && harvests -> WeekActionType.BOTH
+                    sows             -> WeekActionType.SOW
+                    else             -> WeekActionType.HARVEST
                 }
                 WeekAction(
                     type               = type,
                     plant              = SimpleVeg(PlantId(id), row[Plants.name], row[Plants.emoji]),
-                    sowingMethod       = row[Plants.sowingMethod],
+                    sowingMethod       = row[Plants.sowingMethod]?.let { SowingMethod.from(it) },
                     germinationDaysMin = row[Plants.germinationDaysMin],
                     germinationDaysMax = row[Plants.germinationDaysMax],
                     logEntries         = emptyList(),
@@ -241,7 +241,7 @@ class ExposedGardenRepository : GardenRepository {
             .groupBy({ PlantId(it[PlantLog.plantId]) }, { row ->
                 LoggedEntry(
                     id      = PlantLogEntryId(row[PlantLogEntry.id]),
-                    action  = row[PlantLogEntry.action],
+                    action  = LogAction.from(row[PlantLogEntry.action]),
                     date    = row[PlantLogEntry.date],
                     comment = row[PlantLogEntry.comment],
                 )
@@ -249,7 +249,7 @@ class ExposedGardenRepository : GardenRepository {
 
         val actionsWithEntries = actions
             .map { it.copy(logEntries = entriesByPlant[it.plant.id] ?: emptyList()) }
-            .sortedWith(compareBy({ it.type }, { it.plant.name }))
+            .sortedWith(compareBy({ it.type.key }, { it.plant.name }))
 
         WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, actionsWithEntries)
     }
@@ -283,7 +283,7 @@ class ExposedGardenRepository : GardenRepository {
                     id           = PlantId(row[CompanionPlants.companionId]),
                     name         = companionRow?.get(Plants.name) ?: "",
                     emoji        = companionRow?.get(Plants.emoji),
-                    relationship = row[CompanionPlants.relationship],
+                    relationship = CompanionRelationship.from(row[CompanionPlants.relationship]),
                 )
             })
 

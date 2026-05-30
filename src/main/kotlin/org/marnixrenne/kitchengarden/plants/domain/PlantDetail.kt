@@ -1,13 +1,34 @@
 package org.marnixrenne.kitchengarden.plants.domain
 
+import com.fasterxml.jackson.annotation.JsonValue
+
+enum class CompanionRelationship(@JsonValue val key: String) {
+    GOOD("good"),
+    BAD("bad");
+
+    companion object {
+        fun from(key: String): CompanionRelationship = entries.first { it.key == key }
+    }
+}
+
+enum class SowingMethod(@JsonValue val key: String) {
+    INDOOR("indoor"),
+    OUTDOOR("outdoor"),
+    BOTH("both");
+
+    companion object {
+        fun from(key: String): SowingMethod = entries.first { it.key == key }
+    }
+}
+
 data class Country(val code: String, val name: String)
 
-data class CompanionPlant(val id: PlantId, val name: String, val emoji: String?, val relationship: String)
+data class CompanionPlant(val id: PlantId, val name: String, val emoji: String?, val relationship: CompanionRelationship)
 
 data class InsectAttraction(val name: String, val type: String)
 
 data class SowingGuide(
-    val method: String?,
+    val method: SowingMethod?,
     val seedDepthMm: Int?,
     val spacingCm: Int?,
     val germinationDaysMin: Int?,

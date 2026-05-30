@@ -76,7 +76,7 @@ class GardenApplicationService(
 
     fun logAction(authentication: Authentication, request: PlantLogRequest): PlantLogResponse {
         val entry = plantLogRepository.save(userResolver.resolve(authentication), request)
-        if (request.action in setOf("seeding_indoor", "seeding_direct", "planting")) {
+        if (request.action in setOf(LogAction.SEEDING_INDOOR, LogAction.SEEDING_OUTDOOR, LogAction.PLANTING)) {
             try {
                 plantPlanService.generateAndSave(entry.id, entry.plantId, request.date)
             } catch (e: Exception) {

@@ -3,6 +3,7 @@ package org.marnixrenne.kitchengarden.garden.plan.infrastructure
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.marnixrenne.kitchengarden.garden.domain.GardenId
+import org.marnixrenne.kitchengarden.garden.domain.LogAction
 import org.marnixrenne.kitchengarden.garden.domain.PlantInstanceId
 import org.marnixrenne.kitchengarden.garden.domain.PlantLogEntryId
 import org.marnixrenne.kitchengarden.garden.infrastructure.*
@@ -21,7 +22,7 @@ class ExposedPlantPlanRepository : PlantPlanRepository {
             PlantPlanEntry.insert {
                 it[PlantPlanEntry.id]               = UUID.randomUUID()
                 it[PlantPlanEntry.logEntryId]       = logEntryId.value
-                it[PlantPlanEntry.action]           = action
+                it[PlantPlanEntry.action]           = action.key
                 it[PlantPlanEntry.plannedDateStart] = start
                 it[PlantPlanEntry.plannedDateEnd]   = end
                 it[PlantPlanEntry.createdAt]        = Instant.now()
@@ -48,11 +49,11 @@ class ExposedPlantPlanRepository : PlantPlanRepository {
                     id               = PlanEntryId(row[PlantPlanEntry.id]),
                     instanceId       = PlantInstanceId(row[PlantLog.instanceId]!!),
                     plantId          = PlantId(row[PlantLog.plantId]),
-                    action           = row[PlantPlanEntry.action],
+                    action           = PlanAction.from(row[PlantPlanEntry.action]),
                     plannedDateStart = row[PlantPlanEntry.plannedDateStart],
                     plannedDateEnd   = row[PlantPlanEntry.plannedDateEnd],
                     seedDate         = row[PlantLogEntry.date],
-                    seedAction       = row[PlantLogEntry.action],
+                    seedAction       = LogAction.from(row[PlantLogEntry.action]),
                 )
             })
     }

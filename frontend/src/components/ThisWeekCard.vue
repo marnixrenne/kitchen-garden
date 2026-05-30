@@ -47,7 +47,7 @@ function instanceSeedDate(instanceId) {
   const entries = plantLog.value[instanceId] ?? []
   for (let i = entries.length - 1; i >= 0; i--) {
     const e = entries[i]
-    if (e.action === 'seeding_indoor' || e.action === 'seeding_direct' || e.action === 'planting') return formatDate(e.date)
+    if (e.action === 'seeding_indoor' || e.action === 'seeding_outdoor' || e.action === 'planting') return formatDate(e.date)
   }
   return null
 }
@@ -176,7 +176,7 @@ const actionGroups = computed(() => {
       const seedAction = entry.seedAction
 
       if (entry.action === 'germination') {
-        if (!shownGermination.has(instanceId) && (!lc || lc.nextState === 'germinating_indoor' || lc.nextState === 'germinating_direct')) {
+        if (!shownGermination.has(instanceId) && (!lc || lc.nextState === 'germinating_indoor' || lc.nextState === 'germinating_outdoor')) {
           shownGermination.add(instanceId)
           buckets.germination.push({
             plant, instanceId, seedDate, seedAction,
@@ -410,8 +410,8 @@ defineOptions({ inheritAttrs: false })
                 <input type="radio" v-model="seedModal.method" value="seeding_indoor" />
                 {{ t('garden.seedModal.methodIndoor') }}
               </label>
-              <label class="method-option" :class="{ active: seedModal.method === 'seeding_direct' }">
-                <input type="radio" v-model="seedModal.method" value="seeding_direct" />
+              <label class="method-option" :class="{ active: seedModal.method === 'seeding_outdoor' }">
+                <input type="radio" v-model="seedModal.method" value="seeding_outdoor" />
                 {{ t('garden.seedModal.methodOutdoor') }}
               </label>
               <label class="method-option" :class="{ active: seedModal.method === 'planting' }">
@@ -429,7 +429,7 @@ defineOptions({ inheritAttrs: false })
               <span class="seed-info-label">{{ t('garden.seedModal.seedDepth') }}</span>
               <span class="seed-info-value">{{ seedModalInfo.seedDepthMm }} mm</span>
             </div>
-            <template v-if="seedModal.method === 'seeding_direct' || seedModal.method === 'planting'">
+            <template v-if="seedModal.method === 'seeding_outdoor' || seedModal.method === 'planting'">
               <div v-if="seedModalInfo.goodWith.length > 0" class="seed-info-row seed-info-row--companions">
                 <span class="seed-info-label">{{ t('garden.seedModal.plantNear') }}</span>
                 <div class="seed-info-tags">

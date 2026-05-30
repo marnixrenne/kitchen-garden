@@ -108,7 +108,7 @@ class GardenApiTest : IntegrationTestBase() {
         mvc.post("/api/gardens/$gardenId/plant-log") {
             with(user("admin")); with(csrf())
             contentType = MediaType.APPLICATION_JSON
-            content = """{"instanceId":"$instanceId","action":"seeding_direct","date":"2025-04-01","comment":null}"""
+            content = """{"instanceId":"$instanceId","action":"seeding_outdoor","date":"2025-04-01","comment":null}"""
         }.andExpect { status { isCreated() } }
 
         val logId = jdbc.queryForObject(

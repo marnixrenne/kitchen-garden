@@ -3,10 +3,7 @@ package org.marnixrenne.kitchengarden
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.marnixrenne.kitchengarden.garden.plan.domain.FertilizingConfig
-import org.marnixrenne.kitchengarden.garden.plan.domain.PlantPlanCalculator
-import org.marnixrenne.kitchengarden.garden.plan.domain.PruningConfig
-import org.marnixrenne.kitchengarden.garden.plan.domain.WateringConfig
+import org.marnixrenne.kitchengarden.garden.plan.domain.*
 import java.time.LocalDate
 
 class PlantPlanCalculatorTest {
@@ -25,7 +22,7 @@ class PlantPlanCalculatorTest {
             harvestMonths = emptyList(),
             pruningConfig = null, fertilizingConfig = null,
         )
-        val germination = periods.single { it.action == "germination" }
+        val germination = periods.single { it.action == PlanAction.GERMINATION }
         assertEquals(seed.plusDays(7),  germination.start)
         assertEquals(seed.plusDays(14), germination.end)
     }
@@ -39,7 +36,7 @@ class PlantPlanCalculatorTest {
             harvestMonths = emptyList(),
             pruningConfig = null, fertilizingConfig = null,
         )
-        val germination = periods.single { it.action == "germination" }
+        val germination = periods.single { it.action == PlanAction.GERMINATION }
         assertEquals(germination.start, germination.end)
     }
 
@@ -52,7 +49,7 @@ class PlantPlanCalculatorTest {
             harvestMonths = emptyList(),
             pruningConfig = null, fertilizingConfig = null,
         )
-        val harvest = periods.single { it.action == "harvest" }
+        val harvest = periods.single { it.action == PlanAction.HARVEST }
         assertEquals(seed.plusDays(60), harvest.start)
         assertEquals(seed.plusDays(80), harvest.end)
     }
@@ -66,7 +63,7 @@ class PlantPlanCalculatorTest {
             harvestMonths = listOf(7, 8, 9),
             pruningConfig = null, fertilizingConfig = null,
         )
-        val harvest = periods.single { it.action == "harvest" }
+        val harvest = periods.single { it.action == PlanAction.HARVEST }
         assertEquals(7, harvest.start.monthValue)
         assertEquals(9, harvest.end.monthValue)
     }
@@ -81,7 +78,7 @@ class PlantPlanCalculatorTest {
             harvestMonths = listOf(6, 7),
             pruningConfig = null, fertilizingConfig = null,
         )
-        val harvest = periods.single { it.action == "harvest" }
+        val harvest = periods.single { it.action == PlanAction.HARVEST }
         assertEquals(2026, harvest.start.year)
     }
 
@@ -96,7 +93,7 @@ class PlantPlanCalculatorTest {
             pruningConfig = config, fertilizingConfig = null,
         )
         val harvestStart = seed.plusDays(90)
-        val pruning = periods.single { it.action == "pruning" }
+        val pruning = periods.single { it.action == PlanAction.PRUNING }
         assertEquals(harvestStart.minusWeeks(6), pruning.start)
         assertEquals(harvestStart.minusWeeks(2), pruning.end)
     }
@@ -110,7 +107,7 @@ class PlantPlanCalculatorTest {
             harvestMonths = emptyList(),
             pruningConfig = defaultPruning, fertilizingConfig = null,
         )
-        assertTrue(periods.none { it.action == "pruning" })
+        assertTrue(periods.none { it.action == PlanAction.PRUNING })
     }
 
     @Test
@@ -123,7 +120,7 @@ class PlantPlanCalculatorTest {
             harvestMonths = emptyList(),
             pruningConfig = null, fertilizingConfig = config,
         )
-        val fertilizing = periods.filter { it.action == "fertilizing" }
+        val fertilizing = periods.filter { it.action == PlanAction.FERTILIZING }
         assertEquals(3, fertilizing.size)
         fertilizing.forEach { assertEquals(config.windowDays, it.start.until(it.end).days) }
         assertEquals(seed.plusDays(14), fertilizing[0].start)
@@ -141,7 +138,7 @@ class PlantPlanCalculatorTest {
             harvestMonths = emptyList(),
             pruningConfig = null, fertilizingConfig = config,
         )
-        assertEquals(2, periods.count { it.action == "fertilizing" })
+        assertEquals(2, periods.count { it.action == PlanAction.FERTILIZING })
     }
 
     @Test
@@ -154,7 +151,7 @@ class PlantPlanCalculatorTest {
             harvestMonths = emptyList(),
             pruningConfig = null, fertilizingConfig = config,
         )
-        assertTrue(periods.none { it.action == "fertilizing" })
+        assertTrue(periods.none { it.action == PlanAction.FERTILIZING })
     }
 
     @Test
@@ -166,7 +163,7 @@ class PlantPlanCalculatorTest {
             harvestMonths = emptyList(),
             pruningConfig = null, fertilizingConfig = defaultFertilizing,
         )
-        assertTrue(periods.none { it.action == "fertilizing" })
+        assertTrue(periods.none { it.action == PlanAction.FERTILIZING })
     }
 
     @Test
@@ -193,7 +190,7 @@ class PlantPlanCalculatorTest {
             pruningConfig = null, fertilizingConfig = null,
             wateringConfig = config,
         )
-        val watering = periods.filter { it.action == "watering" }
+        val watering = periods.filter { it.action == PlanAction.WATERING }
         assertTrue(watering.isNotEmpty())
         assertEquals(seed.plusDays(3), watering.first().start)
         assertEquals(seed.plusDays(10), watering.first().end)
@@ -211,7 +208,7 @@ class PlantPlanCalculatorTest {
             pruningConfig = null, fertilizingConfig = null,
             wateringConfig = config,
         )
-        assertTrue(periods.none { it.action == "watering" })
+        assertTrue(periods.none { it.action == PlanAction.WATERING })
     }
 
     @Test

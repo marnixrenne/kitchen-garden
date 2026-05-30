@@ -1,15 +1,16 @@
 package org.marnixrenne.kitchengarden.garden.lifecycle.domain
 
+import com.fasterxml.jackson.annotation.JsonValue
 import org.marnixrenne.kitchengarden.garden.domain.PlantInstanceId
 import org.marnixrenne.kitchengarden.plants.domain.PlantId
 import java.time.LocalDate
 
-enum class LifecycleState(val key: String) {
+enum class LifecycleState(@JsonValue val key: String) {
     SEEDED_INDOOR("seeded_indoor"),
-    SEEDED_DIRECT("seeded_direct"),
+    SEEDED_OUTDOOR("seeded_direct"),
     PLANTED("planted"),
     GERMINATING_INDOOR("germinating_indoor"),
-    GERMINATING_DIRECT("germinating_direct"),
+    GERMINATING_OUTDOOR("germinating_outdoor"),
     TRANSPLANTED("transplanted"),
     GROWING("growing"),
     READY_TO_HARVEST("ready_to_harvest"),
@@ -17,10 +18,10 @@ enum class LifecycleState(val key: String) {
 
     fun next(): LifecycleState? = when (this) {
         SEEDED_INDOOR      -> GERMINATING_INDOOR
-        SEEDED_DIRECT      -> GERMINATING_DIRECT
+        SEEDED_OUTDOOR      -> GERMINATING_OUTDOOR
         PLANTED            -> GROWING
         GERMINATING_INDOOR -> TRANSPLANTED
-        GERMINATING_DIRECT -> GROWING
+        GERMINATING_OUTDOOR -> GROWING
         TRANSPLANTED       -> GROWING
         GROWING            -> READY_TO_HARVEST
         READY_TO_HARVEST   -> HARVESTED
@@ -36,8 +37,8 @@ enum class LifecycleState(val key: String) {
 data class PlantLifecycle(
     val instanceId: PlantInstanceId,
     val plantId: PlantId,
-    val state: String,
-    val nextState: String?,
+    val state: LifecycleState,
+    val nextState: LifecycleState?,
     val date: LocalDate? = null,
     val comment: String? = null,
 )
