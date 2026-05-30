@@ -1,8 +1,10 @@
 package org.marnixrenne.kitchengarden.garden.api
 
-import org.marnixrenne.kitchengarden.garden.application.GardenApplicationService
+import org.marnixrenne.kitchengarden.garden.application.GardenCommandService
+import org.marnixrenne.kitchengarden.garden.application.GardenQueryService
 import org.marnixrenne.kitchengarden.garden.domain.*
-import org.marnixrenne.kitchengarden.garden.lifecycle.application.PlantLifecycleApplicationService
+import org.marnixrenne.kitchengarden.garden.lifecycle.application.PlantLifecycleCommandService
+import org.marnixrenne.kitchengarden.garden.lifecycle.application.PlantLifecycleQueryService
 import org.marnixrenne.kitchengarden.garden.lifecycle.domain.AdvanceRequest
 import org.marnixrenne.kitchengarden.garden.lifecycle.domain.PlantLifecycle
 import org.marnixrenne.kitchengarden.garden.plan.domain.PlanEntry
@@ -15,22 +17,24 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/gardens")
 class GardensController(
-    private val gardenService: GardenApplicationService,
-    private val lifecycleService: PlantLifecycleApplicationService,
+    private val gardenCommandService: GardenCommandService,
+    private val gardenQueryService: GardenQueryService,
+    private val lifecycleCommandService: PlantLifecycleCommandService,
+    private val lifecycleQueryService: PlantLifecycleQueryService,
 ) {
 
     // ── Collection ────────────────────────────────────────────────────────────
 
     @GetMapping
     fun listGardens(authentication: Authentication): List<GardenSummary> =
-        gardenService.listGardens(authentication)
+        gardenQueryService.listGardens(authentication)
 
     @PostMapping
     fun createGarden(
         @RequestBody request: CreateGardenRequest,
         authentication: Authentication,
     ): ResponseEntity<GardenSummary> {
-        val garden = gardenService.createGarden(authentication, request.name)
+        val garden = gardenCommandService.createGarden(authentication, request.name)
         return ResponseEntity.status(201).body(garden)
     }
 
@@ -40,7 +44,7 @@ class GardensController(
     fun getGarden(
         @PathVariable gardenId: GardenId,
         authentication: Authentication,
-    ): Set<PlantId> = gardenService.getPlantIds(authentication, gardenId)
+    ): Set<PlantId> = gardenQueryService.getPlantIds(authentication, gardenId)
 
     @PatchMapping("/{gardenId}")
     fun renameGarden(
@@ -49,7 +53,7 @@ class GardensController(
         authentication: Authentication,
     ): ResponseEntity<GardenSummary> {
         val name = body["name"] ?: return ResponseEntity.badRequest().build()
-        gardenService.renameGarden(authentication, gardenId, name)
+        gardenCommandService.renameGarden(authentication, gardenId, name)
         return ResponseEntity.ok(GardenSummary(id = gardenId, name = name))
     }
 
@@ -58,7 +62,7 @@ class GardensController(
         @PathVariable gardenId: GardenId,
         authentication: Authentication,
     ): ResponseEntity<Unit> {
-        gardenService.deleteGarden(authentication, gardenId)
+        gardenCommandService.deleteGarden(authentication, gardenId)
         return ResponseEntity.noContent().build()
     }
 
@@ -66,31 +70,31 @@ class GardensController(
     fun getDetails(
         @PathVariable gardenId: GardenId,
         authentication: Authentication,
-    ): List<PlantDetail> = gardenService.getDetails(authentication, gardenId)
+    ): List<PlantDetail> = gardenQueryService.getDetails(authentication, gardenId)
 
     @GetMapping("/{gardenId}/week")
     fun getWeekSummary(
         @PathVariable gardenId: GardenId,
         authentication: Authentication,
-    ): WeekSummary = gardenService.getWeekSummary(authentication, gardenId)
+    ): WeekSummary = gardenQueryService.getWeekSummary(authentication, gardenId)
 
     @GetMapping("/{gardenId}/suggestions")
     fun getSuggestions(
         @PathVariable gardenId: GardenId,
         authentication: Authentication,
-    ): PlantingSuggestions = gardenService.getSuggestions(authentication, gardenId)
+    ): PlantingSuggestions = gardenQueryService.getSuggestions(authentication, gardenId)
 
     @GetMapping("/{gardenId}/plan")
     fun getPlan(
         @PathVariable gardenId: GardenId,
         authentication: Authentication,
-    ): Map<PlantInstanceId, List<PlanEntry>> = gardenService.getPlan(authentication, gardenId)
+    ): Map<PlantInstanceId, List<PlanEntry>> = gardenQueryService.getPlan(authentication, gardenId)
 
     @GetMapping("/{gardenId}/plant-log")
     fun getPlantLog(
         @PathVariable gardenId: GardenId,
         authentication: Authentication,
-    ): Map<PlantInstanceId, List<LoggedEntry>> = gardenService.getPlantLog(authentication, gardenId)
+    ): Map<PlantInstanceId, List<LoggedEntry>> = gardenQueryService.getPlantLog(authentication, gardenId)
 
     @PostMapping("/{gardenId}/plant-log")
     fun logAction(
@@ -98,7 +102,7 @@ class GardensController(
         @RequestBody request: PlantLogRequest,
         authentication: Authentication,
     ): ResponseEntity<PlantLogResponse> {
-        val entry = gardenService.logAction(authentication, request)
+        val entry = gardenCommandService.logAction(authentication, request)
         return ResponseEntity.status(201).body(entry)
     }
 
@@ -106,7 +110,7 @@ class GardensController(
     fun getInstances(
         @PathVariable gardenId: GardenId,
         authentication: Authentication,
-    ): List<PlantInstance> = gardenService.getInstances(authentication, gardenId)
+    ): List<PlantInstance> = gardenQueryService.getInstances(authentication, gardenId)
 
     // ── Plants ────────────────────────────────────────────────────────────────
 
@@ -116,7 +120,7 @@ class GardensController(
         @PathVariable plantId: PlantId,
         authentication: Authentication,
     ): ResponseEntity<Unit> {
-        gardenService.add(authentication, gardenId, plantId)
+        gardenCommandService.add(authentication, gardenId, plantId)
         return ResponseEntity.noContent().build()
     }
 
@@ -126,7 +130,7 @@ class GardensController(
         @PathVariable plantId: PlantId,
         authentication: Authentication,
     ): ResponseEntity<Unit> {
-        gardenService.remove(authentication, gardenId, plantId)
+        gardenCommandService.remove(authentication, gardenId, plantId)
         return ResponseEntity.noContent().build()
     }
 
@@ -136,7 +140,7 @@ class GardensController(
     fun getLifecycle(
         @PathVariable gardenId: GardenId,
         authentication: Authentication,
-    ): Map<PlantInstanceId, PlantLifecycle> = lifecycleService.getAll(authentication, gardenId)
+    ): Map<PlantInstanceId, PlantLifecycle> = lifecycleQueryService.getAll(authentication, gardenId)
 
     @PutMapping("/{gardenId}/lifecycle/{instanceId}/advance")
     fun advanceLifecycle(
@@ -144,5 +148,5 @@ class GardensController(
         @PathVariable instanceId: PlantInstanceId,
         @RequestBody(required = false) request: AdvanceRequest?,
         authentication: Authentication,
-    ): PlantLifecycle = lifecycleService.advance(authentication, instanceId, request)
+    ): PlantLifecycle = lifecycleCommandService.advance(authentication, instanceId, request)
 }
