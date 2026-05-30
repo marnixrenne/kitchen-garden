@@ -109,6 +109,9 @@ watch(() => route.params.id, (id) => { if (id) loadPlant(id) })
             <p v-if="plant.latinName" class="latin-name">{{ plant.latinName }}</p>
             <div class="badges">
               <span class="category-badge">{{ t(`categories.${plant.category}`) }}</span>
+              <span v-if="plant.lifespan" class="lifespan-badge">
+                {{ t(`lifespan.${plant.lifespan}`) }}
+              </span>
               <span v-if="plant.sunRequirement" class="sun-badge">
                 {{ t(`sunRequirement.${plant.sunRequirement}`) }}
               </span>
@@ -362,7 +365,7 @@ main {
 
 .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.35rem; }
 
-.category-badge, .sun-badge {
+.category-badge, .sun-badge, .lifespan-badge {
   display: inline-block;
   padding: 0.2rem 0.65rem;
   border-radius: 20px;
@@ -373,6 +376,11 @@ main {
 .category-badge {
   background: var(--green-pale);
   color: var(--green-mid);
+}
+
+.lifespan-badge {
+  background: #ede9fe;
+  color: #5b21b6;
 }
 
 .sun-badge {

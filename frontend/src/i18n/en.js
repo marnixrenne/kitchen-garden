@@ -12,6 +12,11 @@ export default {
   logout: 'Sign out',
   back: '← Back',
   countries: 'Countries',
+  lifespan: {
+    annual:    '🌱 Annual',
+    biennial:  '🌿 Biennial',
+    perennial: '🌳 Perennial',
+  },
   sunRequirement: {
     full_sun:      '☀️ Full sun',
     partial_shade: '🌤️ Partial shade',

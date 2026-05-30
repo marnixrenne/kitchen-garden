@@ -77,6 +77,19 @@ function generateSQL(spec, imageUpdates = []) {
     lines.push(``)
   }
 
+  // LIFESPAN
+  const withLifespan = plants.filter(p => p.lifespan)
+  if (withLifespan.length) {
+    lines.push(`-- ============================================================`)
+    lines.push(`-- LIFESPAN`)
+    lines.push(`-- ============================================================`)
+    lines.push(``)
+    for (const p of withLifespan) {
+      lines.push(`UPDATE pts_plants SET lifespan = '${q(p.lifespan)}' WHERE name = '${q(p.name)}';`)
+    }
+    lines.push(``)
+  }
+
   // SOWING INFO
   const withSowing = plants.filter(p => p.sowing)
   if (withSowing.length) {

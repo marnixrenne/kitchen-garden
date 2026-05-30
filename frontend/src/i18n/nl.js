@@ -12,6 +12,11 @@ export default {
   logout: 'Uitloggen',
   back: '← Terug',
   countries: 'Landen',
+  lifespan: {
+    annual:    '🌱 Eenjarig',
+    biennial:  '🌿 Tweejarig',
+    perennial: '🌳 Meerjarig',
+  },
   sunRequirement: {
     full_sun:      '☀️ Volle zon',
     partial_shade: '🌤️ Halfschaduw',

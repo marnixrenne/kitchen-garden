@@ -88,6 +88,7 @@ class ExposedPlantRepository : PlantRepository {
                     category         = row[Plants.category],
                     emoji            = row[Plants.emoji],
                     imageUrl         = row[Plants.imageUrl],
+                    lifespan         = row[Plants.lifespan]?.let { PlantLifespan.from(it) },
                     sunRequirement   = row[Plants.sunRequirement],
                     pruningType      = row[Plants.pruningType],
                     fertilizerType   = row[Plants.fertilizerType],

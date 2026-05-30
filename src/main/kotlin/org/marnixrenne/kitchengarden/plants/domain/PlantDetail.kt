@@ -2,6 +2,16 @@ package org.marnixrenne.kitchengarden.plants.domain
 
 import com.fasterxml.jackson.annotation.JsonValue
 
+enum class PlantLifespan(@JsonValue val key: String) {
+    ANNUAL("annual"),
+    BIENNIAL("biennial"),
+    PERENNIAL("perennial");
+
+    companion object {
+        fun from(key: String): PlantLifespan = entries.first { it.key == key }
+    }
+}
+
 enum class CompanionRelationship(@JsonValue val key: String) {
     GOOD("good"),
     BAD("bad");
@@ -45,6 +55,7 @@ data class PlantDetail(
     val category: String,
     val emoji: String?,
     val imageUrl: String?,
+    val lifespan: PlantLifespan?,
     val sunRequirement: String?,
     val pruningType: String?,
     val fertilizerType: String?,

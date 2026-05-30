@@ -296,6 +296,7 @@ class ExposedGardenRepository : GardenRepository {
                 category         = row[Plants.category],
                 emoji            = row[Plants.emoji],
                 imageUrl         = row[Plants.imageUrl],
+                lifespan         = null,
                 sunRequirement   = row[Plants.sunRequirement],
                 pruningType      = null,
                 fertilizerType   = null,
