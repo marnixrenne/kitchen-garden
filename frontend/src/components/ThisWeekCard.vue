@@ -139,7 +139,8 @@ const actionGroups = computed(() => {
   const ws = weekSummary.value
   const year = new Date().getFullYear()
   const weekStart = new Date(year, ws.weekStartMonth - 1, ws.weekStartDay)
-  const weekEnd   = new Date(year, ws.weekEndMonth   - 1, ws.weekEndDay)
+  let   weekEnd   = new Date(year, ws.weekEndMonth   - 1, ws.weekEndDay)
+  if (weekEnd < weekStart) weekEnd = new Date(year + 1, ws.weekEndMonth - 1, ws.weekEndDay)
 
   const buckets = Object.fromEntries(ACTION_ORDER.map(a => [a, []]))
 

@@ -20,12 +20,16 @@ const i18n = createI18n({
       categories: { Fruiting: 'Fruiting', Flower: 'Flowers', Herb: 'Herbs', Brassica: 'Brassica' },
       sunRequirement: { full_sun: 'Full sun', partial_shade: 'Partial shade' },
       companions: { title: 'Companions', good: 'Good companions', bad: 'Bad companions' },
-      garden: { add: 'Add', added: 'Added', addTooltip: 'Add to garden', removeTooltip: 'Remove from garden' },
+      garden: { add: 'Add', added: 'Added', addTooltip: 'Add to garden', removeTooltip: 'Remove from garden', toSow: 'To sow', toHarvest: 'To harvest', both: 'Both' },
       countries: 'Countries',
       countryNames: {},
       plants: {},
       descriptions: {},
       pruning: { title: 'Pruning', type: {}, tips: {} },
+      fertilizer: { title: 'Fertilizer', type: {}, tips: {} },
+      insects: { title: 'Insects', pollinator: 'Pollinators', beneficial: 'Beneficial', pest: 'Pests', names: {} },
+      lifespan: { annual: 'Annual', biennial: 'Biennial', perennial: 'Perennial' },
+      growingCalendar: 'Growing calendar',
       sowing: {
         title: 'Sowing guide',
         method: { label: 'Method', indoor: 'Indoor', direct: 'Direct', both: 'Both' },
@@ -49,9 +53,10 @@ const TOMATO = {
   category: 'Fruiting',
   emoji: '🍅',
   imageUrl: null,
+  lifespan: 'annual',
   sunRequirement: 'full_sun',
   pruningType: null,
-  pruningTip: null,
+  fertilizerType: null,
   sowingGuide: null,
   seedingMonths: [3, 4],
   harvestingMonths: [7, 8, 9],
@@ -59,6 +64,7 @@ const TOMATO = {
   companions: [
     { id: 'bbbbbbbb-0000-0000-0000-000000000002', name: 'Basil', emoji: '🌿', relationship: 'good' },
   ],
+  insects: [],
 }
 
 const NASTURTIUM = {
@@ -67,9 +73,10 @@ const NASTURTIUM = {
   category: 'Flower',
   emoji: '🌸',
   imageUrl: null,
+  lifespan: 'annual',
   sunRequirement: 'partial_shade',
   pruningType: null,
-  pruningTip: null,
+  fertilizerType: null,
   sowingGuide: null,
   seedingMonths: [4, 5],
   harvestingMonths: [6, 7, 8, 9],
@@ -77,6 +84,7 @@ const NASTURTIUM = {
   companions: [
     { id: TOMATO.id, name: 'Tomato', emoji: '🍅', relationship: 'good' },
   ],
+  insects: [],
 }
 
 const PLANTS = {

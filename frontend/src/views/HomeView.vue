@@ -55,8 +55,9 @@ async function fetchCounts() {
 }
 
 async function fetchGarden() {
+  if (!activeGardenId.value) return
   const res = await fetch(`/api/gardens/${activeGardenId.value}`)
-  gardenIds.value = new Set(await res.json())
+  if (res.ok) gardenIds.value = new Set(await res.json())
 }
 
 async function toggleGarden(plantId) {
@@ -72,7 +73,7 @@ async function fetchPlants(month) {
   loading.value = true
   const url = month ? `/api/plants?month=${month}` : '/api/plants'
   const res = await fetch(url)
-  plants.value = await res.json()
+  if (res.ok) plants.value = await res.json()
   loading.value = false
 }
 

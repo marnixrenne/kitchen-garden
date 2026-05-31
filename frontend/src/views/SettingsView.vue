@@ -7,6 +7,11 @@ import { user, csrfHeaders } from '../stores/auth.js'
 const { t, tm, locale } = useI18n()
 const router = useRouter()
 
+function goBack() {
+  if (window.history.state?.back) router.back()
+  else router.push('/garden')
+}
+
 const country = ref('')
 
 const countries = computed(() =>
@@ -52,7 +57,7 @@ async function setCountry(code) {
 
 <template>
   <main>
-    <button class="back-btn" @click="window.history.state?.back ? router.back() : router.push('/garden')">{{ t('back') }}</button>
+    <button class="back-btn" @click="goBack">{{ t('back') }}</button>
 
     <div class="settings-card">
       <h2>{{ t('settings.title') }}</h2>

@@ -33,6 +33,9 @@ export async function login(username, password) {
 }
 
 export async function logout() {
-  await fetch('/api/auth/logout', { method: 'POST', headers: csrfHeaders() })
-  user.value = null
+  try {
+    await fetch('/api/auth/logout', { method: 'POST', headers: csrfHeaders() })
+  } finally {
+    user.value = null
+  }
 }

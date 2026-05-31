@@ -25,6 +25,7 @@ watch(user, async (u) => {
 
 async function handleLogout() {
   await logout()
+  gardens.value = []
   setActiveGarden(null)
   router.push('/')
 }
@@ -117,7 +118,7 @@ async function submitNewGarden() {
                 v-for="g in gardens"
                 :key="g.id"
                 class="nav-garden-item"
-                :class="{ 'nav-garden-item--active': g.id === activeGardenId }"
+                :class="{ 'nav-garden-item--active': g.id === activeGardenId.value }"
                 @click="selectGarden(g)"
               >{{ g.name }}</button>
             </div>
