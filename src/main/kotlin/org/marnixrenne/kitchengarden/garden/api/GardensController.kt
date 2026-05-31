@@ -53,8 +53,8 @@ class GardensController(
         authentication: Authentication,
     ): ResponseEntity<GardenSummary> {
         val name = body["name"] ?: return ResponseEntity.badRequest().build()
-        gardenCommandService.renameGarden(authentication, gardenId, name)
-        return ResponseEntity.ok(GardenSummary(id = gardenId, name = name))
+        val updated = gardenCommandService.renameGarden(authentication, gardenId, name)
+        return ResponseEntity.ok(updated)
     }
 
     @DeleteMapping("/{gardenId}")
@@ -102,7 +102,7 @@ class GardensController(
         @RequestBody request: PlantLogRequest,
         authentication: Authentication,
     ): ResponseEntity<PlantLogResponse> {
-        val entry = gardenCommandService.logAction(authentication, request)
+        val entry = gardenCommandService.logAction(authentication, gardenId, request)
         return ResponseEntity.status(201).body(entry)
     }
 
@@ -148,5 +148,5 @@ class GardensController(
         @PathVariable instanceId: PlantInstanceId,
         @RequestBody(required = false) request: AdvanceRequest?,
         authentication: Authentication,
-    ): PlantLifecycle = lifecycleCommandService.advance(authentication, instanceId, request)
+    ): PlantLifecycle = lifecycleCommandService.advance(authentication, gardenId, instanceId, request)
 }

@@ -24,11 +24,11 @@ class GardenCommandService(
         return repository.createGarden(userResolver.resolve(authentication), name)
     }
 
-    fun renameGarden(authentication: Authentication, gardenId: GardenId, name: String) {
+    fun renameGarden(authentication: Authentication, gardenId: GardenId, name: String): GardenSummary {
         if (name.isBlank()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Garden name cannot be blank")
         if (name.length > 100) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Garden name must be at most 100 characters")
-        val renamed = repository.renameGarden(gardenId, userResolver.resolve(authentication), name)
-        if (!renamed) throw ResponseStatusException(HttpStatus.NOT_FOUND)
+        return repository.renameGarden(gardenId, userResolver.resolve(authentication), name)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
     }
 
     fun deleteGarden(authentication: Authentication, gardenId: GardenId) {
@@ -42,8 +42,9 @@ class GardenCommandService(
     fun remove(authentication: Authentication, gardenId: GardenId, plantId: PlantId) =
         repository.remove(accessGuard.validate(authentication, gardenId), plantId)
 
-    fun logAction(authentication: Authentication, request: PlantLogRequest): PlantLogResponse {
-        val entry = plantLogRepository.save(userResolver.resolve(authentication), request)
+    fun logAction(authentication: Authentication, gardenId: GardenId, request: PlantLogRequest): PlantLogResponse {
+        accessGuard.validate(authentication, gardenId)
+        val entry = plantLogRepository.save(userResolver.resolve(authentication), gardenId, request)
         if (request.action in setOf(LogAction.SEEDING_INDOOR, LogAction.SEEDING_OUTDOOR, LogAction.PLANTING)) {
             try {
                 plantPlanCommandService.generateAndSave(entry.id, entry.plantId, request.date)

@@ -30,6 +30,7 @@ class ResendMailService(
             log.info("Mail sent via Resend to {}", to)
         } catch (e: Exception) {
             log.warn("Failed to send mail via Resend to {}: {}", to, e.message, e)
+            throw e
         }
     }
 }

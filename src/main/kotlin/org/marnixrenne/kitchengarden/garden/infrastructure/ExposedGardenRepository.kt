@@ -75,10 +75,11 @@ class ExposedGardenRepository : GardenRepository {
         return id
     }
 
-    override fun renameGarden(gardenId: GardenId, userId: UserId, name: String): Boolean = transaction {
-        Garden.update({ (Garden.id eq gardenId.value) and (Garden.userId eq userId.value) }) {
+    override fun renameGarden(gardenId: GardenId, userId: UserId, name: String): GardenSummary? = transaction {
+        val updated = Garden.update({ (Garden.id eq gardenId.value) and (Garden.userId eq userId.value) }) {
             it[Garden.name] = name
-        } > 0
+        }
+        if (updated == 0) null else GardenSummary(gardenId, name)
     }
 
     override fun deleteGarden(gardenId: GardenId, userId: UserId): Boolean = transaction {
@@ -184,7 +185,7 @@ class ExposedGardenRepository : GardenRepository {
         PlantingSuggestions(sunGroups, conflicts)
     }
 
-    override fun findWeekSummary(gardenId: GardenId, countryCode: String?): WeekSummary = transaction {
+    override fun findWeekSummary(userId: UserId, gardenId: GardenId, countryCode: String?): WeekSummary = transaction {
         val today     = LocalDate.now()
         val month     = today.monthValue
         val week      = today.get(WeekFields.ISO.weekOfWeekBasedYear())
@@ -203,10 +204,6 @@ class ExposedGardenRepository : GardenRepository {
 
         val activeIds = seedingIds + harvestingIds
         if (activeIds.isEmpty()) return@transaction WeekSummary(week, month, weekStart.dayOfMonth, weekStart.monthValue, weekEnd.dayOfMonth, weekEnd.monthValue, emptyList())
-
-        val userId = Garden.selectAll()
-            .where { Garden.id eq gardenId.value }
-            .first()[Garden.userId]
 
         val actions = Plants.selectAll()
             .where { Plants.id inList activeIds }
@@ -232,7 +229,7 @@ class ExposedGardenRepository : GardenRepository {
         val entriesByPlant = (PlantLog innerJoin PlantLogEntry)
             .selectAll()
             .where {
-                (PlantLog.userId eq userId) and
+                (PlantLog.userId eq userId.value) and
                 (PlantLog.plantId inList activeIds.toList()) and
                 (PlantLogEntry.date greaterEq weekStart) and
                 (PlantLogEntry.date lessEq weekEnd)

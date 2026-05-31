@@ -30,7 +30,7 @@ class GardenQueryService(
         repository.findDetails(accessGuard.validate(authentication, gardenId), preferenceService.getCountry(authentication))
 
     fun getWeekSummary(authentication: Authentication, gardenId: GardenId): WeekSummary =
-        repository.findWeekSummary(accessGuard.validate(authentication, gardenId), preferenceService.getCountry(authentication))
+        repository.findWeekSummary(userResolver.resolve(authentication), accessGuard.validate(authentication, gardenId), preferenceService.getCountry(authentication))
 
     fun getSuggestions(authentication: Authentication, gardenId: GardenId): PlantingSuggestions =
         repository.findSuggestions(accessGuard.validate(authentication, gardenId))

@@ -7,7 +7,7 @@ import java.time.LocalDate
 
 enum class LifecycleState(@JsonValue val key: String) {
     SEEDED_INDOOR("seeded_indoor"),
-    SEEDED_OUTDOOR("seeded_direct"),
+    SEEDED_OUTDOOR("seeded_outdoor"),
     PLANTED("planted"),
     GERMINATING_INDOOR("germinating_indoor"),
     GERMINATING_OUTDOOR("germinating_outdoor"),

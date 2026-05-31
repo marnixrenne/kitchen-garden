@@ -34,6 +34,7 @@ class SmtpMailService(
             log.info("Mail sent to {}", to)
         } catch (e: Exception) {
             log.warn("Failed to send mail to {}: {}", to, e.message, e)
+            throw e
         }
     }
 }

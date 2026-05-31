@@ -15,21 +15,25 @@ import java.util.UUID
 @Repository
 class ExposedPlantLogRepository : PlantLogRepository {
 
-    override fun save(userId: UserId, request: PlantLogRequest): PlantLogResponse {
+    override fun save(userId: UserId, gardenId: GardenId, request: PlantLogRequest): PlantLogResponse {
         return try {
-            doSave(userId, request)
+            doSave(userId, gardenId, request)
         } catch (e: ExposedSQLException) {
             val msg = e.message.orEmpty().lowercase()
             if ("unique" !in msg && "duplicate" !in msg) throw e
-            doSave(userId, request)
+            doSave(userId, gardenId, request)
         }
     }
 
-    private fun doSave(userId: UserId, request: PlantLogRequest): PlantLogResponse = transaction {
+    private fun doSave(userId: UserId, gardenId: GardenId, request: PlantLogRequest): PlantLogResponse = transaction {
         val instanceRow = (GardenPlantInstances innerJoin Garden)
             .select(GardenPlantInstances.plantId)
-            .where { (GardenPlantInstances.id eq request.instanceId.value) and (Garden.userId eq userId.value) }
-            .firstOrNull() ?: error("Instance ${request.instanceId} not found for user")
+            .where {
+                (GardenPlantInstances.id eq request.instanceId.value) and
+                (GardenPlantInstances.gardenId eq gardenId.value) and
+                (Garden.userId eq userId.value)
+            }
+            .firstOrNull() ?: error("Instance ${request.instanceId} not found in garden ${gardenId} for user")
         val plantId = instanceRow[GardenPlantInstances.plantId]
 
         val logId = PlantLog.selectAll()
@@ -77,7 +81,19 @@ class ExposedPlantLogRepository : PlantLogRepository {
     }
 
     override fun deleteEntry(entryId: PlantLogEntryId): Unit = transaction {
+        val logId = PlantLogEntry.selectAll()
+            .where { PlantLogEntry.id eq entryId.value }
+            .map { it[PlantLogEntry.logId] }
+            .firstOrNull()
+
         PlantLogEntry.deleteWhere { PlantLogEntry.id eq entryId.value }
+
+        if (logId != null) {
+            val remaining = PlantLogEntry.selectAll()
+                .where { PlantLogEntry.logId eq logId }
+                .count()
+            if (remaining == 0L) PlantLog.deleteWhere { PlantLog.id eq logId }
+        }
     }
 
     override fun findAllByUser(userId: UserId, gardenId: GardenId): Map<PlantInstanceId, List<LoggedEntry>> = transaction {

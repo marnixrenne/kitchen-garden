@@ -74,6 +74,7 @@ class SecurityConfig(
                 auth.requestMatchers("/api/**").authenticated()
                 auth.anyRequest().permitAll()
             }
+            .addFilterBefore(BruteForceFilter(bruteForce, json), UsernamePasswordAuthenticationFilter::class.java)
             .addFilterAfter(CsrfCookieFilter(), UsernamePasswordAuthenticationFilter::class.java)
             .formLogin { form ->
                 form.loginProcessingUrl("/api/auth/login")
@@ -136,6 +137,30 @@ class SecurityConfig(
 
     @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
+
+    private class BruteForceFilter(
+        private val bruteForce: BruteForceProtectionService,
+        private val json: ObjectMapper,
+    ) : OncePerRequestFilter() {
+        override fun doFilterInternal(
+            request: HttpServletRequest,
+            response: HttpServletResponse,
+            filterChain: FilterChain,
+        ) {
+            if (request.method == "POST" && request.requestURI.endsWith("/api/auth/login")) {
+                val username = request.getParameter("username").orEmpty()
+                if (bruteForce.isBlocked(username)) {
+                    response.status = HttpServletResponse.SC_FORBIDDEN
+                    response.contentType = "application/json"
+                    response.writer.write(
+                        json.writeValueAsString(mapOf("error" to "Too many failed attempts. Try again later."))
+                    )
+                    return
+                }
+            }
+            filterChain.doFilter(request, response)
+        }
+    }
 
     /**
      * Forces the deferred CSRF token to be loaded so the XSRF-TOKEN cookie is written on every response.

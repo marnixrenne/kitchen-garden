@@ -12,8 +12,13 @@ class SignupController(private val signupService: SignupService) {
         val email = body["email"]?.trim()
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "Email is required"))
 
-        signupService.initiateSignup(email)
-        return ResponseEntity.ok(mapOf("message" to "Verification email sent"))
+        return try {
+            signupService.initiateSignup(email)
+            ResponseEntity.ok(mapOf("message" to "Verification email sent"))
+        } catch (e: IllegalArgumentException) {
+            val status = if (e.message?.startsWith("Too many") == true) 429 else 400
+            ResponseEntity.status(status).body(mapOf("error" to (e.message ?: "Signup failed")))
+        }
     }
 
     @GetMapping("/verify/{token}")

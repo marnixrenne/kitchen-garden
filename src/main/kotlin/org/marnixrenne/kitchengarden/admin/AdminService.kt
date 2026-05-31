@@ -6,7 +6,6 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import org.marnixrenne.kitchengarden.garden.infrastructure.Garden
-import org.marnixrenne.kitchengarden.garden.infrastructure.GardenPlantInstances
 import org.marnixrenne.kitchengarden.security.Users
 import org.springframework.security.core.session.SessionRegistry
 import org.springframework.security.core.userdetails.UserDetails
@@ -23,8 +22,8 @@ class AdminService(private val sessionRegistry: SessionRegistry) {
             .toSet()
 
         return transaction {
-            val countExpr = GardenPlantInstances.plantId.count()
-            val gardenCounts = (GardenPlantInstances innerJoin Garden)
+            val countExpr = Garden.id.count()
+            val gardenCounts = Garden
                 .select(Garden.userId, countExpr)
                 .groupBy(Garden.userId)
                 .associate { it[Garden.userId] to it[countExpr].toInt() }

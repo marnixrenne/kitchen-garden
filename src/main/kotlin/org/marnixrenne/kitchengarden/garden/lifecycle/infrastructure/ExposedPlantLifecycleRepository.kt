@@ -41,7 +41,12 @@ class ExposedPlantLifecycleRepository : PlantLifecycleRepository {
             }
     }
 
-    override fun advance(userId: UserId, instanceId: PlantInstanceId, request: AdvanceRequest?): PlantLifecycle? = transaction {
+    override fun advance(userId: UserId, gardenId: GardenId, instanceId: PlantInstanceId, request: AdvanceRequest?): PlantLifecycle? = transaction {
+        val instanceExists = GardenPlantInstances.selectAll()
+            .where { (GardenPlantInstances.id eq instanceId.value) and (GardenPlantInstances.gardenId eq gardenId.value) }
+            .count() > 0
+        if (!instanceExists) return@transaction null
+
         val row = PlantLog.selectAll()
             .where { (PlantLog.userId eq userId.value) and (PlantLog.instanceId eq instanceId.value) }
             .firstOrNull() ?: return@transaction null

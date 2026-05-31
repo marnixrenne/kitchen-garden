@@ -24,7 +24,8 @@ class SignupService(
     private val rateLimitWindowMs = 60 * 60 * 1_000L
     private val rateLimitMax = 3
 
-    fun initiateSignup(email: String) {
+    fun initiateSignup(rawEmail: String) {
+        val email = rawEmail.lowercase()
         if (!emailRegex.matches(email)) throw IllegalArgumentException("Invalid email address")
 
         checkSignupRateLimit(email)
@@ -48,33 +49,38 @@ class SignupService(
         }
 
         val verifyUrl = "$baseUrl/verify?token=$token"
-        mailService.send(
-            to      = email,
-            subject = "Verify your Kitchen Garden account",
-            text    = "Click the link below to complete your registration:\n\n$verifyUrl\n\nThe link expires in 24 hours.",
-            html    = """
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                  <meta charset="UTF-8">
-                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                </head>
-                <body style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:2rem;color:#1b4332">
-                  <h2 style="margin-bottom:0.5rem">Kitchen Garden</h2>
-                  <p style="color:#52796f;margin-bottom:1.5rem">Verify your email address to complete your registration.</p>
-                  <a href="$verifyUrl" target="_blank" rel="noopener noreferrer"
-                     style="display:inline-block;padding:0.75rem 1.5rem;background:#2d6a4f;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:1rem">
-                    Verify my email
-                  </a>
-                  <p style="margin-top:1.5rem;font-size:0.85rem;color:#52796f">
-                    Or copy this link into your browser:<br>
-                    <a href="$verifyUrl" target="_blank" rel="noopener noreferrer" style="color:#2d6a4f;word-break:break-all">$verifyUrl</a>
-                  </p>
-                  <p style="font-size:0.8rem;color:#52796f">This link expires in 24 hours.</p>
-                </body>
-                </html>
-            """.trimIndent(),
-        )
+        try {
+            mailService.send(
+                to      = email,
+                subject = "Verify your Kitchen Garden account",
+                text    = "Click the link below to complete your registration:\n\n$verifyUrl\n\nThe link expires in 24 hours.",
+                html    = """
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                      <meta charset="UTF-8">
+                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    </head>
+                    <body style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:2rem;color:#1b4332">
+                      <h2 style="margin-bottom:0.5rem">Kitchen Garden</h2>
+                      <p style="color:#52796f;margin-bottom:1.5rem">Verify your email address to complete your registration.</p>
+                      <a href="$verifyUrl" target="_blank" rel="noopener noreferrer"
+                         style="display:inline-block;padding:0.75rem 1.5rem;background:#2d6a4f;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:1rem">
+                        Verify my email
+                      </a>
+                      <p style="margin-top:1.5rem;font-size:0.85rem;color:#52796f">
+                        Or copy this link into your browser:<br>
+                        <a href="$verifyUrl" target="_blank" rel="noopener noreferrer" style="color:#2d6a4f;word-break:break-all">$verifyUrl</a>
+                      </p>
+                      <p style="font-size:0.8rem;color:#52796f">This link expires in 24 hours.</p>
+                    </body>
+                    </html>
+                """.trimIndent(),
+            )
+        } catch (e: Exception) {
+            undoRateLimit(email)
+            throw e
+        }
     }
 
     fun validateToken(tokenStr: String): String? {
@@ -150,6 +156,14 @@ class SignupService(
         }
         if (limited) throw IllegalArgumentException("Too many signup requests. Please try again later.")
         evictStaleRateLimitEntries(now)
+    }
+
+    private fun undoRateLimit(email: String) {
+        signupAttempts.compute(email) { _, list ->
+            if (list.isNullOrEmpty()) return@compute null
+            list.removeLast()
+            list.ifEmpty { null }
+        }
     }
 
     private fun evictStaleRateLimitEntries(now: Long) {
