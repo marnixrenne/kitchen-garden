@@ -65,3 +65,17 @@ When adding a new column to `pts_plants` (e.g. a `foo_type` badge + `foo_tip` te
 9. **`MigrationTest.kt`** — update the two hardcoded counts: migration count (`assertEquals(73, count, …)`) and plant count (`assertEquals(183, count, …)`)
 
 The pruning and fertilizer features are the canonical examples of this pattern.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues on `marnixrenne/kitchen-garden` (via `gh`). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
