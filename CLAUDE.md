@@ -31,7 +31,7 @@ Spring Boot 4 (Kotlin) backend on port 8080, Vue 3/Vite frontend on port 5173. F
 
 **Backend package structure** (domain-driven, each package has `domain/`, `application/`, `infrastructure/` sub-packages):
 - `plants/` — plant catalogue; `PlantTables.kt` holds the Exposed DSL objects; `Plant.kt` is the list DTO, `PlantDetail.kt` has the full detail type with enums (`PlantLifespan`, `SowingMethod`, `CompanionRelationship`)
-- `garden/` — named user gardens, plant instances, log entries with lifecycle states, week summaries, planting suggestions
+- `garden/` — named user gardens split into beds (every plant instance sits in exactly one bed; a garden always keeps at least one), plant instances, log entries with lifecycle states (a log holding only moves has no state), week summaries, planting suggestions
 - `garden/lifecycle/` — lifecycle state machine per plant instance
 - `garden/plan/` — `PlantPlanCalculator` (pure domain object, has unit tests) computes germination/harvest/pruning/fertilizing/watering date ranges from a seed date
 - `preferences/` — key-value user preferences
@@ -42,7 +42,7 @@ Spring Boot 4 (Kotlin) backend on port 8080, Vue 3/Vite frontend on port 5173. F
 
 **Application services follow lightweight CQRS:** each bounded context has separate `*CommandService` and `*QueryService` classes.
 
-**Database:** Flyway migrations in `src/main/resources/db/migration/`. Plant data is seeded through migrations (not a fixture file). V32 was intentionally skipped — the count in `MigrationTest` reflects this (73 successful migrations through V74).
+**Database:** Flyway migrations in `src/main/resources/db/migration/`. Plant data is seeded through migrations (not a fixture file). V32 was intentionally skipped — the count in `MigrationTest` reflects this (76 successful migrations through V77).
 
 **Auth:** Session-based Spring Security with CSRF (`CookieCsrfTokenRepository`, non-XOR handler). The JS SPA reads the raw `XSRF-TOKEN` cookie and sends it as `X-XSRF-TOKEN`; the `CsrfCookieFilter` forces the deferred token to materialise on every response. `/api/auth/**` and `/api/plants/**` are public; `/api/admin/**` requires `ROLE_ADMIN`; everything else requires authentication.
 
@@ -62,7 +62,7 @@ When adding a new column to `pts_plants` (e.g. a `foo_type` badge + `foo_tip` te
 6. **`garden/infrastructure/ExposedGardenRepository.kt`** — add `null` stubs to the `PlantDetail(…)` call in `findDetails` (this file also constructs `PlantDetail` and will fail to compile otherwise)
 7. **`PlantDetailView.vue`** — add template section, badge CSS, computed tip text
 8. **`frontend/src/i18n/{en,nl,es}.js`** — add translation block with `title`, `type`, and `tips`
-9. **`MigrationTest.kt`** — update the two hardcoded counts: migration count (`assertEquals(73, count, …)`) and plant count (`assertEquals(183, count, …)`)
+9. **`MigrationTest.kt`** — update the two hardcoded counts: migration count (`assertEquals(76, count, …)`) and plant count (`assertEquals(183, count, …)`)
 
 The pruning and fertilizer features are the canonical examples of this pattern.
 

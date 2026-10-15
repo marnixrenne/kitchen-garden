@@ -1,5 +1,6 @@
 package org.marnixrenne.kitchengarden.plants.domain
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 
 enum class PlantLifespan(@JsonValue val key: String) {
@@ -31,6 +32,25 @@ enum class SowingMethod(@JsonValue val key: String) {
     }
 }
 
+/** How much direct sun a plant needs (Sun requirement) or a bed receives (Sun exposure). Declared from least to most sun. */
+enum class SunExposure(@JsonValue val key: String) {
+    SHADE("shade"),
+    PARTIAL_SHADE("partial_shade"),
+    FULL_SUN("full_sun");
+
+    fun isSufficientFor(requirement: SunExposure): Boolean = this >= requirement
+
+    companion object {
+        @JsonCreator
+        @JvmStatic
+        fun from(key: String): SunExposure = entries.first { it.key == key }
+
+        /** True only when both are known and the bed gets less sun than the plant needs. */
+        fun isShortfall(exposure: SunExposure?, requirement: SunExposure?): Boolean =
+            exposure != null && requirement != null && !exposure.isSufficientFor(requirement)
+    }
+}
+
 data class Country(val code: String, val name: String)
 
 data class CompanionPlant(val id: PlantId, val name: String, val emoji: String?, val relationship: CompanionRelationship)
@@ -56,7 +76,7 @@ data class PlantDetail(
     val emoji: String?,
     val imageUrl: String?,
     val lifespan: PlantLifespan?,
-    val sunRequirement: String?,
+    val sunRequirement: SunExposure?,
     val pruningType: String?,
     val fertilizerType: String?,
     val sowingGuide: SowingGuide?,

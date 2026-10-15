@@ -11,7 +11,9 @@ enum class LogAction(@JsonValue val key: String) {
     PLANTING("planting"),
     FERTILIZING("fertilizing"),
     PRUNING("pruning"),
-    WATERING("watering");
+    WATERING("watering"),
+    /** Written only by a Move; never posted directly. */
+    MOVED("moved");
 
     companion object {
         @JsonCreator
@@ -33,6 +35,11 @@ data class PlantLogResponse(
     val instanceId: PlantInstanceId,
     val plantId: PlantId,
     val action: LogAction,
+    val date: LocalDate,
+    val comment: String?,
+)
+
+data class LogEntryUpdateRequest(
     val date: LocalDate,
     val comment: String?,
 )

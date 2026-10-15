@@ -89,7 +89,7 @@ class ExposedPlantRepository : PlantRepository {
                     emoji            = row[Plants.emoji],
                     imageUrl         = row[Plants.imageUrl],
                     lifespan         = row[Plants.lifespan]?.let { PlantLifespan.from(it) },
-                    sunRequirement   = row[Plants.sunRequirement],
+                    sunRequirement   = row[Plants.sunRequirement]?.let { SunExposure.from(it) },
                     pruningType      = row[Plants.pruningType],
                     fertilizerType   = row[Plants.fertilizerType],
                     sowingGuide      = sowingGuide,

@@ -72,6 +72,7 @@ class ExposedGardenRepository : GardenRepository {
             it[Garden.name]      = name
             it[Garden.createdAt] = Instant.now()
         }
+        insertInitialBed(id)
         return id
     }
 
@@ -102,12 +103,13 @@ class ExposedGardenRepository : GardenRepository {
             .toSet()
     }
 
-    override fun add(gardenId: GardenId, plantId: PlantId) {
+    override fun add(gardenId: GardenId, plantId: PlantId, bedId: BedId) {
         try {
             transaction {
                 GardenPlantInstances.insert {
                     it[GardenPlantInstances.id]        = UUID.randomUUID()
                     it[GardenPlantInstances.gardenId]  = gardenId.value
+                    it[GardenPlantInstances.bedId]     = bedId.value
                     it[GardenPlantInstances.plantId]   = plantId.value
                     it[GardenPlantInstances.createdAt] = Instant.now()
                 }
@@ -125,10 +127,21 @@ class ExposedGardenRepository : GardenRepository {
     }
 
     override fun findInstances(gardenId: GardenId): List<PlantInstance> = transaction {
-        GardenPlantInstances.selectAll()
+        (GardenPlantInstances innerJoin GardenBeds innerJoin Plants)
+            .select(GardenPlantInstances.id, GardenPlantInstances.plantId, GardenPlantInstances.bedId, GardenBeds.sunExposure, Plants.sunRequirement)
             .where { GardenPlantInstances.gardenId eq gardenId.value }
             .orderBy(GardenPlantInstances.createdAt)
-            .map { PlantInstance(PlantInstanceId(it[GardenPlantInstances.id]), PlantId(it[GardenPlantInstances.plantId])) }
+            .map {
+                PlantInstance(
+                    id           = PlantInstanceId(it[GardenPlantInstances.id]),
+                    plantId      = PlantId(it[GardenPlantInstances.plantId]),
+                    bedId        = BedId(it[GardenPlantInstances.bedId]),
+                    sunShortfall = SunExposure.isShortfall(
+                        exposure    = it[GardenBeds.sunExposure]?.let { s -> SunExposure.from(s) },
+                        requirement = it[Plants.sunRequirement]?.let { s -> SunExposure.from(s) },
+                    ),
+                )
+            }
     }
 
     // ── Views ─────────────────────────────────────────────────────────────────
@@ -232,17 +245,11 @@ class ExposedGardenRepository : GardenRepository {
                 (PlantLog.userId eq userId.value) and
                 (PlantLog.plantId inList activeIds.toList()) and
                 (PlantLogEntry.date greaterEq weekStart) and
-                (PlantLogEntry.date lessEq weekEnd)
+                (PlantLogEntry.date lessEq weekEnd) and
+                (PlantLogEntry.action neq LogAction.MOVED.key)
             }
             .orderBy(PlantLogEntry.date)
-            .groupBy({ PlantId(it[PlantLog.plantId]) }, { row ->
-                LoggedEntry(
-                    id      = PlantLogEntryId(row[PlantLogEntry.id]),
-                    action  = LogAction.from(row[PlantLogEntry.action]),
-                    date    = row[PlantLogEntry.date],
-                    comment = row[PlantLogEntry.comment],
-                )
-            })
+            .groupBy({ PlantId(it[PlantLog.plantId]) }, { it.toLoggedEntry() })
 
         val actionsWithEntries = actions
             .map { it.copy(logEntries = entriesByPlant[it.plant.id] ?: emptyList()) }
@@ -294,7 +301,7 @@ class ExposedGardenRepository : GardenRepository {
                 emoji            = row[Plants.emoji],
                 imageUrl         = row[Plants.imageUrl],
                 lifespan         = null,
-                sunRequirement   = row[Plants.sunRequirement],
+                sunRequirement   = row[Plants.sunRequirement]?.let { SunExposure.from(it) },
                 pruningType      = null,
                 fertilizerType   = null,
                 sowingGuide      = SowingGuide(

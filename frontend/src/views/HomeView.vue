@@ -6,6 +6,7 @@ import MonthSelector from '../components/MonthSelector.vue'
 import PlantList from '../components/PlantList.vue'
 import { csrfHeaders } from '../stores/auth.js'
 import { activeGardenId } from '../stores/garden.js'
+import { chooseBed, addPlantUrl } from '../stores/bedPicker.js'
 
 const CATEGORY_ORDER = ['Fruiting', 'Leafy', 'Brassica', 'Root', 'Legume', 'Herb', 'Flower', 'Sea', 'Fruit']
 
@@ -62,8 +63,10 @@ async function fetchGarden() {
 
 async function toggleGarden(plantId) {
   const inGarden = gardenIds.value.has(plantId)
+  const bedId = inGarden ? undefined : await chooseBed(plantId)
+  if (bedId === null) return
   const method = inGarden ? 'DELETE' : 'PUT'
-  await fetch(`/api/gardens/${activeGardenId.value}/plants/${plantId}`, { method, headers: csrfHeaders() })
+  await fetch(addPlantUrl(plantId, bedId), { method, headers: csrfHeaders() })
   const next = new Set(gardenIds.value)
   inGarden ? next.delete(plantId) : next.add(plantId)
   gardenIds.value = next

@@ -12,6 +12,7 @@ import org.springframework.web.server.ResponseStatusException
 @Service
 class GardenCommandService(
     private val repository: GardenRepository,
+    private val bedRepository: BedRepository,
     private val plantLogRepository: PlantLogRepository,
     private val plantPlanCommandService: PlantPlanCommandService,
     private val userResolver: UserResolver,
@@ -36,14 +37,25 @@ class GardenCommandService(
         if (!deleted) throw ResponseStatusException(HttpStatus.NOT_FOUND)
     }
 
-    fun add(authentication: Authentication, gardenId: GardenId, plantId: PlantId) =
-        repository.add(accessGuard.validate(authentication, gardenId), plantId)
+    fun add(authentication: Authentication, gardenId: GardenId, plantId: PlantId, bedId: BedId?) {
+        accessGuard.validate(authentication, gardenId)
+        val bed = if (bedId != null) {
+            bedRepository.find(gardenId, bedId) ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Bed is not in this garden")
+        } else {
+            // Only a garden with a single bed can place a plant without being told where
+            bedRepository.findAll(gardenId).singleOrNull()
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Garden has several beds; choose one")
+        }
+        repository.add(gardenId, plantId, bed.id)
+    }
 
     fun remove(authentication: Authentication, gardenId: GardenId, plantId: PlantId) =
         repository.remove(accessGuard.validate(authentication, gardenId), plantId)
 
     fun logAction(authentication: Authentication, gardenId: GardenId, request: PlantLogRequest): PlantLogResponse {
         accessGuard.validate(authentication, gardenId)
+        if (request.action == LogAction.MOVED)
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Moves are recorded by moving the plant to another bed")
         val entry = plantLogRepository.save(userResolver.resolve(authentication), gardenId, request)
         if (request.action in setOf(LogAction.SEEDING_INDOOR, LogAction.SEEDING_OUTDOOR, LogAction.PLANTING)) {
             try {
@@ -54,5 +66,16 @@ class GardenCommandService(
             }
         }
         return entry
+    }
+
+    fun updateLogEntry(authentication: Authentication, gardenId: GardenId, entryId: PlantLogEntryId, request: LogEntryUpdateRequest): LoggedEntry {
+        accessGuard.validate(authentication, gardenId)
+        val entry = plantLogRepository.findEntry(gardenId, entryId) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
+        // Other entries drive generated plans, which a date change would leave stale
+        if (entry.action != LogAction.MOVED)
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Only move entries can be edited")
+        val comment = request.comment?.takeIf { it.isNotBlank() }
+        plantLogRepository.updateEntry(entryId, request.copy(comment = comment))
+        return entry.copy(date = request.date, comment = comment)
     }
 }
