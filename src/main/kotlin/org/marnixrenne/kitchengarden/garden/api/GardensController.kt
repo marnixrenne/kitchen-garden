@@ -106,6 +106,14 @@ class GardensController(
         return ResponseEntity.status(201).body(entry)
     }
 
+    @PatchMapping("/{gardenId}/plant-log/{entryId}")
+    fun updateLogEntry(
+        @PathVariable gardenId: GardenId,
+        @PathVariable entryId: PlantLogEntryId,
+        @RequestBody request: LogEntryUpdateRequest,
+        authentication: Authentication,
+    ): LoggedEntry = gardenCommandService.updateLogEntry(authentication, gardenId, entryId, request)
+
     @GetMapping("/{gardenId}/instances")
     fun getInstances(
         @PathVariable gardenId: GardenId,
@@ -118,9 +126,10 @@ class GardensController(
     fun addPlant(
         @PathVariable gardenId: GardenId,
         @PathVariable plantId: PlantId,
+        @RequestParam(required = false) bedId: BedId?,
         authentication: Authentication,
     ): ResponseEntity<Unit> {
-        gardenCommandService.add(authentication, gardenId, plantId)
+        gardenCommandService.add(authentication, gardenId, plantId, bedId)
         return ResponseEntity.noContent().build()
     }
 

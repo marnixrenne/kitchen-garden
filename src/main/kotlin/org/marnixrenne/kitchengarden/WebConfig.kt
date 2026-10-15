@@ -17,6 +17,8 @@ class WebConfig : WebMvcConfigurer {
         registry.addConverter(String::class.java, PlantInstanceId::class.java) { PlantInstanceId(UUID.fromString(it)) }
         registry.addConverter(String::class.java, PlantLogId::class.java)    { PlantLogId(UUID.fromString(it)) }
         registry.addConverter(String::class.java, PlantLogEntryId::class.java) { PlantLogEntryId(UUID.fromString(it)) }
+        registry.addConverter(String::class.java, BedId::class.java)         { BedId(UUID.fromString(it)) }
+        registry.addConverter(String::class.java, BedPlantsDisposition::class.java) { BedPlantsDisposition.from(it) }
         registry.addConverter(String::class.java, PlanEntryId::class.java)   { PlanEntryId(UUID.fromString(it)) }
         registry.addConverter(String::class.java, UserId::class.java)        { UserId(UUID.fromString(it)) }
     }

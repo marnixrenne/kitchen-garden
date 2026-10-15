@@ -27,8 +27,8 @@ class ExposedPlantLifecycleRepository : PlantLifecycleRepository {
                 PlantLog.instanceId.isNotNull() and
                 (PlantLog.instanceId inList instanceIds)
             }
-            .associate { row ->
-                val state      = LifecycleState.from(row[PlantLog.lifecycleState])
+            .mapNotNull { row ->
+                val state      = row[PlantLog.lifecycleState]?.let { LifecycleState.from(it) } ?: return@mapNotNull null
                 val instanceId = PlantInstanceId(row[PlantLog.instanceId]!!)
                 instanceId to PlantLifecycle(
                     instanceId = instanceId,
@@ -39,6 +39,7 @@ class ExposedPlantLifecycleRepository : PlantLifecycleRepository {
                     comment    = row[PlantLog.lifecycleComment],
                 )
             }
+            .toMap()
     }
 
     override fun advance(userId: UserId, gardenId: GardenId, instanceId: PlantInstanceId, request: AdvanceRequest?): PlantLifecycle? = transaction {
@@ -51,7 +52,7 @@ class ExposedPlantLifecycleRepository : PlantLifecycleRepository {
             .where { (PlantLog.userId eq userId.value) and (PlantLog.instanceId eq instanceId.value) }
             .firstOrNull() ?: return@transaction null
 
-        val current = LifecycleState.from(row[PlantLog.lifecycleState])
+        val current = row[PlantLog.lifecycleState]?.let { LifecycleState.from(it) } ?: return@transaction null
         val next    = current.next() ?: return@transaction null
 
         val date    = request?.date
@@ -72,7 +73,7 @@ class ExposedPlantLifecycleRepository : PlantLifecycleRepository {
             val currentRow = PlantLog.selectAll()
                 .where { (PlantLog.userId eq userId.value) and (PlantLog.instanceId eq instanceId.value) }
                 .firstOrNull() ?: return@transaction null
-            val currentState = LifecycleState.from(currentRow[PlantLog.lifecycleState])
+            val currentState = currentRow[PlantLog.lifecycleState]?.let { LifecycleState.from(it) } ?: return@transaction null
             return@transaction PlantLifecycle(
                 instanceId = instanceId,
                 plantId    = PlantId(currentRow[PlantLog.plantId]),

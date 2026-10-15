@@ -10,7 +10,7 @@ interface GardenRepository {
     fun renameGarden(gardenId: GardenId, userId: UserId, name: String): GardenSummary?
     fun deleteGarden(gardenId: GardenId, userId: UserId): Boolean
     fun findPlantIds(gardenId: GardenId): Set<PlantId>
-    fun add(gardenId: GardenId, plantId: PlantId)
+    fun add(gardenId: GardenId, plantId: PlantId, bedId: BedId)
     fun remove(gardenId: GardenId, plantId: PlantId)
     fun findInstances(gardenId: GardenId): List<PlantInstance>
     fun findSuggestions(gardenId: GardenId): PlantingSuggestions

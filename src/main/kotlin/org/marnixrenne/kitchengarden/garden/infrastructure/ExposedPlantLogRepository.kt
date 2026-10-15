@@ -36,18 +36,24 @@ class ExposedPlantLogRepository : PlantLogRepository {
             .firstOrNull() ?: error("Instance ${request.instanceId} not found in garden ${gardenId} for user")
         val plantId = instanceRow[GardenPlantInstances.plantId]
 
-        val logId = PlantLog.selectAll()
+        val initialState = when (request.action) {
+            LogAction.SEEDING_INDOOR -> LifecycleState.SEEDED_INDOOR
+            LogAction.SEEDING_OUTDOOR -> LifecycleState.SEEDED_OUTDOOR
+            LogAction.PLANTING       -> LifecycleState.PLANTED
+            else                     -> LifecycleState.GROWING
+        }
+        val existingLog = PlantLog.select(PlantLog.id, PlantLog.lifecycleState)
             .where { PlantLog.instanceId eq request.instanceId.value }
-            .map { it[PlantLog.id] }
             .firstOrNull()
+        // A log started by a move has no lifecycle state until the first real action
+        if (existingLog != null && existingLog[PlantLog.lifecycleState] == null) {
+            PlantLog.update({ PlantLog.id eq existingLog[PlantLog.id] }) {
+                it[lifecycleState] = initialState.key
+            }
+        }
+        val logId = existingLog?.get(PlantLog.id)
             ?: run {
                 val newLogId = UUID.randomUUID()
-                val initialState = when (request.action) {
-                    LogAction.SEEDING_INDOOR -> LifecycleState.SEEDED_INDOOR
-                    LogAction.SEEDING_OUTDOOR -> LifecycleState.SEEDED_OUTDOOR
-                    LogAction.PLANTING       -> LifecycleState.PLANTED
-                    else                     -> LifecycleState.GROWING
-                }
                 PlantLog.insert {
                     it[id]                  = newLogId
                     it[PlantLog.userId]     = userId.value
@@ -110,13 +116,21 @@ class ExposedPlantLogRepository : PlantLogRepository {
                 (PlantLog.instanceId inList instanceIds)
             }
             .orderBy(PlantLogEntry.date, SortOrder.DESC)
-            .groupBy({ PlantInstanceId(it[PlantLog.instanceId]!!) }, { row ->
-                LoggedEntry(
-                    id      = PlantLogEntryId(row[PlantLogEntry.id]),
-                    action  = LogAction.from(row[PlantLogEntry.action]),
-                    date    = row[PlantLogEntry.date],
-                    comment = row[PlantLogEntry.comment],
-                )
-            })
+            .groupBy({ PlantInstanceId(it[PlantLog.instanceId]!!) }, { it.toLoggedEntry() })
+    }
+
+    override fun findEntry(gardenId: GardenId, entryId: PlantLogEntryId): LoggedEntry? = transaction {
+        (PlantLogEntry innerJoin PlantLog)
+            .join(GardenPlantInstances, JoinType.INNER, PlantLog.instanceId, GardenPlantInstances.id)
+            .selectAll()
+            .where { (PlantLogEntry.id eq entryId.value) and (GardenPlantInstances.gardenId eq gardenId.value) }
+            .firstOrNull()?.toLoggedEntry()
+    }
+
+    override fun updateEntry(entryId: PlantLogEntryId, request: LogEntryUpdateRequest): Unit = transaction {
+        PlantLogEntry.update({ PlantLogEntry.id eq entryId.value }) {
+            it[date]    = request.date
+            it[comment] = request.comment
+        }
     }
 }

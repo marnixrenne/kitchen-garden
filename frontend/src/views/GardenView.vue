@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import ThisWeekCard from '../components/ThisWeekCard.vue'
 import { activeGardenName, activeGardenId, gardens, setActiveGarden } from '../stores/garden.js'
 import { csrfHeaders } from '../stores/auth.js'
+import { BED_TYPES, ASPECTS, SUN_LEVELS, MAX_DIMENSION_CM, bedLabel } from '../utils/beds.js'
 
 const router = useRouter()
 const route  = useRoute()
@@ -19,7 +20,8 @@ const suggestions   = ref(null)
 const loading       = ref(true)
 const selectedMonth = ref(null)
 
-const instances      = ref([])   // [{id: instanceId, plantId}]
+const instances      = ref([])   // [{id: instanceId, plantId, bedId, sunShortfall}]
+const beds           = ref([])   // creation order
 const plantLog       = ref({})   // keyed by instanceId
 const plantPlan      = ref({})   // keyed by instanceId
 const lifecycle      = ref({})   // keyed by instanceId
@@ -60,7 +62,7 @@ const logEntries = computed(() => {
     if (!plant) continue
     const name = plantName(plant)
     for (const e of (plantLog.value[inst.id] ?? [])) {
-      flat.push({ id: e.id, plantId: plant.id, plantName: name, emoji: plant.emoji ?? '🌱', action: e.action, date: e.date, comment: e.comment })
+      flat.push({ ...e, plantId: plant.id, plantName: name, emoji: plant.emoji ?? '🌱' })
     }
   }
   flat.sort((a, b) => b.date.localeCompare(a.date))
@@ -73,6 +75,7 @@ const filteredLogEntries = computed(() => {
   return logEntries.value.filter(e =>
     e.plantName.toLowerCase().includes(q) ||
     actionLabel(e.action).toLowerCase().includes(q) ||
+    (e.action === 'moved' && moveDescription(e).toLowerCase().includes(q)) ||
     (e.comment ?? '').toLowerCase().includes(q)
   )
 })
@@ -145,6 +148,11 @@ async function fetchInstances() {
   if (res.ok) instances.value = await res.json()
 }
 
+async function fetchBeds() {
+  const res = await fetch(`/api/gardens/${activeGardenId.value}/beds`)
+  if (res.ok) beds.value = await res.json()
+}
+
 async function fetchPlantLog() {
   const res = await fetch(`/api/gardens/${activeGardenId.value}/plant-log`)
   if (res.ok) plantLog.value = await res.json()
@@ -169,6 +177,201 @@ function isPlanEntryDone(plantId, entry) {
       log.date <= entry.plannedDateEnd
     )
   )
+}
+
+// ── Beds ──────────────────────────────────────────────────────────────────────
+
+// A plant is in a garden at most once, so each plant maps to a single instance
+const instanceByPlantId = computed(() => {
+  const map = {}
+  for (const inst of instances.value) map[inst.plantId] = inst
+  return map
+})
+
+const hasSeveralBeds = computed(() => beds.value.length > 1)
+
+// With one bed the calendar looks as it did before beds existed: a single headerless group
+const calendarGroups = computed(() => {
+  if (!hasSeveralBeds.value) return [{ bed: null, plants: sortedPlants.value }]
+  return beds.value.map(bed => ({
+    bed,
+    plants: sortedPlants.value.filter(p => instanceByPlantId.value[p.id]?.bedId === bed.id),
+  }))
+})
+
+function bedDetails(bed) {
+  const parts = []
+  if (bed.type)                  parts.push(t(`beds.type.${bed.type}`))
+  if (bed.lengthCm && bed.widthCm) parts.push(t('beds.dimensionsValue', { length: bed.lengthCm, width: bed.widthCm }))
+  else if (bed.lengthCm || bed.widthCm) parts.push(`${bed.lengthCm ?? bed.widthCm} cm`)
+  if (bed.sunExposure)           parts.push(t(`sunRequirement.${bed.sunExposure}`))
+  if (bed.aspect)                parts.push(t('beds.facing', { aspect: t(`beds.aspect.${bed.aspect}`) }))
+  return parts.join(' · ')
+}
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+async function errorText(res) {
+  try { return (await res.json()).message || `Error ${res.status}` } catch { return `Error ${res.status}` }
+}
+
+// Create / edit bed
+
+const bedModal = ref({ open: false })
+
+function openBedModal(bed = null) {
+  bedModal.value = {
+    open: true,
+    bed,
+    name:        bed?.name ?? '',
+    type:        bed?.type ?? '',
+    lengthCm:    bed?.lengthCm ?? '',
+    widthCm:     bed?.widthCm ?? '',
+    sunExposure: bed?.sunExposure ?? '',
+    aspect:      bed?.aspect ?? '',
+    saving: false,
+    error: '',
+  }
+}
+
+function validDimension(value) {
+  if (value === '' || value === null) return true
+  const n = Number(value)
+  return Number.isInteger(n) && n >= 1 && n <= MAX_DIMENSION_CM
+}
+
+// The unnamed bed a garden starts with may stay unnamed; every other bed needs a name
+const bedFormError = computed(() => {
+  const m = bedModal.value
+  if (!m.open) return ''
+  const mayStayUnnamed = m.bed && m.bed.name === null
+  if (!m.name.trim() && !mayStayUnnamed) return t('beds.nameRequired')
+  if (!validDimension(m.lengthCm) || !validDimension(m.widthCm)) return t('beds.dimensionsInvalid', { max: MAX_DIMENSION_CM })
+  return ''
+})
+
+async function saveBed() {
+  const m = bedModal.value
+  if (bedFormError.value || m.saving) return
+  m.saving = true
+  m.error = ''
+  const body = {
+    name:        m.name.trim() || null,
+    type:        m.type || null,
+    lengthCm:    m.lengthCm === '' ? null : Number(m.lengthCm),
+    widthCm:     m.widthCm === '' ? null : Number(m.widthCm),
+    sunExposure: m.sunExposure || null,
+    aspect:      m.aspect || null,
+  }
+  const res = await fetch(
+    m.bed ? `/api/gardens/${activeGardenId.value}/beds/${m.bed.id}` : `/api/gardens/${activeGardenId.value}/beds`,
+    { method: m.bed ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json', ...csrfHeaders() }, body: JSON.stringify(body) },
+  )
+  m.saving = false
+  if (!res.ok) { m.error = await errorText(res); return }
+  m.open = false
+  // A bed's sun exposure changes the instances' sun warnings
+  await Promise.all([fetchBeds(), fetchInstances()])
+}
+
+// Delete bed
+
+const deleteBedModal = ref({ open: false })
+
+function plantsInBed(bed) {
+  return instances.value.filter(i => i.bedId === bed.id).length
+}
+
+function openDeleteBedModal(bed) {
+  const others = beds.value.filter(b => b.id !== bed.id)
+  deleteBedModal.value = {
+    open: true,
+    bed,
+    plantCount: plantsInBed(bed),
+    disposition: 'move',
+    targetBedId: others[0]?.id ?? null,
+    deleting: false,
+    error: '',
+  }
+}
+
+async function confirmDeleteBed() {
+  const m = deleteBedModal.value
+  if (m.deleting) return
+  const params = m.plantCount === 0 ? ''
+    : m.disposition === 'move' ? `?plants=move&targetBedId=${m.targetBedId}`
+    : '?plants=delete'
+  m.deleting = true
+  m.error = ''
+  const res = await fetch(`/api/gardens/${activeGardenId.value}/beds/${m.bed.id}${params}`, {
+    method: 'DELETE',
+    headers: csrfHeaders(),
+  })
+  m.deleting = false
+  if (!res.ok) { m.error = await errorText(res); return }
+  m.open = false
+  if (m.plantCount > 0 && m.disposition === 'delete') await loadAll()
+  else await Promise.all([fetchBeds(), fetchInstances(), fetchPlantLog()])
+}
+
+// Move a plant
+
+const moveModal = ref({ open: false })
+
+function openMoveModal(plant) {
+  const instance = instanceByPlantId.value[plant.id]
+  if (!instance) return
+  moveModal.value = { open: true, plant, instance, bedId: null, date: todayIso(), comment: '', saving: false, error: '' }
+}
+
+const moveTargets = computed(() =>
+  moveModal.value.open ? beds.value.filter(b => b.id !== moveModal.value.instance.bedId) : []
+)
+
+async function confirmMove() {
+  const m = moveModal.value
+  if (!m.bedId || m.saving) return
+  m.saving = true
+  m.error = ''
+  const res = await fetch(`/api/gardens/${activeGardenId.value}/instances/${m.instance.id}/move`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+    body: JSON.stringify({ bedId: m.bedId, date: m.date || null, comment: m.comment.trim() || null }),
+  })
+  m.saving = false
+  if (!res.ok) { m.error = await errorText(res); return }
+  m.open = false
+  await Promise.all([fetchInstances(), fetchPlantLog()])
+}
+
+// Edit a move log entry: only its date and comment can change
+
+const entryModal = ref({ open: false })
+
+function openEntryModal(entry) {
+  entryModal.value = { open: true, entry, date: entry.date, comment: entry.comment ?? '', saving: false, error: '' }
+}
+
+async function saveEntry() {
+  const m = entryModal.value
+  if (!m.date || m.saving) return
+  m.saving = true
+  m.error = ''
+  const res = await fetch(`/api/gardens/${activeGardenId.value}/plant-log/${m.entry.id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+    body: JSON.stringify({ date: m.date, comment: m.comment.trim() || null }),
+  })
+  m.saving = false
+  if (!res.ok) { m.error = await errorText(res); return }
+  m.open = false
+  await fetchPlantLog()
+}
+
+function moveDescription(entry) {
+  return t('beds.movedFromTo', { from: bedLabel(t, entry.fromBedName), to: bedLabel(t, entry.toBedName) })
 }
 
 const months = computed(() => tm('months'))
@@ -276,7 +479,7 @@ function plantName(plant) {
 }
 
 async function onWeekRefresh() {
-  await Promise.all([fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
+  await Promise.all([fetchBeds(), fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
 }
 
 // ── Rename garden ─────────────────────────────────────────────────────────────
@@ -331,6 +534,7 @@ async function loadAll() {
   plants.value = []
   suggestions.value = null
   instances.value = []
+  beds.value = []
   plantLog.value = {}
   plantPlan.value = {}
   lifecycle.value = {}
@@ -342,7 +546,7 @@ async function loadAll() {
   if (detailsRes.ok)     plants.value      = await detailsRes.json()
   if (suggestionsRes.ok) suggestions.value = await suggestionsRes.json()
   loading.value = false
-  await Promise.all([fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
+  await Promise.all([fetchBeds(), fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
 }
 
 onMounted(loadAll)
@@ -377,6 +581,13 @@ watch(activeGardenId, loadAll)
       <button class="garden-tab" :class="{ active: activeTab === 'log' }" @click="setTab('log')">{{ t('garden.logNav') }}</button>
     </div>
 
+    <div v-if="!loading && activeTab === 'calendar'" class="bed-toolbar">
+      <button v-if="!hasSeveralBeds && beds.length === 1" class="bed-settings-link" @click="openBedModal(beds[0])">
+        {{ t('beds.settings') }}
+      </button>
+      <button class="add-bed-btn" @click="openBedModal()">+ {{ t('beds.add') }}</button>
+    </div>
+
     <div v-if="loading" class="loading">{{ t('loading') }}</div>
 
     <template v-else-if="activeTab === 'log'">
@@ -402,7 +613,14 @@ watch(activeGardenId, loadAll)
               {{ entry.plantName }}
             </button>
             <span class="log-action-badge">{{ actionLabel(entry.action) }}</span>
+            <span v-if="entry.action === 'moved'" class="log-move">{{ moveDescription(entry) }}</span>
             <span class="log-date">{{ formatLogDate(entry.date) }}</span>
+            <button
+              v-if="entry.action === 'moved'"
+              class="log-edit-btn"
+              :title="t('beds.editEntry')"
+              @click="openEntryModal(entry)"
+            >✎</button>
           </div>
           <p v-if="entry.comment" class="log-comment">{{ entry.comment }}</p>
         </li>
@@ -451,7 +669,21 @@ watch(activeGardenId, loadAll)
             </tr>
           </thead>
           <tbody>
-            <template v-for="plant in sortedPlants" :key="plant.id">
+            <template v-for="group in calendarGroups" :key="group.bed?.id ?? 'all'">
+            <tr v-if="group.bed" class="bed-row">
+              <td colspan="13">
+                <div class="bed-row-inner">
+                  <span class="bed-name">{{ bedLabel(t, group.bed.name) }}</span>
+                  <span v-if="bedDetails(group.bed)" class="bed-details">{{ bedDetails(group.bed) }}</span>
+                  <span v-if="group.plants.length === 0" class="bed-empty">{{ t('beds.empty') }}</span>
+                  <span class="bed-actions">
+                    <button class="bed-icon-btn" :title="t('beds.edit')" @click="openBedModal(group.bed)">✎</button>
+                    <button class="bed-icon-btn danger" :title="t('beds.delete')" @click="openDeleteBedModal(group.bed)">🗑</button>
+                  </span>
+                </div>
+              </td>
+            </tr>
+            <template v-for="plant in group.plants" :key="plant.id">
               <tr class="plant-row">
                 <td
                   class="plant-name"
@@ -471,10 +703,23 @@ watch(activeGardenId, loadAll)
                   <span class="plant-emoji">{{ plant.emoji ?? '🌱' }}</span>
                   <span>{{ plantName(plant) }}</span>
                   <span
+                    v-if="instanceByPlantId[plant.id]?.sunShortfall"
+                    class="sun-warning"
+                    :title="t('beds.sunWarning')"
+                    :aria-label="t('beds.sunWarning')"
+                  >⚠️</span>
+                  <span
                     v-if="lcForPlant(plant.id)"
                     class="lifecycle-badge"
                     :class="'lc-' + lcForPlant(plant.id).state"
                   >{{ te(`garden.lifecycle.${lcForPlant(plant.id).state}`) ? t(`garden.lifecycle.${lcForPlant(plant.id).state}`) : lcForPlant(plant.id).state }}</span>
+                  <button
+                    v-if="hasSeveralBeds && instanceByPlantId[plant.id]"
+                    class="move-btn"
+                    :class="{ 'push-right': !lcForPlant(plant.id) }"
+                    :title="t('beds.moveToBed')"
+                    @click.stop="openMoveModal(plant)"
+                  >⇄</button>
                 </td>
                 <td
                   v-for="m in 12"
@@ -513,6 +758,7 @@ watch(activeGardenId, loadAll)
                   />
                 </td>
               </tr>
+            </template>
             </template>
           </tbody>
         </table>
@@ -643,6 +889,167 @@ watch(activeGardenId, loadAll)
             </button>
             <button class="dg-confirm" @click="confirmDeleteGarden" :disabled="deleteModal.deleting">
               {{ t('garden.deleteGardenConfirmBtn') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <Teleport to="body">
+    <div v-if="bedModal.open" class="dg-backdrop" @click.self="bedModal.open = false">
+      <div class="dg-modal" role="dialog" aria-modal="true">
+        <div class="eg-header">{{ bedModal.bed ? t('beds.edit') : t('beds.add') }}</div>
+        <div class="dg-body">
+          <label class="bf-field">
+            <span class="bf-label">{{ t('beds.name') }}</span>
+            <input
+              v-model="bedModal.name"
+              class="eg-input"
+              maxlength="100"
+              :placeholder="bedModal.bed && bedModal.bed.name === null ? t('beds.mainBed') : t('beds.namePlaceholder')"
+            />
+          </label>
+          <label class="bf-field">
+            <span class="bf-label">{{ t('beds.typeLabel') }}</span>
+            <select v-model="bedModal.type" class="eg-input">
+              <option value="">{{ t('beds.notSet') }}</option>
+              <option v-for="type in BED_TYPES" :key="type" :value="type">{{ t(`beds.type.${type}`) }}</option>
+            </select>
+          </label>
+          <div class="bf-row">
+            <label class="bf-field">
+              <span class="bf-label">{{ t('beds.lengthCm') }}</span>
+              <input v-model="bedModal.lengthCm" class="eg-input" type="number" min="1" :max="MAX_DIMENSION_CM" step="1" />
+            </label>
+            <label class="bf-field">
+              <span class="bf-label">{{ t('beds.widthCm') }}</span>
+              <input v-model="bedModal.widthCm" class="eg-input" type="number" min="1" :max="MAX_DIMENSION_CM" step="1" />
+            </label>
+          </div>
+          <div class="bf-row">
+            <label class="bf-field">
+              <span class="bf-label">{{ t('beds.sunLabel') }}</span>
+              <select v-model="bedModal.sunExposure" class="eg-input">
+                <option value="">{{ t('beds.notSet') }}</option>
+                <option v-for="sun in SUN_LEVELS" :key="sun" :value="sun">{{ t(`sunRequirement.${sun}`) }}</option>
+              </select>
+            </label>
+            <label class="bf-field">
+              <span class="bf-label">{{ t('beds.aspectLabel') }}</span>
+              <select v-model="bedModal.aspect" class="eg-input">
+                <option value="">{{ t('beds.notSet') }}</option>
+                <option v-for="aspect in ASPECTS" :key="aspect" :value="aspect">{{ t(`beds.aspect.${aspect}`) }}</option>
+              </select>
+            </label>
+          </div>
+          <p v-if="bedFormError || bedModal.error" class="bf-error">{{ bedModal.error || bedFormError }}</p>
+          <div class="dg-actions">
+            <button class="dg-cancel" @click="bedModal.open = false" :disabled="bedModal.saving">
+              {{ t('garden.seedModal.cancel') }}
+            </button>
+            <button class="eg-save" @click="saveBed" :disabled="bedModal.saving || !!bedFormError">
+              {{ t('garden.editGardenSave') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <Teleport to="body">
+    <div v-if="deleteBedModal.open" class="dg-backdrop" @click.self="deleteBedModal.open = false">
+      <div class="dg-modal" role="dialog" aria-modal="true">
+        <div class="dg-header">{{ t('beds.delete') }}</div>
+        <div class="dg-body">
+          <p class="dg-warning">{{ t('beds.deleteConfirm', { name: bedLabel(t, deleteBedModal.bed.name) }) }}</p>
+          <template v-if="deleteBedModal.plantCount > 0">
+            <p class="dg-warning">{{ t('beds.deleteHasPlants', deleteBedModal.plantCount) }}</p>
+            <label class="bf-radio">
+              <input v-model="deleteBedModal.disposition" type="radio" value="move" />
+              {{ t('beds.deleteMovePlants') }}
+            </label>
+            <select v-if="deleteBedModal.disposition === 'move'" v-model="deleteBedModal.targetBedId" class="eg-input">
+              <option
+                v-for="bed in beds.filter(b => b.id !== deleteBedModal.bed.id)"
+                :key="bed.id"
+                :value="bed.id"
+              >{{ bedLabel(t, bed.name) }}</option>
+            </select>
+            <label class="bf-radio">
+              <input v-model="deleteBedModal.disposition" type="radio" value="delete" />
+              {{ t('beds.deleteRemovePlants') }}
+            </label>
+          </template>
+          <p v-if="deleteBedModal.error" class="bf-error">{{ deleteBedModal.error }}</p>
+          <div class="dg-actions">
+            <button class="dg-cancel" @click="deleteBedModal.open = false" :disabled="deleteBedModal.deleting">
+              {{ t('garden.seedModal.cancel') }}
+            </button>
+            <button class="dg-confirm" @click="confirmDeleteBed" :disabled="deleteBedModal.deleting">
+              {{ t('beds.deleteConfirmBtn') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <Teleport to="body">
+    <div v-if="moveModal.open" class="dg-backdrop" @click.self="moveModal.open = false">
+      <div class="dg-modal" role="dialog" aria-modal="true">
+        <div class="eg-header">{{ t('beds.moveTitle', { plant: plantName(moveModal.plant) }) }}</div>
+        <div class="dg-body">
+          <label class="bf-field">
+            <span class="bf-label">{{ t('beds.moveTo') }}</span>
+            <select v-model="moveModal.bedId" class="eg-input">
+              <option :value="null" disabled>{{ t('beds.chooseBed') }}</option>
+              <option v-for="bed in moveTargets" :key="bed.id" :value="bed.id">{{ bedLabel(t, bed.name) }}</option>
+            </select>
+          </label>
+          <label class="bf-field">
+            <span class="bf-label">{{ t('garden.seedModal.dateLabel') }}</span>
+            <input v-model="moveModal.date" class="eg-input" type="date" />
+          </label>
+          <label class="bf-field">
+            <span class="bf-label">{{ t('garden.seedModal.commentLabel') }}</span>
+            <input v-model="moveModal.comment" class="eg-input" :placeholder="t('garden.seedModal.commentPlaceholder')" />
+          </label>
+          <p v-if="moveModal.error" class="bf-error">{{ moveModal.error }}</p>
+          <div class="dg-actions">
+            <button class="dg-cancel" @click="moveModal.open = false" :disabled="moveModal.saving">
+              {{ t('garden.seedModal.cancel') }}
+            </button>
+            <button class="eg-save" @click="confirmMove" :disabled="moveModal.saving || !moveModal.bedId">
+              {{ t('beds.moveConfirm') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <Teleport to="body">
+    <div v-if="entryModal.open" class="dg-backdrop" @click.self="entryModal.open = false">
+      <div class="dg-modal" role="dialog" aria-modal="true">
+        <div class="eg-header">{{ t('beds.editEntry') }}</div>
+        <div class="dg-body">
+          <p class="dg-warning">{{ moveDescription(entryModal.entry) }}</p>
+          <label class="bf-field">
+            <span class="bf-label">{{ t('garden.seedModal.dateLabel') }}</span>
+            <input v-model="entryModal.date" class="eg-input" type="date" />
+          </label>
+          <label class="bf-field">
+            <span class="bf-label">{{ t('garden.seedModal.commentLabel') }}</span>
+            <input v-model="entryModal.comment" class="eg-input" :placeholder="t('garden.seedModal.commentPlaceholder')" />
+          </label>
+          <p v-if="entryModal.error" class="bf-error">{{ entryModal.error }}</p>
+          <div class="dg-actions">
+            <button class="dg-cancel" @click="entryModal.open = false" :disabled="entryModal.saving">
+              {{ t('garden.seedModal.cancel') }}
+            </button>
+            <button class="eg-save" @click="saveEntry" :disabled="entryModal.saving || !entryModal.date">
+              {{ t('garden.editGardenSave') }}
             </button>
           </div>
         </div>
@@ -1369,5 +1776,105 @@ main {
   color: var(--text-muted);
   padding-left: 1.6rem;
 }
+
+/* Beds */
+.bed-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.bed-settings-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--green-mid);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.add-bed-btn {
+  padding: 0.4rem 0.9rem;
+  border: 1.5px solid var(--green-pale);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  color: var(--green-dark);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-bed-btn:hover { border-color: var(--green-mid); }
+
+.bed-row td {
+  background: var(--green-pale);
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--green-pale);
+}
+
+.bed-row-inner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.bed-name { font-size: 0.85rem; font-weight: 700; color: var(--green-dark); }
+.bed-details, .bed-empty { font-size: 0.78rem; color: var(--text-muted); }
+.bed-empty { font-style: italic; }
+.bed-actions { margin-left: auto; display: flex; gap: 0.25rem; }
+
+.bed-icon-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 6px;
+  color: var(--green-dark);
+}
+
+.bed-icon-btn:hover { background: rgba(255,255,255,0.6); }
+
+.sun-warning { font-size: 0.8rem; cursor: help; }
+
+.move-btn {
+  flex-shrink: 0;
+  border: 1px solid var(--green-pale);
+  background: var(--card-bg);
+  color: var(--green-mid);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  padding: 0 0.35rem;
+  cursor: pointer;
+}
+
+.move-btn.push-right { margin-left: auto; }
+.move-btn:hover { border-color: var(--green-mid); }
+
+.bf-field { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; min-width: 0; }
+.bf-label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); }
+.bf-row { display: flex; gap: 0.75rem; }
+.bf-radio { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+.bf-error { font-size: 0.82rem; color: #b91c1c; }
+
+.dg-body .eg-input { background: #fff; }
+
+.log-move { font-size: .85rem; color: var(--text-muted); }
+
+.log-edit-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: .9rem;
+  padding: 0 .2rem;
+}
+
+.log-edit-btn:hover { color: var(--green-dark); }
 
 </style>

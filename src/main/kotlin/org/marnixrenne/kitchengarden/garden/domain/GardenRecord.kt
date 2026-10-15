@@ -4,4 +4,10 @@ import org.marnixrenne.kitchengarden.plants.domain.PlantId
 
 data class GardenSummary(val id: GardenId, val name: String)
 data class CreateGardenRequest(val name: String)
-data class PlantInstance(val id: PlantInstanceId, val plantId: PlantId)
+data class PlantInstance(
+    val id: PlantInstanceId,
+    val plantId: PlantId,
+    val bedId: BedId,
+    /** The bed gets less sun than the plant needs. */
+    val sunShortfall: Boolean,
+)
