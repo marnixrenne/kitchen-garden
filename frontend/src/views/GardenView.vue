@@ -586,7 +586,8 @@ watch(gardens, (list) => {
     </nav>
 
     <div class="page-header">
-      <h2 class="page-title">{{ focusedZone ? zoneLabel(t, focusedZone.name) : (activeGardenName ?? t('myGarden')) }}</h2>
+      <h2 class="page-title" :class="{ 'page-title--zone': zoneId }">{{ focusedZone ? zoneLabel(t, focusedZone.name) : (activeGardenName ?? t('myGarden')) }}</h2>
+      <button v-if="focusedZone" class="zone-settings-link" @click="openZoneModal(focusedZone)">{{ t('zones.settings') }}</button>
       <div v-if="!zoneId" class="page-header-actions">
         <button class="edit-garden-btn" @click="openEditModal" :title="t('garden.editGarden')">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -605,17 +606,14 @@ watch(gardens, (list) => {
       </div>
     </div>
 
+    <div v-if="!zoneId" class="zone-toolbar">
+      <button class="add-zone-btn" @click="openZoneModal()">+ {{ t('zones.add') }}</button>
+    </div>
+
     <div class="garden-tabs">
       <button class="garden-tab" :class="{ active: activeTab === 'week' }" @click="setTab('week')">{{ t('garden.thisWeek') }}</button>
       <button class="garden-tab" :class="{ active: activeTab === 'calendar' }" @click="setTab('calendar')">{{ t('garden.calendarTab') }}</button>
       <button class="garden-tab" :class="{ active: activeTab === 'log' }" @click="setTab('log')">{{ t('garden.logNav') }}</button>
-    </div>
-
-    <div v-if="!loading && activeTab !== 'log' && !zoneId" class="zone-toolbar">
-      <button v-if="!hasSeveralZones && zones.length === 1" class="zone-settings-link" @click="openZoneModal(zones[0])">
-        {{ t('zones.settings') }}
-      </button>
-      <button class="add-zone-btn" @click="openZoneModal()">+ {{ t('zones.add') }}</button>
     </div>
 
     <div v-if="loading" class="loading">{{ t('loading') }}</div>
@@ -837,7 +835,7 @@ watch(gardens, (list) => {
         </template>
       </div>
       <!-- This week -->
-      <ThisWeekCard v-if="activeTab === 'week'" class="this-week-card" :zones="zones" :zone-id="zoneId" @refresh="onWeekRefresh" />
+      <ThisWeekCard v-if="activeTab === 'week'" class="this-week-card" :zones="zones" :zone-id="zoneId" @refresh="onWeekRefresh" @edit-zone="openZoneModal" />
 
       <!-- Planting suggestions -->
       <div v-if="activeTab === 'calendar' && !zoneId && suggestions && (suggestions.sunGroups.length > 0 || suggestions.conflicts.length > 0)" class="suggestions">
@@ -1129,6 +1127,10 @@ main {
   font-weight: 700;
   color: var(--green-dark);
   flex: 1;
+}
+
+.page-title--zone {
+  flex: 0 1 auto;
 }
 
 .page-header-actions {

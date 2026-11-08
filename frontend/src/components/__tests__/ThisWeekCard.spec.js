@@ -81,6 +81,14 @@ describe('ThisWeekCard', () => {
     expect(zoneNames(wrapper)).toEqual(['Veg', 'Herbs', 'Empty', 'New'])
   })
 
+  it('asks to edit a zone from the settings link next to its name', async () => {
+    const wrapper = await mountCard()
+
+    await wrapper.findAll('.week-zone-header')[1].find('.week-zone-settings').trigger('click')
+
+    expect(wrapper.emitted('edit-zone')).toEqual([[HERBS]])
+  })
+
   it('links each zone on the garden page to its own page', async () => {
     const wrapper = await mountCard()
 

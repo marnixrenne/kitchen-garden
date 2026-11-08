@@ -11,7 +11,7 @@ const props = defineProps({
   zones:  { type: Array,  default: () => [] },
   zoneId: { type: String, default: null },
 })
-const emit = defineEmits(['refresh'])
+const emit = defineEmits(['refresh', 'edit-zone'])
 const { t, te, tm, locale } = useI18n()
 const router = useRouter()
 
@@ -236,9 +236,12 @@ defineOptions({ inheritAttrs: false })
     </div>
 
     <section v-for="{ zone, rows } in zoneGroups" :key="zone.id" class="week-zone">
-      <h3 v-if="!zoneId" class="week-zone-name">
-        <RouterLink :to="`/gardens/${activeGardenId}/zones/${zone.id}`">{{ zoneLabel(t, zone.name) }}</RouterLink>
-      </h3>
+      <div v-if="!zoneId" class="week-zone-header">
+        <h3 class="week-zone-name">
+          <RouterLink :to="`/gardens/${activeGardenId}/zones/${zone.id}`">{{ zoneLabel(t, zone.name) }}</RouterLink>
+        </h3>
+        <button class="week-zone-settings" @click="emit('edit-zone', zone)">{{ t('zones.settings') }}</button>
+      </div>
 
       <p v-if="rows.length === 0" class="week-empty">{{ zoneId ? t('zones.empty') : t('dashboard.nothingOpen') }}</p>
 
@@ -486,10 +489,26 @@ defineOptions({ inheritAttrs: false })
   border-top: none;
 }
 
-.week-zone-name {
+.week-zone-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
   padding: 0.5rem 1.25rem;
   background: var(--bg);
   border-bottom: 1px solid var(--green-pale);
+}
+
+.week-zone-settings {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.75rem;
+  color: var(--green-mid);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.week-zone-name {
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--green-dark);

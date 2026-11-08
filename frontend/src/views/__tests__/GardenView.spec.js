@@ -64,7 +64,7 @@ describe('GardenView zones', () => {
   beforeEach(() => setActiveGarden(GARDEN))
   afterEach(() => vi.restoreAllMocks())
 
-  it('with a single zone shows no zone headers or move action, only a zone settings link', async () => {
+  it('with a single zone shows no zone headers or move action', async () => {
     const wrapper = await mountGarden({
       zones: [MAIN_ZONE],
       instances: [
@@ -75,7 +75,6 @@ describe('GardenView zones', () => {
 
     expect(wrapper.findAll('.zone-row')).toHaveLength(0)
     expect(wrapper.findAll('.move-btn')).toHaveLength(0)
-    expect(wrapper.find('.zone-settings-link').text()).toBe('Zone settings')
     expect(wrapper.findAll('.plant-row')).toHaveLength(2)
   })
 
@@ -97,7 +96,6 @@ describe('GardenView zones', () => {
     expect(rows[3]).toMatch(/^plant:.*Basil/)
     expect(wrapper.find('.zone-details').text()).toContain('Raised bed')
     expect(wrapper.findAll('.move-btn')).toHaveLength(2)
-    expect(wrapper.find('.zone-settings-link').exists()).toBe(false)
   })
 
   it('shows a sun warning only on plants whose zone gets too little sun', async () => {
@@ -252,12 +250,39 @@ describe('GardenView scoped to one zone', () => {
     expect(wrapper.findComponent(ThisWeekCard).props('zones').map(z => z.id)).toEqual([MAIN_ZONE.id, HERBS_ZONE.id])
   })
 
-  it('offers adding a zone on the calendar tab but not on the log tab or a zone page', async () => {
+  it('offers adding a zone above the tabs on every tab, but not on a zone page', async () => {
     const config = { zones: [MAIN_ZONE, HERBS_ZONE], instances: INSTANCES }
 
-    expect((await mountAt(`/gardens/${GARDEN}?tab=calendar`, config)).wrapper.find('.add-zone-btn').exists()).toBe(true)
-    expect((await mountAt(`/gardens/${GARDEN}?tab=log`, config)).wrapper.find('.add-zone-btn').exists()).toBe(false)
+    for (const query of ['', '?tab=calendar', '?tab=log']) {
+      const { wrapper } = await mountAt(`/gardens/${GARDEN}${query}`, config)
+      expect(wrapper.find('.zone-toolbar + .garden-tabs').exists()).toBe(true)
+      expect(wrapper.find('.add-zone-btn').exists()).toBe(true)
+    }
     expect((await mountAt(`/gardens/${GARDEN}/zones/${HERBS_ZONE.id}`, config)).wrapper.find('.add-zone-btn').exists()).toBe(false)
+  })
+
+  it('opens the settings of the zone the this-week card asks for', async () => {
+    const { wrapper } = await mountAt(`/gardens/${GARDEN}`, { zones: [MAIN_ZONE, HERBS_ZONE], instances: INSTANCES })
+
+    wrapper.findComponent(ThisWeekCard).vm.$emit('edit-zone', HERBS_ZONE)
+    await flushPromises()
+
+    expect(wrapper.find('.eg-header').text()).toBe('Edit zone')
+    expect(wrapper.find('.bf-field input').element.value).toBe('Herbs')
+  })
+
+  it('has a settings link next to the zone name on a zone page', async () => {
+    const { wrapper } = await mountAt(`/gardens/${GARDEN}/zones/${HERBS_ZONE.id}`, { zones: [MAIN_ZONE, HERBS_ZONE], instances: INSTANCES })
+
+    await wrapper.find('.page-title + .zone-settings-link').trigger('click')
+
+    expect(wrapper.find('.bf-field input').element.value).toBe('Herbs')
+  })
+
+  it('has no zone settings link on the garden page header', async () => {
+    const { wrapper } = await mountAt(`/gardens/${GARDEN}`, { zones: [MAIN_ZONE], instances: INSTANCES })
+
+    expect(wrapper.find('.zone-settings-link').exists()).toBe(false)
   })
 
   it('falls back to the garden when the zone no longer exists', async () => {
