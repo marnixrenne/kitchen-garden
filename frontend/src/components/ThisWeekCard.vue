@@ -7,13 +7,15 @@ import { activeGardenId } from '../stores/garden.js'
 import { zoneLabel } from '../utils/zones.js'
 import { ACTION_ICON, ACTION_LABEL_KEY, allActions, buildActionBuckets } from '../utils/openActions.js'
 
-const props = defineProps({ zoneId: { type: String, default: null } })
-const emit = defineEmits(['refresh'])
+const props = defineProps({
+  zones:  { type: Array,  default: () => [] },
+  zoneId: { type: String, default: null },
+})
+const emit = defineEmits(['refresh', 'edit-zone'])
 const { t, te, tm, locale } = useI18n()
 const router = useRouter()
 
 const weekSummary = ref(null)
-const zones       = ref([])
 const instances   = ref([])
 const plantLog    = ref({})
 const plantPlan   = ref({})
@@ -107,7 +109,7 @@ const zoneGroups = computed(() => {
   const actionsByInstance = {}
   for (const item of actions.value) (actionsByInstance[item.instanceId] ??= []).push(item)
 
-  return zones.value
+  return props.zones
     .filter(zone => !props.zoneId || zone.id === props.zoneId)
     .map(zone => ({
       zone,
@@ -131,8 +133,7 @@ const openActionCount = computed(() =>
 async function fetchAll() {
   loading.value = true
   const gid = activeGardenId.value
-  const [zonesRes, weekRes, instRes, logRes, planRes, lcRes, detailRes] = await Promise.all([
-    fetch(`/api/gardens/${gid}/zones`),
+  const [weekRes, instRes, logRes, planRes, lcRes, detailRes] = await Promise.all([
     fetch(`/api/gardens/${gid}/week`),
     fetch(`/api/gardens/${gid}/instances`),
     fetch(`/api/gardens/${gid}/plant-log`),
@@ -140,7 +141,6 @@ async function fetchAll() {
     fetch(`/api/gardens/${gid}/lifecycle`),
     fetch(`/api/gardens/${gid}/details`),
   ])
-  if (zonesRes.ok)  zones.value       = await zonesRes.json()
   if (weekRes.ok)   weekSummary.value = await weekRes.json()
   if (instRes.ok)   instances.value   = await instRes.json()
   if (logRes.ok)    plantLog.value     = await logRes.json()
@@ -236,9 +236,12 @@ defineOptions({ inheritAttrs: false })
     </div>
 
     <section v-for="{ zone, rows } in zoneGroups" :key="zone.id" class="week-zone">
-      <h3 v-if="!zoneId" class="week-zone-name">
-        <RouterLink :to="`/gardens/${activeGardenId}/zones/${zone.id}`">{{ zoneLabel(t, zone.name) }}</RouterLink>
-      </h3>
+      <div v-if="!zoneId" class="week-zone-header">
+        <h3 class="week-zone-name">
+          <RouterLink :to="`/gardens/${activeGardenId}/zones/${zone.id}`">{{ zoneLabel(t, zone.name) }}</RouterLink>
+        </h3>
+        <button class="week-zone-settings" @click="emit('edit-zone', zone)">{{ t('zones.settings') }}</button>
+      </div>
 
       <p v-if="rows.length === 0" class="week-empty">{{ zoneId ? t('zones.empty') : t('dashboard.nothingOpen') }}</p>
 
@@ -486,10 +489,26 @@ defineOptions({ inheritAttrs: false })
   border-top: none;
 }
 
-.week-zone-name {
+.week-zone-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
   padding: 0.5rem 1.25rem;
   background: var(--bg);
   border-bottom: 1px solid var(--green-pale);
+}
+
+.week-zone-settings {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.75rem;
+  color: var(--green-mid);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.week-zone-name {
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--green-dark);
