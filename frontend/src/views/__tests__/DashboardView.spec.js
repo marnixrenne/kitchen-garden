@@ -98,6 +98,22 @@ describe('DashboardView', () => {
     expect(wrapper.findAll('.dash-job').map(j => j.text())).toEqual(['✂️ Prune', '💧 Water'])
   })
 
+  it('marks only the jobs that are overdue', async () => {
+    const pruning = { ...watering('2026-06-12'), id: 'plan-prune', action: 'pruning' }
+    const wrapper = await mountDashboard(
+      [{ id: 'g1', name: 'Backyard' }],
+      gardenRoutes('g1', {
+        zones: [HERBS],
+        instances: [{ id: 'i1', plantId: TOMATO.id, zoneId: HERBS.id }],
+        plan: { i1: [watering('2026-06-09'), pruning] },
+      }),
+    )
+
+    const [prune, water] = wrapper.findAll('.dash-job')
+    expect(prune.find('.dash-overdue').exists()).toBe(false)
+    expect(water.find('.dash-overdue').text()).toBe(en.garden.overdue)
+  })
+
   it('caps the plants listed on a zone and says how many are left', async () => {
     const plants = Array.from({ length: 7 }, (_, i) => ({ id: `p${i}`, name: `Plant ${i}` }))
     const wrapper = await mountDashboard(

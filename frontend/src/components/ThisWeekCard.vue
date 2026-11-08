@@ -265,6 +265,7 @@ defineOptions({ inheritAttrs: false })
           <span class="week-action-icon" aria-hidden="true">{{ ACTION_ICON[item.action] }}</span>
           <div class="week-action-body">
             <span class="week-action-label">{{ actionLabel(item.action) }}</span>
+            <span v-if="item.overdue" class="wi-overdue">{{ t('garden.overdue') }}</span>
             <span v-if="item.sowAction && hintsFor(item.sowAction).length" class="wi-hints">{{ hintsFor(item.sowAction).join(' · ') }}</span>
             <span v-if="item.dateRange" class="wi-daterange">{{ item.dateRange }}</span>
           </div>
@@ -616,7 +617,7 @@ defineOptions({ inheritAttrs: false })
 }
 
 .wi-overdue {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 700;
   padding: 0.1rem 0.4rem;
   border-radius: 20px;

@@ -122,6 +122,18 @@ describe('ThisWeekCard', () => {
     expect(wrapper.find('.week-empty').text()).toBe('No plants yet')
   })
 
+  it('labels only the jobs whose planned dates have passed as overdue', async () => {
+    const wrapper = await mountCard({
+      zoneId: VEG.id,
+      plan: { 'i-tomato': [planned('watering', '2026-06-09'), planned('pruning', '2026-06-12')] },
+    })
+
+    const rows = wrapper.findAll('.week-action')
+    const byLabel = Object.fromEntries(rows.map(r => [r.find('.week-action-label').text(), r]))
+    expect(byLabel[en.garden.job.watering].find('.wi-overdue').text()).toBe(en.garden.overdue)
+    expect(byLabel[en.garden.job.pruning].find('.wi-overdue').exists()).toBe(false)
+  })
+
   it('leaves out actions planned for another week', async () => {
     const wrapper = await mountCard({ plan: { 'i-tomato': [planned('watering', '2026-06-20')] } })
 

@@ -56,6 +56,32 @@ describe('open actions', () => {
     expect(open).toHaveLength(0)
   })
 
+  describe('overdue', () => {
+    const overdueOf = (plantPlan, plantLog = {}) =>
+      buildActionBuckets(data({ plantPlan, plantLog }), formatDate).watering[0].overdue
+
+    it('marks an open action whose planned dates have passed', () => {
+      expect(overdueOf({ 'i-tomato': [water('2026-06-08', '2026-06-09')] })).toBe(true)
+    })
+
+    it('does not mark an action planned to end today', () => {
+      expect(overdueOf({ 'i-tomato': [water('2026-06-08', '2026-06-10')] })).toBe(false)
+    })
+
+    it('does not mark an action that was logged in time', () => {
+      expect(overdueOf(
+        { 'i-tomato': [water('2026-06-08', '2026-06-09')] },
+        { 'i-tomato': [{ action: 'watering', date: '2026-06-09' }] },
+      )).toBe(false)
+    })
+
+    it('compares with the local date, not UTC', () => {
+      vi.setSystemTime(new Date(2026, 5, 10, 0, 30))
+
+      expect(overdueOf({ 'i-tomato': [water('2026-06-08', '2026-06-10')] })).toBe(false)
+    })
+  })
+
   it('leaves out an action planned outside the current week', () => {
     const open = openActions(buildActionBuckets(data({ plantPlan: { 'i-tomato': [water('2026-06-20')] } }), formatDate))
 
