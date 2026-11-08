@@ -4,7 +4,9 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { csrfHeaders } from '../stores/auth.js'
 import { activeGardenId } from '../stores/garden.js'
+import { ACTION_ORDER, ACTION_ICON, ACTION_LABEL_KEY, buildActionBuckets } from '../utils/openActions.js'
 
+const props = defineProps({ zoneId: { type: String, default: null } })
 const emit = defineEmits(['refresh'])
 const { t, te, tm, locale } = useI18n()
 const router = useRouter()
@@ -52,12 +54,6 @@ function instanceSeedDate(instanceId) {
   return null
 }
 
-function planDateRange(entry) {
-  return entry.plannedDateStart === entry.plannedDateEnd
-    ? formatDate(entry.plannedDateStart)
-    : `${formatDate(entry.plannedDateStart)} – ${formatDate(entry.plannedDateEnd)}`
-}
-
 function weekRangeLabel() {
   if (!weekSummary.value) return ''
   const ws = weekSummary.value
@@ -69,21 +65,6 @@ function weekRangeLabel() {
     : `${ws.weekStartDay} ${sm} – ${ws.weekEndDay} ${em}`
   return `${t('garden.week')} ${ws.week} · ${range}`
 }
-
-const instanceById = computed(() =>
-  Object.fromEntries(instances.value.map(i => [i.id, i]))
-)
-const plantById = computed(() =>
-  Object.fromEntries(plants.value.map(p => [p.id, p]))
-)
-const instancesByPlantId = computed(() => {
-  const map = {}
-  for (const inst of instances.value) {
-    if (!map[inst.plantId]) map[inst.plantId] = []
-    map[inst.plantId].push(inst.id)
-  }
-  return map
-})
 
 const seedModalInfo = computed(() => {
   const plant = seedModal.value.plant
@@ -100,16 +81,6 @@ const seedModalInfo = computed(() => {
   }
 })
 
-const LOGGABLE = new Set(['fertilizing', 'pruning', 'watering'])
-
-function isDone(instanceId, entry) {
-  return (plantLog.value[instanceId] ?? []).some(l =>
-    l.action === entry.action &&
-    l.date >= entry.plannedDateStart &&
-    l.date <= entry.plannedDateEnd
-  )
-}
-
 function hintsFor(action) {
   const hints = []
   if (action.type !== 'harvest') {
@@ -123,96 +94,25 @@ function hintsFor(action) {
   return hints
 }
 
-const ACTION_ORDER = ['seeding', 'germination', 'harvest', 'pruning', 'fertilizing', 'watering']
-const ACTION_ICON  = { seeding: '🌱', germination: '🌿', harvest: '🧺', pruning: '✂️', fertilizing: '🌻', watering: '💧' }
-const GROUP_LABEL_KEY = {
-  seeding:     'garden.toSow',
-  germination: 'garden.planAction.germination',
-  harvest:     'garden.planAction.harvest',
-  pruning:     'garden.planAction.pruning',
-  fertilizing: 'garden.planAction.fertilizing',
-  watering:    'garden.planAction.watering',
-}
-
 const actionGroups = computed(() => {
   if (!weekSummary.value) return []
-  const ws = weekSummary.value
-  const year = new Date().getFullYear()
-  const weekStart = new Date(year, ws.weekStartMonth - 1, ws.weekStartDay)
-  let   weekEnd   = new Date(year, ws.weekEndMonth   - 1, ws.weekEndDay)
-  if (weekEnd < weekStart) weekEnd = new Date(year + 1, ws.weekEndMonth - 1, ws.weekEndDay)
-
-  const buckets = Object.fromEntries(ACTION_ORDER.map(a => [a, []]))
-
-  for (const wa of (ws.actions ?? [])) {
-    if (wa.type === 'sow' || wa.type === 'both') {
-      const allInst = instancesByPlantId.value[wa.plant.id] ?? []
-      const iid = allInst.find(id => !lifecycle.value[id]) ?? null
-      if (!iid) continue  // all instances already seeded
-      buckets.seeding.push({
-        plant: wa.plant, instanceId: iid,
-        seedDate: null,
-        dateRange: null, done: false,
-        planEntry: null, lc: null, sowAction: wa,
-      })
-    }
-  }
-
-  const shownGermination = new Set()
-  const shownHarvest     = new Set()
-
-  for (const [instanceId, entries] of Object.entries(plantPlan.value)) {
-    const inst  = instanceById.value[instanceId]
-    if (!inst) continue
-    const plant = plantById.value[inst.plantId]
-    if (!plant) continue
-    const lc = lifecycle.value[instanceId]
-
-    for (const entry of entries) {
-      const start = new Date(entry.plannedDateStart + 'T00:00:00')
-      const end   = new Date(entry.plannedDateEnd   + 'T00:00:00')
-      if (start > weekEnd || end < weekStart) continue
-
-      const seedDate   = formatDate(entry.seedDate)
-      const seedAction = entry.seedAction
-
-      if (entry.action === 'germination') {
-        if (!shownGermination.has(instanceId) && (!lc || lc.nextState === 'germinating_indoor' || lc.nextState === 'germinating_outdoor')) {
-          shownGermination.add(instanceId)
-          buckets.germination.push({
-            plant, instanceId, seedDate, seedAction,
-            dateRange: planDateRange(entry),
-            done: false,
-            planEntry: entry, lc: lc ?? null, sowAction: null,
-          })
-        }
-      } else if (entry.action === 'harvest') {
-        if (!shownHarvest.has(instanceId) && lc?.nextState === 'ready_to_harvest') {
-          shownHarvest.add(instanceId)
-          buckets.harvest.push({
-            plant, instanceId, seedDate, seedAction,
-            dateRange: planDateRange(entry),
-            done: false,
-            planEntry: entry, lc, sowAction: null,
-          })
-        }
-      } else if (LOGGABLE.has(entry.action)) {
-        buckets[entry.action]?.push({
-          plant, instanceId, seedDate, seedAction,
-          dateRange: planDateRange(entry),
-          done: isDone(instanceId, entry),
-          planEntry: entry, lc: null, sowAction: null,
-        })
-      }
-    }
-  }
+  const buckets = buildActionBuckets({
+    weekSummary: weekSummary.value,
+    instances:   instances.value,
+    plantLog:    plantLog.value,
+    plantPlan:   plantPlan.value,
+    lifecycle:   lifecycle.value,
+    plants:      plants.value,
+  }, formatDate)
 
   return ACTION_ORDER
     .map(a => ({
       action: a,
       icon:   ACTION_ICON[a],
-      label:  te(GROUP_LABEL_KEY[a]) ? t(GROUP_LABEL_KEY[a]) : a,
-      items:  [...buckets[a]].sort((x, y) => pName(x.plant).localeCompare(pName(y.plant))),
+      label:  te(ACTION_LABEL_KEY[a]) ? t(ACTION_LABEL_KEY[a]) : a,
+      items:  buckets[a]
+        .filter(i => !props.zoneId || i.zoneId === props.zoneId)
+        .sort((x, y) => pName(x.plant).localeCompare(pName(y.plant))),
     }))
     .filter(g => g.items.length > 0)
 })

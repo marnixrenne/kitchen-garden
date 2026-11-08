@@ -380,6 +380,15 @@ export default {
     logEmpty:     'No activity logged yet.',
     logNoResults: 'No entries matching "{query}".',
   },
+  dashboard: {
+    title:       'Dashboard',
+    noGardens:   "You don't have a garden yet.",
+    explore:     'Explore plants',
+    loadFailed:  'This garden could not be loaded.',
+    nothingOpen: 'Nothing to do this week',
+    more:        '+{n} more',
+    plantCount:  '{n} plant | {n} plants',
+  },
   zones: {
     mainZone:          'Main zone',
     add:               'Add zone',

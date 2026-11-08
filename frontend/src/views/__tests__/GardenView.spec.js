@@ -4,6 +4,7 @@ import { createRouter, createMemoryHistory } from 'vue-router'
 import { createI18n } from 'vue-i18n'
 import en from '../../i18n/en.js'
 import GardenView from '../GardenView.vue'
+import ThisWeekCard from '../../components/ThisWeekCard.vue'
 import ZonePickerModal from '../../components/ZonePickerModal.vue'
 import { setActiveGarden } from '../../stores/garden.js'
 import { chooseZone } from '../../stores/zonePicker.js'
@@ -46,7 +47,7 @@ async function mountGarden(fetchConfig) {
   global.fetch = makeFetch(fetchConfig)
   const router = createRouter({
     history: createMemoryHistory(),
-    routes: [{ path: '/garden', component: GardenView }, { path: '/plant/:id', component: { template: '<div />' } }],
+    routes: [{ path: '/', component: { template: '<div />' } }, { path: '/garden', component: GardenView }, { path: '/plant/:id', component: { template: '<div />' } }],
   })
   await router.push('/garden?tab=calendar')
   const wrapper = mount(GardenView, {
@@ -178,5 +179,67 @@ describe('zone picker', () => {
     await wrapper.find('.bp-cancel').trigger('click')
 
     await expect(choice).resolves.toBeNull()
+  })
+})
+
+describe('GardenView scoped to one zone', () => {
+  const INSTANCES = [
+    { id: 'i-tomato', plantId: TOMATO.id, zoneId: MAIN_ZONE.id,  sunShortfall: false },
+    { id: 'i-basil',  plantId: BASIL.id,  zoneId: HERBS_ZONE.id, sunShortfall: false },
+  ]
+
+  async function mountAt(path, fetchConfig) {
+    global.fetch = makeFetch(fetchConfig)
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/', component: { template: '<div />' } },
+        { path: '/gardens/:gardenId', component: { template: '<div />' } },
+        { path: '/gardens/:gardenId/zones/:zoneId', component: { template: '<div />' } },
+      ],
+    })
+    await router.push(path)
+    const wrapper = mount(GardenView, {
+      global: { plugins: [router, i18n], stubs: { ThisWeekCard: true, Teleport: true } },
+    })
+    await flushPromises()
+    return { wrapper, router }
+  }
+
+  beforeEach(() => setActiveGarden(GARDEN))
+  afterEach(() => vi.restoreAllMocks())
+
+  it('shows only the plants of that zone in the calendar, titled with the zone', async () => {
+    const { wrapper } = await mountAt(`/gardens/${GARDEN}/zones/${HERBS_ZONE.id}?tab=calendar`, { zones: [MAIN_ZONE, HERBS_ZONE], instances: INSTANCES })
+
+    expect(wrapper.find('.page-title').text()).toBe('Herbs')
+    const rows = wrapper.findAll('.plant-row')
+    expect(rows).toHaveLength(1)
+    expect(rows[0].text()).toContain('Basil')
+    expect(wrapper.find('.zone-toolbar').exists()).toBe(false)
+  })
+
+  it('shows only log entries of plants in that zone', async () => {
+    const entry = (id) => ({ id, action: 'watering', date: '2025-05-02', comment: null })
+    const { wrapper } = await mountAt(`/gardens/${GARDEN}/zones/${HERBS_ZONE.id}?tab=log`, {
+      zones: [MAIN_ZONE, HERBS_ZONE],
+      instances: INSTANCES,
+      extra: { [`/api/gardens/${GARDEN}/plant-log`]: { 'i-tomato': [entry('e1')], 'i-basil': [entry('e2')] } },
+    })
+
+    expect(wrapper.text()).toContain('Basil')
+    expect(wrapper.text()).not.toContain('Tomato')
+  })
+
+  it('passes the zone to the this-week card', async () => {
+    const { wrapper } = await mountAt(`/gardens/${GARDEN}/zones/${HERBS_ZONE.id}`, { zones: [MAIN_ZONE, HERBS_ZONE], instances: INSTANCES })
+
+    expect(wrapper.findComponent(ThisWeekCard).props('zoneId')).toBe(HERBS_ZONE.id)
+  })
+
+  it('falls back to the garden when the zone no longer exists', async () => {
+    const { router } = await mountAt(`/gardens/${GARDEN}/zones/gone`, { zones: [MAIN_ZONE], instances: [] })
+
+    expect(router.currentRoute.value.path).toBe(`/gardens/${GARDEN}`)
   })
 })

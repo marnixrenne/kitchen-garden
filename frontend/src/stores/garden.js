@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 
 export const activeGardenId = ref(localStorage.getItem('activeGardenId') || null)
 export const gardens = ref([])
+export const gardensLoaded = ref(false)
 
 export const activeGardenName = computed(() =>
   gardens.value.find(g => g.id === activeGardenId.value)?.name ?? null

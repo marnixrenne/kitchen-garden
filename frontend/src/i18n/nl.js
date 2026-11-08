@@ -380,6 +380,15 @@ export default {
     logEmpty:     'Nog geen activiteiten geregistreerd.',
     logNoResults: 'Geen registraties gevonden voor "{query}".',
   },
+  dashboard: {
+    title:       'Dashboard',
+    noGardens:   'Je hebt nog geen tuin.',
+    explore:     'Planten ontdekken',
+    loadFailed:  'Deze tuin kon niet worden geladen.',
+    nothingOpen: 'Deze week niets te doen',
+    more:        '+{n} meer',
+    plantCount:  '{n} plant | {n} planten',
+  },
   zones: {
     mainZone:          'Hoofdzone',
     add:               'Zone toevoegen',

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter, useRoute, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ThisWeekCard from '../components/ThisWeekCard.vue'
 import { activeGardenName, activeGardenId, gardens, setActiveGarden } from '../stores/garden.js'
@@ -10,6 +10,9 @@ import { ZONE_TYPES, ASPECTS, SUN_LEVELS, MAX_DIMENSION_CM, zoneLabel } from '..
 const router = useRouter()
 const route  = useRoute()
 const { t, tm, te, locale } = useI18n()
+
+// Set when this page shows a single Zone rather than the whole Garden
+const zoneId = computed(() => route.params.zoneId ?? null)
 
 function formatDate(isoDate) {
   return new Date(isoDate + 'T00:00:00').toLocaleDateString(locale.value, { day: 'numeric', month: 'short' })
@@ -37,7 +40,7 @@ watch(() => route.query.tab, (tab) => {
 
 function setTab(tab) {
   activeTab.value = tab
-  router.replace({ path: '/garden', query: tab === 'week' ? {} : { tab } })
+  router.replace({ path: route.path, query: tab === 'week' ? {} : { tab } })
 }
 
 const logFilter = ref('')
@@ -58,6 +61,7 @@ const logEntries = computed(() => {
   for (const p of plants.value) plantById[p.id] = p
   const flat = []
   for (const inst of instances.value) {
+    if (zoneId.value && inst.zoneId !== zoneId.value) continue
     const plant = plantById[inst.plantId]
     if (!plant) continue
     const name = plantName(plant)
@@ -149,8 +153,13 @@ async function fetchInstances() {
 }
 
 async function fetchZones() {
-  const res = await fetch(`/api/gardens/${activeGardenId.value}/zones`)
-  if (res.ok) zones.value = await res.json()
+  const gardenId = activeGardenId.value
+  const res = await fetch(`/api/gardens/${gardenId}/zones`)
+  if (!res.ok) return
+  zones.value = await res.json()
+  if (gardenId === activeGardenId.value && zoneId.value && !zones.value.some(z => z.id === zoneId.value)) {
+    router.replace({ path: `/gardens/${gardenId}`, query: route.query })
+  }
 }
 
 async function fetchPlantLog() {
@@ -190,8 +199,11 @@ const instanceByPlantId = computed(() => {
 
 const hasSeveralZones = computed(() => zones.value.length > 1)
 
+const focusedZone = computed(() => zones.value.find(z => z.id === zoneId.value) ?? null)
+
 // With one zone the calendar looks as it did before zones existed: a single headerless group
 const calendarGroups = computed(() => {
+  if (focusedZone.value) return [{ zone: focusedZone.value, plants: sortedPlants.value }]
   if (!hasSeveralZones.value) return [{ zone: null, plants: sortedPlants.value }]
   return zones.value.map(zone => ({
     zone,
@@ -376,7 +388,9 @@ function moveDescription(entry) {
 
 const months = computed(() => tm('months'))
 const sortedPlants = computed(() =>
-  [...plants.value].sort((a, b) => plantName(a).localeCompare(plantName(b)))
+  plants.value
+    .filter(p => !zoneId.value || instanceByPlantId.value[p.id]?.zoneId === zoneId.value)
+    .sort((a, b) => plantName(a).localeCompare(plantName(b)))
 )
 
 function cellType(plant, month) {
@@ -526,7 +540,7 @@ async function confirmDeleteGarden() {
   const remaining = gardens.value.filter(g => g.id !== id)
   setActiveGarden(remaining.length > 0 ? remaining[0].id : null)
   gardens.value = remaining
-  router.push(remaining.length > 0 ? '/garden' : '/discover')
+  router.push(remaining.length > 0 ? '/' : '/discover')
 }
 
 async function loadAll() {
@@ -551,13 +565,29 @@ async function loadAll() {
 
 onMounted(loadAll)
 watch(activeGardenId, loadAll)
+
+// An address for a Garden the user doesn't have (deleted, or from another account)
+watch(gardens, (list) => {
+  const id = route.params.gardenId
+  if (!id || list.length === 0 || list.some(g => g.id === id)) return
+  setActiveGarden(list[0].id)
+  router.replace('/')
+}, { immediate: true })
 </script>
 
 <template>
   <main>
+    <nav class="breadcrumb">
+      <RouterLink to="/">{{ t('dashboard.title') }}</RouterLink>
+      <template v-if="zoneId">
+        <span aria-hidden="true">›</span>
+        <RouterLink :to="`/gardens/${activeGardenId}`">{{ activeGardenName ?? t('myGarden') }}</RouterLink>
+      </template>
+    </nav>
+
     <div class="page-header">
-      <h2 class="page-title">{{ activeGardenName ?? t('myGarden') }}</h2>
-      <div class="page-header-actions">
+      <h2 class="page-title">{{ focusedZone ? zoneLabel(t, focusedZone.name) : (activeGardenName ?? t('myGarden')) }}</h2>
+      <div v-if="!zoneId" class="page-header-actions">
         <button class="edit-garden-btn" @click="openEditModal" :title="t('garden.editGarden')">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -581,7 +611,7 @@ watch(activeGardenId, loadAll)
       <button class="garden-tab" :class="{ active: activeTab === 'log' }" @click="setTab('log')">{{ t('garden.logNav') }}</button>
     </div>
 
-    <div v-if="!loading && activeTab === 'calendar'" class="zone-toolbar">
+    <div v-if="!loading && activeTab === 'calendar' && !zoneId" class="zone-toolbar">
       <button v-if="!hasSeveralZones && zones.length === 1" class="zone-settings-link" @click="openZoneModal(zones[0])">
         {{ t('zones.settings') }}
       </button>
@@ -678,7 +708,7 @@ watch(activeGardenId, loadAll)
                   <span v-if="group.plants.length === 0" class="zone-empty">{{ t('zones.empty') }}</span>
                   <span class="zone-actions">
                     <button class="zone-icon-btn" :title="t('zones.edit')" @click="openZoneModal(group.zone)">✎</button>
-                    <button class="zone-icon-btn danger" :title="t('zones.delete')" @click="openDeleteZoneModal(group.zone)">🗑</button>
+                    <button v-if="hasSeveralZones" class="zone-icon-btn danger" :title="t('zones.delete')" @click="openDeleteZoneModal(group.zone)">🗑</button>
                   </span>
                 </div>
               </td>
@@ -807,10 +837,10 @@ watch(activeGardenId, loadAll)
         </template>
       </div>
       <!-- This week -->
-      <ThisWeekCard v-if="activeTab === 'week'" class="this-week-card" @refresh="onWeekRefresh" />
+      <ThisWeekCard v-if="activeTab === 'week'" class="this-week-card" :zone-id="zoneId" @refresh="onWeekRefresh" />
 
       <!-- Planting suggestions -->
-      <div v-if="activeTab === 'calendar' && suggestions && (suggestions.sunGroups.length > 0 || suggestions.conflicts.length > 0)" class="suggestions">
+      <div v-if="activeTab === 'calendar' && !zoneId && suggestions && (suggestions.sunGroups.length > 0 || suggestions.conflicts.length > 0)" class="suggestions">
         <h3 class="suggestions-title">{{ t('garden.suggestions') }}</h3>
         <p class="suggestions-hint">{{ t('garden.suggestionsHint') }}</p>
 
@@ -1065,6 +1095,25 @@ main {
   max-width: 960px;
   margin: 0 auto;
   padding: 1.5rem 1rem 4rem;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.breadcrumb a {
+  color: var(--green-mid);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
 }
 
 .page-header {

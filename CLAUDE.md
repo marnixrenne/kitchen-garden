@@ -48,7 +48,7 @@ Spring Boot 4 (Kotlin) backend on port 8080, Vue 3/Vite frontend on port 5173. F
 
 **i18n:** vue-i18n v11 with EN, NL, ES in `frontend/src/i18n/{en,nl,es}.js`. Tips/descriptions are stored in both the i18n files (preferred) and the DB column (fallback), resolved at render time with `te(key) ? t(key) : dbValue`.
 
-**Frontend routing:** `router/index.js` uses `meta.requiresAuth`, `meta.requiresAdmin`, `meta.noAdmin`, and `meta.guestOnly` flags. Admin users are redirected away from regular views (`/discover`, `/garden`) to `/admin` automatically.
+**Frontend routing:** `router/index.js` uses `meta.requiresAuth`, `meta.requiresAdmin`, `meta.noAdmin`, and `meta.guestOnly` flags. `/` shows the landing page to guests and the dashboard to signed-in users. The garden page lives at `/gardens/:gardenId` and, scoped to one zone, `/gardens/:gardenId/zones/:zoneId`; `/garden` redirects to the active garden. Admin users are redirected away from regular views (`/`, `/discover`, `/gardens/…`) to `/admin` automatically.
 
 ## Adding a plant attribute
 

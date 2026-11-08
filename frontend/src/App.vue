@@ -3,7 +3,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, RouterView, RouterLink } from 'vue-router'
 import { user, logout, csrfHeaders } from './stores/auth.js'
-import { activeGardenId, activeGardenName, gardens, setActiveGarden } from './stores/garden.js'
+import { activeGardenId, activeGardenName, gardens, gardensLoaded, setActiveGarden } from './stores/garden.js'
 import ZonePickerModal from './components/ZonePickerModal.vue'
 
 const { t, locale } = useI18n()
@@ -27,6 +27,7 @@ watch(user, async (u) => {
 async function handleLogout() {
   await logout()
   gardens.value = []
+  gardensLoaded.value = false
   setActiveGarden(null)
   router.push('/')
 }
@@ -40,6 +41,7 @@ async function fetchGardens() {
     if (gardens.value.length > 0 && !activeGardenId.value) {
       setActiveGarden(gardens.value[0].id)
     }
+    gardensLoaded.value = true
   }
 }
 
@@ -105,6 +107,7 @@ async function submitNewGarden() {
       <h1>🌱 Kitchen Garden</h1>
       <nav class="header-nav">
         <template v-if="!user?.roles?.includes('ROLE_ADMIN')">
+          <RouterLink to="/">{{ t('dashboard.title') }}</RouterLink>
           <!-- Single garden: plain link -->
           <RouterLink v-if="gardens.length <= 1" to="/garden" :class="{ 'router-link-active': $route.path.startsWith('/garden') }">{{ t('myGarden') }}</RouterLink>
 
