@@ -352,6 +352,7 @@ export default {
     editGarden: 'Rename garden',
     editGardenPlaceholder: 'Garden name…',
     editGardenSave: 'Save',
+    editGardenFailed: 'The name could not be saved. Try again.',
     deleteGarden: 'Delete garden',
     deleteGardenConfirm: 'Are you sure you want to delete "{name}"? All plants, log entries and activity will be permanently removed.',
     deleteGardenConfirmBtn: 'Yes, delete this garden',

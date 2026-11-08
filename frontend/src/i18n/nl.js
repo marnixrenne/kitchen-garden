@@ -352,6 +352,7 @@ export default {
     editGarden: 'Tuin hernoemen',
     editGardenPlaceholder: 'Naam van de tuin…',
     editGardenSave: 'Opslaan',
+    editGardenFailed: 'De naam kon niet worden opgeslagen. Probeer het opnieuw.',
     deleteGarden: 'Tuin verwijderen',
     deleteGardenConfirm: 'Weet je zeker dat je "{name}" wilt verwijderen? Alle planten, logboekregels en activiteit worden permanent verwijderd.',
     deleteGardenConfirmBtn: 'Ja, verwijder deze tuin',

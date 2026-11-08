@@ -498,10 +498,11 @@ async function onWeekRefresh() {
 
 // ── Rename garden ─────────────────────────────────────────────────────────────
 
-const editModal = ref({ open: false, name: '', saving: false })
+const editModal = ref({ open: false, name: '', saving: false, error: '' })
 
 function openEditModal() {
   editModal.value.name = activeGardenName.value ?? ''
+  editModal.value.error = ''
   editModal.value.open = true
 }
 
@@ -509,17 +510,23 @@ async function confirmRenameGarden() {
   const id = activeGardenId.value
   if (!id) return
   editModal.value.saving = true
-  const res = await fetch(`/api/gardens/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-    body: JSON.stringify({ name: editModal.value.name.trim() }),
-  })
-  editModal.value.saving = false
-  if (!res.ok) return
-  const updated = await res.json()
-  const idx = gardens.value.findIndex(g => g.id === id)
-  if (idx !== -1) gardens.value[idx] = updated
-  editModal.value.open = false
+  editModal.value.error = ''
+  try {
+    const res = await fetch(`/api/gardens/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+      body: JSON.stringify({ name: editModal.value.name.trim() }),
+    })
+    if (!res.ok) { editModal.value.error = t('garden.editGardenFailed'); return }
+    const updated = await res.json()
+    const idx = gardens.value.findIndex(g => g.id === id)
+    if (idx !== -1) gardens.value[idx] = updated
+    editModal.value.open = false
+  } catch {
+    editModal.value.error = t('garden.editGardenFailed')
+  } finally {
+    editModal.value.saving = false
+  }
 }
 
 // ── Delete garden ─────────────────────────────────────────────────────────────
@@ -889,6 +896,7 @@ watch(gardens, (list) => {
             @keydown.enter="confirmRenameGarden"
             @keydown.esc="editModal.open = false"
           />
+          <p v-if="editModal.error" class="bf-error" role="alert">{{ editModal.error }}</p>
           <div class="dg-actions">
             <button class="dg-cancel" @click="editModal.open = false" :disabled="editModal.saving">
               {{ t('garden.seedModal.cancel') }}

@@ -284,6 +284,57 @@ describe('GardenView scoped to one zone', () => {
     expect(wrapper.find('.zone-settings-link').exists()).toBe(false)
   })
 
+  describe('renaming the garden', () => {
+    const config = { zones: [MAIN_ZONE], instances: [] }
+
+    async function submitRename(wrapper) {
+      await wrapper.find('.edit-garden-btn').trigger('click')
+      await wrapper.find('.eg-input').setValue('New name')
+      await wrapper.find('.eg-save').trigger('click')
+      await flushPromises()
+    }
+
+    it('closes the popup when the name is saved', async () => {
+      const { wrapper } = await mountAt(`/gardens/${GARDEN}`, {
+        ...config,
+        extra: { [`/api/gardens/${GARDEN}`]: { id: GARDEN, name: 'New name' } },
+      })
+
+      await submitRename(wrapper)
+
+      expect(wrapper.find('.eg-input').exists()).toBe(false)
+    })
+
+    it('keeps the popup open with an error when the server rejects the save', async () => {
+      const { wrapper } = await mountAt(`/gardens/${GARDEN}`, config)
+
+      await submitRename(wrapper)
+
+      expect(wrapper.find('.eg-input').element.value).toBe('New name')
+      expect(wrapper.find('.bf-error').text()).toBe(en.garden.editGardenFailed)
+    })
+
+    it('shows an error and allows retrying when the request cannot be sent', async () => {
+      const { wrapper } = await mountAt(`/gardens/${GARDEN}`, config)
+      global.fetch = vi.fn().mockRejectedValue(new Error('offline'))
+
+      await submitRename(wrapper)
+
+      expect(wrapper.find('.bf-error').text()).toBe(en.garden.editGardenFailed)
+      expect(wrapper.find('.eg-save').attributes('disabled')).toBeUndefined()
+    })
+
+    it('clears the error when the popup is reopened', async () => {
+      const { wrapper } = await mountAt(`/gardens/${GARDEN}`, config)
+      await submitRename(wrapper)
+
+      await wrapper.find('.dg-cancel').trigger('click')
+      await wrapper.find('.edit-garden-btn').trigger('click')
+
+      expect(wrapper.find('.bf-error').exists()).toBe(false)
+    })
+  })
+
   it('falls back to the garden when the zone no longer exists', async () => {
     const { router } = await mountAt(`/gardens/${GARDEN}/zones/gone`, { zones: [MAIN_ZONE], instances: [] })
 
