@@ -356,6 +356,7 @@ export default {
     deleteGarden: 'Delete garden',
     deleteGardenConfirm: 'Are you sure you want to delete "{name}"? All plants, log entries and activity will be permanently removed.',
     deleteGardenConfirmBtn: 'Yes, delete this garden',
+    deleteGardenFailed: 'The garden could not be deleted. Try again.',
     actionModal: {
       title: 'Log action',
       actionLabel: 'Action',

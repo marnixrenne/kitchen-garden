@@ -531,23 +531,33 @@ async function confirmRenameGarden() {
 
 // ── Delete garden ─────────────────────────────────────────────────────────────
 
-const deleteModal = ref({ open: false, deleting: false })
+const deleteModal = ref({ open: false, deleting: false, error: '' })
+
+function openDeleteModal() {
+  deleteModal.value = { open: true, deleting: false, error: '' }
+}
 
 async function confirmDeleteGarden() {
   const id = activeGardenId.value
   if (!id) return
   deleteModal.value.deleting = true
-  const res = await fetch(`/api/gardens/${id}`, {
-    method: 'DELETE',
-    headers: csrfHeaders(),
-  })
-  deleteModal.value.deleting = false
-  if (!res.ok) return
-  deleteModal.value.open = false
-  const remaining = gardens.value.filter(g => g.id !== id)
-  setActiveGarden(remaining.length > 0 ? remaining[0].id : null)
-  gardens.value = remaining
-  router.push(remaining.length > 0 ? '/' : '/discover')
+  deleteModal.value.error = ''
+  try {
+    const res = await fetch(`/api/gardens/${id}`, {
+      method: 'DELETE',
+      headers: csrfHeaders(),
+    })
+    if (!res.ok) { deleteModal.value.error = t('garden.deleteGardenFailed'); return }
+    deleteModal.value.open = false
+    const remaining = gardens.value.filter(g => g.id !== id)
+    setActiveGarden(remaining.length > 0 ? remaining[0].id : null)
+    gardens.value = remaining
+    router.push(remaining.length > 0 ? '/' : '/discover')
+  } catch {
+    deleteModal.value.error = t('garden.deleteGardenFailed')
+  } finally {
+    deleteModal.value.deleting = false
+  }
 }
 
 async function loadAll() {
@@ -603,7 +613,7 @@ watch(gardens, (list) => {
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
         </button>
-        <button class="delete-garden-btn" @click="deleteModal.open = true" :title="t('garden.deleteGarden')">
+        <button class="delete-garden-btn" @click="openDeleteModal" :title="t('garden.deleteGarden')">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3 6 5 6 21 6"/>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
@@ -916,6 +926,7 @@ watch(gardens, (list) => {
         <div class="dg-header">{{ t('garden.deleteGarden') }}</div>
         <div class="dg-body">
           <p class="dg-warning">{{ t('garden.deleteGardenConfirm', { name: activeGardenName ?? t('myGarden') }) }}</p>
+          <p v-if="deleteModal.error" class="bf-error" role="alert">{{ deleteModal.error }}</p>
           <div class="dg-actions">
             <button class="dg-cancel" @click="deleteModal.open = false" :disabled="deleteModal.deleting">
               {{ t('garden.seedModal.cancel') }}
