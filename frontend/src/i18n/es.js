@@ -354,6 +354,7 @@ export default {
     deleteGarden: 'Eliminar huerto',
     deleteGardenConfirm: '¿Seguro que quieres eliminar "{name}"? Todas las plantas, entradas del diario y actividad se eliminarán de forma permanente.',
     deleteGardenConfirmBtn: 'Sí, eliminar este huerto',
+    deleteGardenFailed: 'No se ha podido eliminar el huerto. Inténtalo de nuevo.',
     actionModal: {
       title: 'Registrar acción',
       actionLabel: 'Acción',

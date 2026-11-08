@@ -356,6 +356,7 @@ export default {
     deleteGarden: 'Tuin verwijderen',
     deleteGardenConfirm: 'Weet je zeker dat je "{name}" wilt verwijderen? Alle planten, logboekregels en activiteit worden permanent verwijderd.',
     deleteGardenConfirmBtn: 'Ja, verwijder deze tuin',
+    deleteGardenFailed: 'De tuin kon niet worden verwijderd. Probeer het opnieuw.',
     actionModal: {
       title: 'Actie registreren',
       actionLabel: 'Actie',

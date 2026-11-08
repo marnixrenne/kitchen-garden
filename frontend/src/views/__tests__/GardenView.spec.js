@@ -6,7 +6,7 @@ import en from '../../i18n/en.js'
 import GardenView from '../GardenView.vue'
 import ThisWeekCard from '../../components/ThisWeekCard.vue'
 import ZonePickerModal from '../../components/ZonePickerModal.vue'
-import { setActiveGarden } from '../../stores/garden.js'
+import { gardens, setActiveGarden } from '../../stores/garden.js'
 import { chooseZone } from '../../stores/zonePicker.js'
 
 const i18n = createI18n({ legacy: false, locale: 'en', messages: { en } })
@@ -330,6 +330,62 @@ describe('GardenView scoped to one zone', () => {
 
       await wrapper.find('.dg-cancel').trigger('click')
       await wrapper.find('.edit-garden-btn').trigger('click')
+
+      expect(wrapper.find('.bf-error').exists()).toBe(false)
+    })
+  })
+
+  describe('deleting the garden', () => {
+    const config = { zones: [MAIN_ZONE], instances: [] }
+
+    afterEach(() => { gardens.value = [] })
+
+    async function submitDelete(wrapper) {
+      await wrapper.find('.delete-garden-btn').trigger('click')
+      await wrapper.find('.dg-confirm').trigger('click')
+      await flushPromises()
+    }
+
+    it('closes the popup and returns to the dashboard when the garden is deleted', async () => {
+      gardens.value = [{ id: GARDEN, name: 'Backyard' }, { id: 'garden-2', name: 'Balcony' }]
+      const { wrapper, router } = await mountAt(`/gardens/${GARDEN}`, {
+        ...config,
+        extra: { [`/api/gardens/${GARDEN}`]: {} },
+      })
+
+      await submitDelete(wrapper)
+
+      expect(wrapper.find('.dg-confirm').exists()).toBe(false)
+      expect(router.currentRoute.value.path).toBe('/')
+    })
+
+    it('keeps the popup open with an error when the server rejects the delete', async () => {
+      gardens.value = [{ id: GARDEN, name: 'Backyard' }]
+      const { wrapper, router } = await mountAt(`/gardens/${GARDEN}`, config)
+
+      await submitDelete(wrapper)
+
+      expect(wrapper.find('.bf-error').text()).toBe(en.garden.deleteGardenFailed)
+      expect(gardens.value).toHaveLength(1)
+      expect(router.currentRoute.value.path).toBe(`/gardens/${GARDEN}`)
+    })
+
+    it('shows an error and allows retrying when the request cannot be sent', async () => {
+      const { wrapper } = await mountAt(`/gardens/${GARDEN}`, config)
+      global.fetch = vi.fn().mockRejectedValue(new Error('offline'))
+
+      await submitDelete(wrapper)
+
+      expect(wrapper.find('.bf-error').text()).toBe(en.garden.deleteGardenFailed)
+      expect(wrapper.find('.dg-confirm').attributes('disabled')).toBeUndefined()
+    })
+
+    it('clears the error when the popup is reopened', async () => {
+      const { wrapper } = await mountAt(`/gardens/${GARDEN}`, config)
+      await submitDelete(wrapper)
+
+      await wrapper.find('.dg-cancel').trigger('click')
+      await wrapper.find('.delete-garden-btn').trigger('click')
 
       expect(wrapper.find('.bf-error').exists()).toBe(false)
     })
