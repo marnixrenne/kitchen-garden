@@ -12,6 +12,9 @@ interface GardenRepository {
     fun findPlantIds(gardenId: GardenId): Set<PlantId>
     fun add(gardenId: GardenId, plantId: PlantId, zoneId: ZoneId): PlantInstanceId
     fun removeInstance(gardenId: GardenId, instanceId: PlantInstanceId): Boolean
+    fun findRecommendationCandidates(countryCode: String?): List<RecommendationCandidate>
+    /** Companion relationships with at least one side in [plantIds]. */
+    fun findCompanionLinks(plantIds: Set<PlantId>): List<CompanionLink>
     fun findInstances(gardenId: GardenId): List<PlantInstance>
     fun findSuggestions(gardenId: GardenId): PlantingSuggestions
     fun findWeekSummary(userId: UserId, gardenId: GardenId, countryCode: String?): WeekSummary

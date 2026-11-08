@@ -17,6 +17,7 @@ import java.util.UUID
 class ZoneApiTest : IntegrationTestBase() {
 
     @Autowired lateinit var jdbc: JdbcTemplate
+    @Autowired lateinit var gardenRepository: org.marnixrenne.kitchengarden.garden.domain.GardenRepository
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -454,5 +455,78 @@ class ZoneApiTest : IntegrationTestBase() {
             .andExpect { status { isNoContent() } }
 
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM pts_garden_zone WHERE garden_id = ?::uuid", Int::class.java, gardenId))
+    }
+
+    // ── Plant options ─────────────────────────────────────────────────────────
+
+    @Test
+    fun `plant options report what is planted, recommended and in the wrong light`() {
+        val gardenId = createGarden()
+        val shade = createZoneId(gardenId, "Shade", "shade")
+        val kas = createZoneId(gardenId, "Kas", "full_sun")
+        addPlant(gardenId, "Tomato", kas).andExpect { status { isCreated() } }
+        addPlant(gardenId, "Parsley", shade).andExpect { status { isCreated() } }
+        addPlant(gardenId, "Parsley", shade).andExpect { status { isCreated() } }
+
+        mvc.get("/api/gardens/$gardenId/zones/$shade/plant-options") { with(user("admin")) }.andExpect {
+            status { isOk() }
+            jsonPath("$[?(@.name=='Parsley')].inThisZone") { value(hasItem(2)) }
+            jsonPath("$[?(@.name=='Parsley')].recommended") { value(hasItem(false)) }
+            jsonPath("$[?(@.name=='Tomato')].sunShortfall") { value(hasItem(true)) }
+            jsonPath("$[?(@.name=='Tomato')].recommended") { value(hasItem(false)) }
+            jsonPath("$[?(@.name=='Tomato')].alsoIn[0]") { value(hasItem("Kas")) }
+        }
+    }
+
+    @Test
+    fun `plant options report bad companions in either stored direction`() {
+        val gardenId = createGarden()
+        val zone = createZoneId(gardenId, "Bed", "full_sun")
+        val (first, second) = jdbc.queryForObject(
+            """SELECT a.name AS a, b.name AS b FROM pts_companion_plants c
+               JOIN pts_plants a ON a.id = c.plant_id JOIN pts_plants b ON b.id = c.companion_id
+               WHERE c.relationship = 'bad' ORDER BY a.name, b.name LIMIT 1""",
+        ) { rs, _ -> rs.getString("a") to rs.getString("b") }!!
+
+        addPlant(gardenId, second, zone).andExpect { status { isCreated() } }
+
+        mvc.get("/api/gardens/$gardenId/zones/$zone/plant-options") { with(user("admin")) }.andExpect {
+            jsonPath("$[?(@.name=='$first')].badWith[*].name") { value(hasItem(second)) }
+            jsonPath("$[?(@.name=='$first')].recommended") { value(hasItem(false)) }
+        }
+    }
+
+    @Test
+    fun `plant options are limited to eight recommendations and cover the whole catalogue`() {
+        val gardenId = createGarden()
+        val zone = createZoneId(gardenId, "Bed", "full_sun")
+        val catalogue = jdbc.queryForObject("SELECT COUNT(*) FROM pts_plants", Int::class.java)!!
+
+        mvc.get("/api/gardens/$gardenId/zones/$zone/plant-options") { with(user("admin")) }.andExpect {
+            jsonPath("$.length()") { value(catalogue) }
+            jsonPath("$[?(@.recommended==true)]") { value(hasSize<Any>(lessThanOrEqualTo(8))) }
+        }
+    }
+
+    @Test
+    fun `recommendation candidates carry category, insects and country availability`() {
+        fun tomato(country: String?) = gardenRepository.findRecommendationCandidates(country).first { it.plant.name == "Tomato" }
+        fun cassava(country: String?) = gardenRepository.findRecommendationCandidates(country).first { it.plant.name == "Cassava" }
+
+        assertEquals("Fruiting", tomato(null).category)
+        assertEquals(true, tomato(null).insects.any { it.type == "pest" && it.name == "aphid" })
+        assertEquals(true, cassava(null).availableInCountry)
+        assertEquals(false, cassava("NL").availableInCountry)
+        assertEquals(true, tomato("NL").availableInCountry)
+    }
+
+    @Test
+    fun `plant options of a zone in another garden are not found`() {
+        val gardenId = createGarden()
+        val otherZone = createZoneId(createGarden(), "Other", null)
+
+        mvc.get("/api/gardens/$gardenId/zones/$otherZone/plant-options") { with(user("admin")) }.andExpect {
+            status { isNotFound() }
+        }
     }
 }

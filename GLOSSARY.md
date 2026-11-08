@@ -28,6 +28,10 @@ _Avoid_: Bed, region, area, patch, section
 One specific planting of a Plant, growing in exactly one Zone. A Plant can have several, even in the same Zone, each with its own log and plan.
 _Avoid_: Garden plant, entry
 
+**Recommendation**:
+A Plant proposed for a Zone because of the Plants already growing there, the insects it would attract for them, or the Zone's Sun exposure.
+_Avoid_: Suggestion
+
 **Sun exposure**:
 How much direct sun a Zone receives, on the same scale as Sun requirement.
 _Avoid_: Sun availability, light

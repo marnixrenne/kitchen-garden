@@ -128,8 +128,8 @@ const openActionCount = computed(() =>
     sum + group.rows.reduce((n, row) => n + row.actions.filter(a => !a.done).length, 0), 0)
 )
 
-async function fetchAll() {
-  loading.value = true
+async function fetchAll(quietly = false) {
+  if (!quietly) loading.value = true
   const gid = activeGardenId.value
   const [weekRes, instRes, logRes, planRes, lcRes, detailRes] = await Promise.all([
     fetch(`/api/gardens/${gid}/week`),
@@ -243,7 +243,9 @@ async function submitAction() {
   }
 }
 
-onMounted(fetchAll)
+onMounted(() => fetchAll())
+
+defineExpose({ reload: () => fetchAll(true) })
 
 defineOptions({ inheritAttrs: false })
 </script>

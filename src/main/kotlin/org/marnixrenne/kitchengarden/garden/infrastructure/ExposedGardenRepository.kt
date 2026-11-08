@@ -127,6 +127,42 @@ class ExposedGardenRepository : GardenRepository {
         exists
     }
 
+    override fun findRecommendationCandidates(countryCode: String?): List<RecommendationCandidate> = transaction {
+        val inCountry = countryCode?.let { code ->
+            PlantCountries.selectAll()
+                .where { PlantCountries.countryCode eq code }
+                .map { it[PlantCountries.plantId] }
+                .toSet()
+        }
+        val insectsByPlant = PlantInsects.selectAll()
+            .groupBy({ it[PlantInsects.plantId] }, { InsectAttraction(it[PlantInsects.insectName], it[PlantInsects.insectType]) })
+
+        Plants.selectAll().map { row ->
+            val id = row[Plants.id]
+            RecommendationCandidate(
+                plant              = SimpleVeg(PlantId(id), row[Plants.name], row[Plants.emoji]),
+                category           = row[Plants.category],
+                sunRequirement     = row[Plants.sunRequirement]?.let { SunExposure.from(it) },
+                availableInCountry = inCountry == null || id in inCountry,
+                insects            = insectsByPlant[id].orEmpty(),
+            )
+        }
+    }
+
+    override fun findCompanionLinks(plantIds: Set<PlantId>): List<CompanionLink> = transaction {
+        val ids = plantIds.map { it.value }
+        if (ids.isEmpty()) return@transaction emptyList()
+        CompanionPlants.selectAll()
+            .where { (CompanionPlants.plantId inList ids) or (CompanionPlants.companionId inList ids) }
+            .map {
+                CompanionLink(
+                    a    = PlantId(it[CompanionPlants.plantId]),
+                    b    = PlantId(it[CompanionPlants.companionId]),
+                    good = it[CompanionPlants.relationship] == "good",
+                )
+            }
+    }
+
     override fun findInstances(gardenId: GardenId): List<PlantInstance> = transaction {
         (GardenPlantInstances innerJoin GardenZones innerJoin Plants)
             .select(GardenPlantInstances.id, GardenPlantInstances.plantId, GardenPlantInstances.zoneId, GardenZones.sunExposure, Plants.sunRequirement)
