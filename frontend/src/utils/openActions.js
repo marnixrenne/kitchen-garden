@@ -108,9 +108,11 @@ export function buildActionBuckets({ weekSummary, instances, plantLog, plantPlan
   return buckets
 }
 
-// The not-yet-done items of the buckets as one list, in ACTION_ORDER.
+// Every item of the buckets as one list, in ACTION_ORDER, each tagged with its action.
+export function allActions(buckets) {
+  return ACTION_ORDER.flatMap(action => buckets[action].map(item => ({ ...item, action })))
+}
+
 export function openActions(buckets) {
-  return ACTION_ORDER.flatMap(action =>
-    buckets[action].filter(item => !item.done).map(item => ({ ...item, action }))
-  )
+  return allActions(buckets).filter(item => !item.done)
 }

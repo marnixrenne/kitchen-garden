@@ -288,7 +288,6 @@ export default {
     thisWeek: 'Esta semana',
     openActions: '{n} acción pendiente | {n} acciones pendientes',
     week: 'Semana',
-    nothingThisWeek: 'Nada que sembrar o cosechar en tu huerto este mes.',
     actionSow: 'Sembrar',
     actionHarvest: 'Cosechar',
     actionBoth: 'Sembrar y cosechar',
