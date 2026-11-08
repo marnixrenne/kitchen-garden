@@ -350,6 +350,7 @@ export default {
     editGarden: 'Renombrar huerto',
     editGardenPlaceholder: 'Nombre del huerto…',
     editGardenSave: 'Guardar',
+    editGardenFailed: 'No se ha podido guardar el nombre. Inténtalo de nuevo.',
     deleteGarden: 'Eliminar huerto',
     deleteGardenConfirm: '¿Seguro que quieres eliminar "{name}"? Todas las plantas, entradas del diario y actividad se eliminarán de forma permanente.',
     deleteGardenConfirmBtn: 'Sí, eliminar este huerto',
