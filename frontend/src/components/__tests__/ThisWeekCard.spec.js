@@ -62,18 +62,27 @@ describe('ThisWeekCard', () => {
   })
   afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
 
-  it('lists every zone with its plants in name order', async () => {
-    const wrapper = await mountCard()
+  it('on the garden page lists every zone but only the plants with an action this week', async () => {
+    const wrapper = await mountCard({ plan: { 'i-tomato': [planned('watering', '2026-06-10')] } })
 
     expect(zoneNames(wrapper)).toEqual(['Veg', 'Herbs', 'Empty'])
     const [veg, herbs, empty] = wrapper.findAll('.week-zone')
-    expect(veg.findAll('.wi-name').map(n => n.text())).toEqual(['Bean', 'Tomato'])
-    expect(herbs.findAll('.wi-name').map(n => n.text())).toEqual(['Basil'])
-    expect(empty.find('.week-empty').text()).toBe('No plants yet')
+    expect(veg.findAll('.week-plant')).toHaveLength(1)
+    expect(veg.find('.week-plant').text()).toContain('Tomato')
+    expect(veg.text()).not.toContain('Bean')
+    expect(herbs.find('.week-empty').text()).toBe('Nothing to do this week')
+    expect(empty.find('.week-empty').text()).toBe('Nothing to do this week')
   })
 
-  it('shows this week\'s actions under their own plant', async () => {
+  it('links each zone on the garden page to its own page', async () => {
+    const wrapper = await mountCard()
+
+    expect(wrapper.find('.week-zone-name a').attributes('href')).toBe(`/gardens/${GARDEN}/zones/${VEG.id}`)
+  })
+
+  it('on a zone page lists all its plants, with actions under their own plant', async () => {
     const wrapper = await mountCard({
+      zoneId: VEG.id,
       plan: { 'i-tomato': [planned('watering', '2026-06-10'), planned('pruning', '2026-06-11')] },
     })
 
@@ -82,6 +91,12 @@ describe('ThisWeekCard', () => {
     expect(tomato.find('.week-plant-none').exists()).toBe(false)
     expect(beans.findAll('.week-action')).toHaveLength(0)
     expect(beans.find('.week-plant-none').text()).toBe('Nothing to do this week')
+  })
+
+  it('says so when a zone page has no plants', async () => {
+    const wrapper = await mountCard({ zoneId: EMPTY.id })
+
+    expect(wrapper.find('.week-empty').text()).toBe('No plants yet')
   })
 
   it('leaves out actions planned for another week', async () => {

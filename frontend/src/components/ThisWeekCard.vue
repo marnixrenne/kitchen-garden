@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRouter, RouterLink } from 'vue-router'
 import { csrfHeaders } from '../stores/auth.js'
 import { activeGardenId } from '../stores/garden.js'
 import { zoneLabel } from '../utils/zones.js'
@@ -117,6 +117,8 @@ const zoneGroups = computed(() => {
           const rowActions = actionsByInstance[inst.id] ?? []
           return { instanceId: inst.id, plant: plantById[inst.plantId], actions: rowActions, seeded: rowActions.find(a => a.seedDate) ?? null }
         })
+        // The Garden shows what needs doing; a Zone's own page shows all its Plants
+        .filter(row => props.zoneId || row.actions.length > 0)
         .sort((x, y) => pName(x.plant).localeCompare(pName(y.plant))),
     }))
 })
@@ -234,9 +236,11 @@ defineOptions({ inheritAttrs: false })
     </div>
 
     <section v-for="{ zone, rows } in zoneGroups" :key="zone.id" class="week-zone">
-      <h3 v-if="!zoneId" class="week-zone-name">{{ zoneLabel(t, zone.name) }}</h3>
+      <h3 v-if="!zoneId" class="week-zone-name">
+        <RouterLink :to="`/gardens/${activeGardenId}/zones/${zone.id}`">{{ zoneLabel(t, zone.name) }}</RouterLink>
+      </h3>
 
-      <p v-if="rows.length === 0" class="week-empty">{{ t('zones.empty') }}</p>
+      <p v-if="rows.length === 0" class="week-empty">{{ zoneId ? t('zones.empty') : t('dashboard.nothingOpen') }}</p>
 
       <div v-for="row in rows" :key="row.instanceId" class="week-plant">
         <div class="week-plant-header">
@@ -489,6 +493,15 @@ defineOptions({ inheritAttrs: false })
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--green-dark);
+}
+
+.week-zone-name a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.week-zone-name a:hover {
+  text-decoration: underline;
 }
 
 .week-plant {
