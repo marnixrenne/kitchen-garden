@@ -32,12 +32,13 @@ function actionLabel(action) {
 // One row per Plant, however many jobs it has this week
 function plantRows(actions) {
   const rows = new Map()
-  for (const { instanceId, plant, action } of actions) {
-    if (!rows.has(instanceId)) rows.set(instanceId, { instanceId, plant, jobs: new Set() })
-    rows.get(instanceId).jobs.add(action)
+  for (const { instanceId, plant, action, overdue } of actions) {
+    if (!rows.has(instanceId)) rows.set(instanceId, { instanceId, plant, jobs: new Map() })
+    const jobs = rows.get(instanceId).jobs
+    jobs.set(action, jobs.get(action) || overdue)
   }
   return [...rows.values()]
-    .map(row => ({ ...row, jobs: [...row.jobs] }))
+    .map(row => ({ ...row, jobs: [...row.jobs].map(([action, overdue]) => ({ action, overdue })) }))
     .sort((a, b) => plantName(a.plant).localeCompare(plantName(b.plant)))
 }
 
@@ -138,7 +139,7 @@ watch([gardens, gardensLoaded], load, { immediate: true })
               <li v-for="row in rows.slice(0, MAX_PLANTS_PER_ZONE)" :key="row.instanceId" class="dash-action">
                 <span class="dash-action-plant">{{ plantName(row.plant) }}</span>
                 <span class="dash-jobs">
-                  <span v-for="job in row.jobs" :key="job" class="dash-job"><span aria-hidden="true">{{ ACTION_ICON[job] }}</span> {{ actionLabel(job) }}</span>
+                  <span v-for="job in row.jobs" :key="job.action" class="dash-job"><span aria-hidden="true">{{ ACTION_ICON[job.action] }}</span> {{ actionLabel(job.action) }}<span v-if="job.overdue" class="dash-overdue">{{ t('garden.overdue') }}</span></span>
                 </span>
               </li>
               <li v-if="rows.length > MAX_PLANTS_PER_ZONE" class="dash-more">{{ t('dashboard.more', { n: rows.length - MAX_PLANTS_PER_ZONE }) }}</li>
@@ -309,6 +310,16 @@ main {
   font-size: 0.85rem;
   color: var(--text-soft);
   white-space: nowrap;
+}
+
+.dash-overdue {
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 20px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
 .dash-more {

@@ -14,6 +14,11 @@ function isDone(plantLog, instanceId, entry) {
   )
 }
 
+function localToday() {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
+
 function planDateRange(entry, formatDate) {
   return entry.plannedDateStart === entry.plannedDateEnd
     ? formatDate(entry.plannedDateStart)
@@ -32,6 +37,8 @@ export function buildActionBuckets({ weekSummary, instances, plantLog, plantPlan
   const plantById    = Object.fromEntries(plants.map(p => [p.id, p]))
   const instanceIdsByPlant = {}
   for (const inst of instances) (instanceIdsByPlant[inst.plantId] ??= []).push(inst.id)
+
+  const today = localToday()
 
   const buckets = Object.fromEntries(ACTION_ORDER.map(a => [a, []]))
 
@@ -74,6 +81,7 @@ export function buildActionBuckets({ weekSummary, instances, plantLog, plantPlan
             ...common, seedDate, seedAction,
             dateRange: planDateRange(entry, formatDate),
             done: false,
+            overdue: entry.plannedDateEnd < today,
             planEntry: entry, lc: lc ?? null, sowAction: null,
           })
         }
@@ -84,14 +92,17 @@ export function buildActionBuckets({ weekSummary, instances, plantLog, plantPlan
             ...common, seedDate, seedAction,
             dateRange: planDateRange(entry, formatDate),
             done: false,
+            overdue: entry.plannedDateEnd < today,
             planEntry: entry, lc, sowAction: null,
           })
         }
       } else if (LOGGABLE.has(entry.action)) {
+        const done = isDone(plantLog, instanceId, entry)
         buckets[entry.action]?.push({
           ...common, seedDate, seedAction,
           dateRange: planDateRange(entry, formatDate),
-          done: isDone(plantLog, instanceId, entry),
+          done,
+          overdue: !done && entry.plannedDateEnd < today,
           planEntry: entry, lc: null, sowAction: null,
         })
       }
