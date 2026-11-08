@@ -4,9 +4,9 @@ import { createRouter, createMemoryHistory } from 'vue-router'
 import { createI18n } from 'vue-i18n'
 import en from '../../i18n/en.js'
 import GardenView from '../GardenView.vue'
-import BedPickerModal from '../../components/BedPickerModal.vue'
+import ZonePickerModal from '../../components/ZonePickerModal.vue'
 import { setActiveGarden } from '../../stores/garden.js'
-import { chooseBed } from '../../stores/bedPicker.js'
+import { chooseZone } from '../../stores/zonePicker.js'
 
 const i18n = createI18n({ legacy: false, locale: 'en', messages: { en } })
 
@@ -15,8 +15,8 @@ const i18n = createI18n({ legacy: false, locale: 'en', messages: { en } })
 // ---------------------------------------------------------------------------
 const GARDEN = 'garden-1'
 
-const MAIN_BED  = { id: 'bed-main',  name: null,    type: null, lengthCm: null, widthCm: null, sunExposure: null,    aspect: null }
-const HERBS_BED = { id: 'bed-herbs', name: 'Herbs', type: 'raised', lengthCm: 200, widthCm: 100, sunExposure: 'shade', aspect: 'N' }
+const MAIN_ZONE  = { id: 'zone-main',  name: null,    type: null, lengthCm: null, widthCm: null, sunExposure: null,    aspect: null }
+const HERBS_ZONE = { id: 'zone-herbs', name: 'Herbs', type: 'raised', lengthCm: 200, widthCm: 100, sunExposure: 'shade', aspect: 'N' }
 
 function plant(id, name, sunRequirement) {
   return { id, name, emoji: null, sunRequirement, seedingMonths: [3], harvestingMonths: [8] }
@@ -25,11 +25,11 @@ function plant(id, name, sunRequirement) {
 const TOMATO = plant('p-tomato', 'Tomato', 'full_sun')
 const BASIL  = plant('p-basil',  'Basil',  'full_sun')
 
-function makeFetch({ beds, instances, plants = [TOMATO, BASIL], extra = {} }) {
+function makeFetch({ zones, instances, plants = [TOMATO, BASIL], extra = {} }) {
   const routes = {
     [`/api/gardens/${GARDEN}/details`]:     plants,
     [`/api/gardens/${GARDEN}/suggestions`]: { sunGroups: [], conflicts: [] },
-    [`/api/gardens/${GARDEN}/beds`]:        beds,
+    [`/api/gardens/${GARDEN}/zones`]:        zones,
     [`/api/gardens/${GARDEN}/instances`]:   instances,
     [`/api/gardens/${GARDEN}/plant-log`]:   {},
     [`/api/gardens/${GARDEN}/plan`]:        {},
@@ -59,52 +59,52 @@ async function mountGarden(fetchConfig) {
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
-describe('GardenView beds', () => {
+describe('GardenView zones', () => {
   beforeEach(() => setActiveGarden(GARDEN))
   afterEach(() => vi.restoreAllMocks())
 
-  it('with a single bed shows no bed headers or move action, only a bed settings link', async () => {
+  it('with a single zone shows no zone headers or move action, only a zone settings link', async () => {
     const wrapper = await mountGarden({
-      beds: [MAIN_BED],
+      zones: [MAIN_ZONE],
       instances: [
-        { id: 'i-tomato', plantId: TOMATO.id, bedId: MAIN_BED.id, sunShortfall: false },
-        { id: 'i-basil',  plantId: BASIL.id,  bedId: MAIN_BED.id, sunShortfall: false },
+        { id: 'i-tomato', plantId: TOMATO.id, zoneId: MAIN_ZONE.id, sunShortfall: false },
+        { id: 'i-basil',  plantId: BASIL.id,  zoneId: MAIN_ZONE.id, sunShortfall: false },
       ],
     })
 
-    expect(wrapper.findAll('.bed-row')).toHaveLength(0)
+    expect(wrapper.findAll('.zone-row')).toHaveLength(0)
     expect(wrapper.findAll('.move-btn')).toHaveLength(0)
-    expect(wrapper.find('.bed-settings-link').text()).toBe('Bed settings')
+    expect(wrapper.find('.zone-settings-link').text()).toBe('Zone settings')
     expect(wrapper.findAll('.plant-row')).toHaveLength(2)
   })
 
-  it('with several beds groups plants under bed headers in creation order', async () => {
+  it('with several zones groups plants under zone headers in creation order', async () => {
     const wrapper = await mountGarden({
-      beds: [MAIN_BED, HERBS_BED],
+      zones: [MAIN_ZONE, HERBS_ZONE],
       instances: [
-        { id: 'i-tomato', plantId: TOMATO.id, bedId: MAIN_BED.id,  sunShortfall: false },
-        { id: 'i-basil',  plantId: BASIL.id,  bedId: HERBS_BED.id, sunShortfall: true },
+        { id: 'i-tomato', plantId: TOMATO.id, zoneId: MAIN_ZONE.id,  sunShortfall: false },
+        { id: 'i-basil',  plantId: BASIL.id,  zoneId: HERBS_ZONE.id, sunShortfall: true },
       ],
     })
 
     const rows = wrapper.findAll('tbody tr').map(r =>
-      r.classes('bed-row') ? `bed:${r.find('.bed-name').text()}` : r.classes('plant-row') ? `plant:${r.find('.plant-name').text()}` : null
+      r.classes('zone-row') ? `zone:${r.find('.zone-name').text()}` : r.classes('plant-row') ? `plant:${r.find('.plant-name').text()}` : null
     ).filter(Boolean)
-    expect(rows[0]).toBe('bed:Main bed')
+    expect(rows[0]).toBe('zone:Main zone')
     expect(rows[1]).toMatch(/^plant:.*Tomato/)
-    expect(rows[2]).toBe('bed:Herbs')
+    expect(rows[2]).toBe('zone:Herbs')
     expect(rows[3]).toMatch(/^plant:.*Basil/)
-    expect(wrapper.find('.bed-details').text()).toContain('Raised bed')
+    expect(wrapper.find('.zone-details').text()).toContain('Raised bed')
     expect(wrapper.findAll('.move-btn')).toHaveLength(2)
-    expect(wrapper.find('.bed-settings-link').exists()).toBe(false)
+    expect(wrapper.find('.zone-settings-link').exists()).toBe(false)
   })
 
-  it('shows a sun warning only on plants whose bed gets too little sun', async () => {
+  it('shows a sun warning only on plants whose zone gets too little sun', async () => {
     const wrapper = await mountGarden({
-      beds: [MAIN_BED, HERBS_BED],
+      zones: [MAIN_ZONE, HERBS_ZONE],
       instances: [
-        { id: 'i-tomato', plantId: TOMATO.id, bedId: MAIN_BED.id,  sunShortfall: false },
-        { id: 'i-basil',  plantId: BASIL.id,  bedId: HERBS_BED.id, sunShortfall: true },
+        { id: 'i-tomato', plantId: TOMATO.id, zoneId: MAIN_ZONE.id,  sunShortfall: false },
+        { id: 'i-basil',  plantId: BASIL.id,  zoneId: HERBS_ZONE.id, sunShortfall: true },
       ],
     })
 
@@ -113,13 +113,13 @@ describe('GardenView beds', () => {
     expect(warnings[0].text()).toContain('Basil')
   })
 
-  it('shows a logged move with its source and destination bed', async () => {
+  it('shows a logged move with its source and destination zone', async () => {
     global.fetch = makeFetch({
-      beds: [MAIN_BED, HERBS_BED],
-      instances: [{ id: 'i-basil', plantId: BASIL.id, bedId: HERBS_BED.id, sunShortfall: false }],
+      zones: [MAIN_ZONE, HERBS_ZONE],
+      instances: [{ id: 'i-basil', plantId: BASIL.id, zoneId: HERBS_ZONE.id, sunShortfall: false }],
       extra: {
         [`/api/gardens/${GARDEN}/plant-log`]: {
-          'i-basil': [{ id: 'e1', action: 'moved', date: '2025-05-02', comment: null, fromBedId: null, toBedId: HERBS_BED.id, fromBedName: null, toBedName: 'Herbs' }],
+          'i-basil': [{ id: 'e1', action: 'moved', date: '2025-05-02', comment: null, fromZoneId: null, toZoneId: HERBS_ZONE.id, fromZoneName: null, toZoneName: 'Herbs' }],
         },
       },
     })
@@ -128,52 +128,52 @@ describe('GardenView beds', () => {
     const wrapper = mount(GardenView, { global: { plugins: [router, i18n], stubs: { ThisWeekCard: true, Teleport: true } } })
     await flushPromises()
 
-    expect(wrapper.find('.log-move').text()).toBe('Main bed → Herbs')
+    expect(wrapper.find('.log-move').text()).toBe('Main zone → Herbs')
     expect(wrapper.find('.log-edit-btn').exists()).toBe(true)
   })
 })
 
-describe('bed picker', () => {
+describe('zone picker', () => {
   beforeEach(() => setActiveGarden(GARDEN))
   afterEach(() => vi.restoreAllMocks())
 
-  function mountPicker(beds) {
+  function mountPicker(zones) {
     global.fetch = makeFetch({
-      beds,
+      zones,
       instances: [],
       extra: { [`/api/plants/${TOMATO.id}`]: TOMATO },
     })
-    return mount(BedPickerModal, { global: { plugins: [i18n], stubs: { Teleport: true } } })
+    return mount(ZonePickerModal, { global: { plugins: [i18n], stubs: { Teleport: true } } })
   }
 
-  it('skips the question when the garden has a single bed', async () => {
-    mountPicker([MAIN_BED])
+  it('skips the question when the garden has a single zone', async () => {
+    mountPicker([MAIN_ZONE])
 
-    await expect(chooseBed(TOMATO.id)).resolves.toBeUndefined()
+    await expect(chooseZone(TOMATO.id)).resolves.toBeUndefined()
   })
 
   it('requires an explicit choice with nothing preselected and warns about too little sun', async () => {
-    const wrapper = mountPicker([MAIN_BED, HERBS_BED])
+    const wrapper = mountPicker([MAIN_ZONE, HERBS_ZONE])
 
-    const choice = chooseBed(TOMATO.id)
+    const choice = chooseZone(TOMATO.id)
     await flushPromises()
 
     expect(wrapper.findAll('input[type=radio]').some(r => r.element.checked)).toBe(false)
     expect(wrapper.find('.bp-confirm').attributes('disabled')).toBeDefined()
     const options = wrapper.findAll('.bp-option')
     expect(options[0].find('.bp-warning').exists()).toBe(false) // sun unknown
-    expect(options[1].find('.bp-warning').exists()).toBe(true)  // shade bed, full sun plant
+    expect(options[1].find('.bp-warning').exists()).toBe(true)  // shade zone, full sun plant
 
     await options[1].find('input').setValue(true)
     await wrapper.find('.bp-confirm').trigger('click')
 
-    await expect(choice).resolves.toBe(HERBS_BED.id)
+    await expect(choice).resolves.toBe(HERBS_ZONE.id)
   })
 
   it('resolves with null when cancelled', async () => {
-    const wrapper = mountPicker([MAIN_BED, HERBS_BED])
+    const wrapper = mountPicker([MAIN_ZONE, HERBS_ZONE])
 
-    const choice = chooseBed(TOMATO.id)
+    const choice = chooseZone(TOMATO.id)
     await flushPromises()
     await wrapper.find('.bp-cancel').trigger('click')
 

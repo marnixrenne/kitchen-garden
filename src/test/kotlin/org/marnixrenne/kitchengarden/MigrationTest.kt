@@ -21,8 +21,8 @@ class MigrationTest : IntegrationTestBase() {
             "SELECT COUNT(*) FROM flyway_schema_history WHERE success = true",
             Int::class.java
         )!!
-        // V1 through V77 (no V32)
-        assertEquals(76, count, "Expected 76 successful migrations")
+        // V1 through V78 (no V32)
+        assertEquals(77, count, "Expected 77 successful migrations")
     }
 
     @Test
@@ -75,8 +75,8 @@ class MigrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `bed migration gives every existing garden one unnamed bed holding all its instances`() {
-        val schema = "bed_backfill_${System.nanoTime()}"
+    fun `zone migration gives every existing garden one unnamed zone holding all its instances`() {
+        val schema = "zone_backfill_${System.nanoTime()}"
         fun flyway(target: String) = Flyway.configure()
             .dataSource(dataSource)
             .schemas(schema)
@@ -108,21 +108,21 @@ class MigrationTest : IntegrationTestBase() {
 
             flyway("latest").migrate()
 
-            val bedsPerGarden = jdbc.queryForList(
-                "SELECT garden_id::text AS garden, COUNT(*) AS beds, COUNT(name) AS named FROM $schema.pts_garden_bed GROUP BY garden_id"
-            ).associate { it["garden"] as String to (it["beds"] as Long to it["named"] as Long) }
-            assertEquals(3, bedsPerGarden.size, "Every garden, including an empty one, gets a bed")
-            bedsPerGarden.values.forEach { assertEquals(1L to 0L, it, "Exactly one unnamed bed per garden") }
+            val zonesPerGarden = jdbc.queryForList(
+                "SELECT garden_id::text AS garden, COUNT(*) AS zones, COUNT(name) AS named FROM $schema.pts_garden_zone GROUP BY garden_id"
+            ).associate { it["garden"] as String to (it["zones"] as Long to it["named"] as Long) }
+            assertEquals(3, zonesPerGarden.size, "Every garden, including an empty one, gets a zone")
+            zonesPerGarden.values.forEach { assertEquals(1L to 0L, it, "Exactly one unnamed zone per garden") }
 
             val misplaced = jdbc.queryForObject(
                 """
                 SELECT COUNT(*) FROM $schema.garden_plant_instances i
-                JOIN $schema.pts_garden_bed b ON b.id = i.bed_id
+                JOIN $schema.pts_garden_zone b ON b.id = i.zone_id
                 WHERE b.garden_id <> i.garden_id
                 """,
                 Int::class.java,
             )
-            val placed = jdbc.queryForObject("SELECT COUNT(*) FROM $schema.garden_plant_instances WHERE bed_id IS NOT NULL", Int::class.java)
+            val placed = jdbc.queryForObject("SELECT COUNT(*) FROM $schema.garden_plant_instances WHERE zone_id IS NOT NULL", Int::class.java)
             assertEquals(0, misplaced)
             assertEquals(6, placed)
         } finally {

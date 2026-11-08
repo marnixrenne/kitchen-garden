@@ -15,10 +15,10 @@ data class LoggedEntry(
     val action: LogAction,
     val date: LocalDate,
     val comment: String?,
-    val fromBedId: BedId? = null,
-    val toBedId: BedId? = null,
-    val fromBedName: String? = null,
-    val toBedName: String? = null,
+    val fromZoneId: ZoneId? = null,
+    val toZoneId: ZoneId? = null,
+    val fromZoneName: String? = null,
+    val toZoneName: String? = null,
 )
 
 data class WeekAction(

@@ -15,11 +15,11 @@ object Garden : Table("pts_garden") {
     override val primaryKey = PrimaryKey(id)
 }
 
-object GardenBeds : Table("pts_garden_bed") {
+object GardenZones : Table("pts_garden_zone") {
     val id          = uuid("id")
     val gardenId    = uuid("garden_id") references Garden.id
     val name        = varchar("name", 100).nullable()
-    val bedType     = varchar("bed_type", 20).nullable()
+    val zoneType    = varchar("zone_type", 20).nullable()
     val lengthCm    = integer("length_cm").nullable()
     val widthCm     = integer("width_cm").nullable()
     val sunExposure = varchar("sun_exposure", 15).nullable()
@@ -32,7 +32,7 @@ object GardenBeds : Table("pts_garden_bed") {
 object GardenPlantInstances : Table("garden_plant_instances") {
     val id        = uuid("id")
     val gardenId  = uuid("garden_id") references Garden.id
-    val bedId     = uuid("bed_id")    references GardenBeds.id
+    val zoneId    = uuid("zone_id")   references GardenZones.id
     val plantId   = uuid("plant_id")  references Plants.id
     val createdAt = timestamp("created_at")
 
@@ -59,10 +59,10 @@ object PlantLogEntry : Table("pts_plant_log_entry") {
     val action    = varchar("action", 20)
     val date      = date("date")
     val comment   = text("comment").nullable()
-    val fromBedId   = uuid("from_bed_id").nullable()
-    val toBedId     = uuid("to_bed_id").nullable()
-    val fromBedName = varchar("from_bed_name", 100).nullable()
-    val toBedName   = varchar("to_bed_name", 100).nullable()
+    val fromZoneId   = uuid("from_zone_id").nullable()
+    val toZoneId     = uuid("to_zone_id").nullable()
+    val fromZoneName = varchar("from_zone_name", 100).nullable()
+    val toZoneName   = varchar("to_zone_name", 100).nullable()
     val createdAt = timestamp("created_at")
 
     override val primaryKey = PrimaryKey(id)

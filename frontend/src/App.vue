@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter, RouterView, RouterLink } from 'vue-router'
 import { user, logout, csrfHeaders } from './stores/auth.js'
 import { activeGardenId, activeGardenName, gardens, setActiveGarden } from './stores/garden.js'
-import BedPickerModal from './components/BedPickerModal.vue'
+import ZonePickerModal from './components/ZonePickerModal.vue'
 
 const { t, locale } = useI18n()
 const router = useRouter()
@@ -138,7 +138,7 @@ async function submitNewGarden() {
     </div>
   </header>
   <RouterView />
-  <BedPickerModal />
+  <ZonePickerModal />
 
   <Teleport to="body">
     <div v-if="newGardenModal.open" class="ng-backdrop" @click.self="newGardenModal.open = false">

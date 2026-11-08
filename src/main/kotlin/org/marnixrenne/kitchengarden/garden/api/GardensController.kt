@@ -126,10 +126,10 @@ class GardensController(
     fun addPlant(
         @PathVariable gardenId: GardenId,
         @PathVariable plantId: PlantId,
-        @RequestParam(required = false) bedId: BedId?,
+        @RequestParam(required = false) zoneId: ZoneId?,
         authentication: Authentication,
     ): ResponseEntity<Unit> {
-        gardenCommandService.add(authentication, gardenId, plantId, bedId)
+        gardenCommandService.add(authentication, gardenId, plantId, zoneId)
         return ResponseEntity.noContent().build()
     }
 

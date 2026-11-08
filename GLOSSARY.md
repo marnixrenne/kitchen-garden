@@ -17,25 +17,25 @@ _Avoid_: Light level
 ### Gardens
 
 **Garden**:
-A user's named growing space, made up of one or more Beds.
+A user's named growing space, made up of one or more Zones.
 _Avoid_: Plot, allotment
 
-**Bed**:
+**Zone**:
 A bounded growing area within a Garden that holds Plant instances; it can be in-ground, raised, a container or a greenhouse.
-_Avoid_: Region, zone, area, patch, section
+_Avoid_: Bed, region, area, patch, section
 
 **Plant instance**:
-One specific planting of a Plant, growing in exactly one Bed.
+One specific planting of a Plant, growing in exactly one Zone.
 _Avoid_: Garden plant, entry
 
 **Sun exposure**:
-How much direct sun a Bed receives, on the same scale as Sun requirement.
+How much direct sun a Zone receives, on the same scale as Sun requirement.
 _Avoid_: Sun availability, light
 
 **Aspect**:
-The compass direction a Bed faces or slopes toward.
+The compass direction a Zone faces or slopes toward.
 _Avoid_: Orientation, direction
 
 **Move**:
-Relocating a Plant instance from one Bed to another Bed in the same Garden; recorded in its log.
+Relocating a Plant instance from one Zone to another Zone in the same Garden; recorded in its log.
 _Avoid_: Transfer, transplant
