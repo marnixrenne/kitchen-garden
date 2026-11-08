@@ -122,24 +122,22 @@ class GardensController(
 
     // ── Plants ────────────────────────────────────────────────────────────────
 
-    @PutMapping("/{gardenId}/plants/{plantId}")
+    @PostMapping("/{gardenId}/plants/{plantId}")
     fun addPlant(
         @PathVariable gardenId: GardenId,
         @PathVariable plantId: PlantId,
         @RequestParam(required = false) zoneId: ZoneId?,
         authentication: Authentication,
-    ): ResponseEntity<Unit> {
-        gardenCommandService.add(authentication, gardenId, plantId, zoneId)
-        return ResponseEntity.noContent().build()
-    }
+    ): ResponseEntity<PlantInstance> =
+        ResponseEntity.status(201).body(gardenCommandService.add(authentication, gardenId, plantId, zoneId))
 
-    @DeleteMapping("/{gardenId}/plants/{plantId}")
-    fun removePlant(
+    @DeleteMapping("/{gardenId}/instances/{instanceId}")
+    fun removeInstance(
         @PathVariable gardenId: GardenId,
-        @PathVariable plantId: PlantId,
+        @PathVariable instanceId: PlantInstanceId,
         authentication: Authentication,
     ): ResponseEntity<Unit> {
-        gardenCommandService.remove(authentication, gardenId, plantId)
+        gardenCommandService.removeInstance(authentication, gardenId, instanceId)
         return ResponseEntity.noContent().build()
     }
 

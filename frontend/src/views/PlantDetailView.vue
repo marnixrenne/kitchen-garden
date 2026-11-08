@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { csrfHeaders } from '../stores/auth.js'
 import { activeGardenId } from '../stores/garden.js'
 import { chooseZone, addPlantUrl } from '../stores/zonePicker.js'
+import { plantCounts } from '../utils/plantings.js'
 
 const route  = useRoute()
 const router = useRouter()
@@ -12,8 +13,7 @@ const { t, tm, te } = useI18n()
 
 const plant     = ref(null)
 const loading   = ref(true)
-const inGarden  = ref(false)
-const gardenIds = ref(new Set())
+const counts = ref({})
 
 const months = computed(() => tm('months'))
 
@@ -57,23 +57,11 @@ const fertilizerTipText = computed(() => {
   return te(key) ? t(key) : ''
 })
 
-async function toggleGarden() {
-  const zoneId = inGarden.value ? undefined : await chooseZone(route.params.id)
+async function addToGarden(id) {
+  const zoneId = await chooseZone(id)
   if (zoneId === null) return
-  const method = inGarden.value ? 'DELETE' : 'PUT'
-  const res = await fetch(addPlantUrl(route.params.id, zoneId), { method, headers: csrfHeaders() })
-  if (res.ok) inGarden.value = !inGarden.value
-}
-
-async function toggleCompanionGarden(id) {
-  const inG = gardenIds.value.has(id)
-  const zoneId = inG ? undefined : await chooseZone(id)
-  if (zoneId === null) return
-  const res = await fetch(addPlantUrl(id, zoneId), { method: inG ? 'DELETE' : 'PUT', headers: csrfHeaders() })
-  if (!res.ok) return
-  const next = new Set(gardenIds.value)
-  inG ? next.delete(id) : next.add(id)
-  gardenIds.value = next
+  const res = await fetch(addPlantUrl(id, zoneId), { method: 'POST', headers: csrfHeaders() })
+  if (res.ok) counts.value = { ...counts.value, [id]: (counts.value[id] ?? 0) + 1 }
 }
 
 async function loadPlant(id) {
@@ -81,13 +69,11 @@ async function loadPlant(id) {
   plant.value = null
   const [plantRes, gardenRes] = await Promise.all([
     fetch(`/api/plants/${id}`),
-    fetch(`/api/gardens/${activeGardenId.value}`),
+    fetch(`/api/gardens/${activeGardenId.value}/instances`),
   ])
   if (plantRes.ok) plant.value = await plantRes.json()
   if (gardenRes.ok) {
-    const ids = await gardenRes.json()
-    inGarden.value = ids.includes(id)
-    gardenIds.value = new Set(ids)
+    counts.value = plantCounts(await gardenRes.json())
   }
   loading.value = false
 }
@@ -124,13 +110,8 @@ watch(() => route.params.id, (id) => { if (id) loadPlant(id) })
               </span>
             </div>
           </div>
-          <button
-            class="garden-btn"
-            :class="{ added: inGarden }"
-            @click="toggleGarden"
-          >
-            {{ inGarden ? t('garden.added') : t('garden.add') }}
-          </button>
+          <span v-if="counts[plant.id]" class="garden-count">{{ t('garden.inGardenCount', counts[plant.id], { n: counts[plant.id] }) }}</span>
+          <button class="garden-btn" @click="addToGarden(plant.id)">{{ t('garden.add') }}</button>
         </div>
 
         <img
@@ -237,14 +218,13 @@ watch(() => route.params.id, (id) => { if (id) loadPlant(id) })
                 @click="router.push(`/plant/${c.id}`)"
               >
                 {{ c.emoji ?? '🌱' }} {{ te(`plants.${c.name}`) ? t(`plants.${c.name}`) : c.name }}
+                <span v-if="counts[c.id]" class="garden-count" :title="t('garden.inGardenCount', counts[c.id], { n: counts[c.id] })">{{ counts[c.id] }}×</span>
                 <button
                   class="companion-garden-btn"
-                  :class="{ added: gardenIds.has(c.id) }"
-                  :title="gardenIds.has(c.id) ? t('garden.removeTooltip') : t('garden.addTooltip')"
-                  @click.stop="toggleCompanionGarden(c.id)"
-                >
-                  {{ gardenIds.has(c.id) ? '✓' : '+' }}
-                </button>
+                  :class="{ added: counts[c.id] }"
+                  :title="t('garden.addTooltip')"
+                  @click.stop="addToGarden(c.id)"
+                >+</button>
               </div>
             </div>
           </div>
@@ -309,6 +289,12 @@ watch(() => route.params.id, (id) => { if (id) loadPlant(id) })
 </template>
 
 <style scoped>
+.garden-count {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
 main {
   max-width: 860px;
   margin: 0 auto;

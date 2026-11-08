@@ -7,6 +7,7 @@ import PlantList from '../components/PlantList.vue'
 import { csrfHeaders } from '../stores/auth.js'
 import { activeGardenId } from '../stores/garden.js'
 import { chooseZone, addPlantUrl } from '../stores/zonePicker.js'
+import { plantCounts } from '../utils/plantings.js'
 
 const CATEGORY_ORDER = ['Fruiting', 'Leafy', 'Brassica', 'Root', 'Legume', 'Herb', 'Flower', 'Sea', 'Fruit']
 
@@ -18,7 +19,7 @@ const selectedMonth = ref(route.query.month ? parseInt(route.query.month) : null
 const counts        = ref({})
 const plants        = ref([])
 const loading       = ref(false)
-const gardenIds     = ref(new Set())
+const plantings     = ref({})
 const query         = ref(route.query.q ?? '')
 
 const months = computed(() => tm('months'))
@@ -57,19 +58,15 @@ async function fetchCounts() {
 
 async function fetchGarden() {
   if (!activeGardenId.value) return
-  const res = await fetch(`/api/gardens/${activeGardenId.value}`)
-  if (res.ok) gardenIds.value = new Set(await res.json())
+  const res = await fetch(`/api/gardens/${activeGardenId.value}/instances`)
+  if (res.ok) plantings.value = plantCounts(await res.json())
 }
 
-async function toggleGarden(plantId) {
-  const inGarden = gardenIds.value.has(plantId)
-  const zoneId = inGarden ? undefined : await chooseZone(plantId)
+async function addToGarden(plantId) {
+  const zoneId = await chooseZone(plantId)
   if (zoneId === null) return
-  const method = inGarden ? 'DELETE' : 'PUT'
-  await fetch(addPlantUrl(plantId, zoneId), { method, headers: csrfHeaders() })
-  const next = new Set(gardenIds.value)
-  inGarden ? next.delete(plantId) : next.add(plantId)
-  gardenIds.value = next
+  const res = await fetch(addPlantUrl(plantId, zoneId), { method: 'POST', headers: csrfHeaders() })
+  if (res.ok) plantings.value = { ...plantings.value, [plantId]: (plantings.value[plantId] ?? 0) + 1 }
 }
 
 async function fetchPlants(month) {
@@ -120,9 +117,9 @@ onMounted(() => {
       :month-name="selectedMonth ? months[selectedMonth - 1] : null"
       :total="filteredTotal"
       :loading="loading"
-      :garden-ids="gardenIds"
+      :counts="plantings"
       :query="query"
-      @toggle-garden="toggleGarden"
+      @add-to-garden="addToGarden"
     />
   </main>
 </template>

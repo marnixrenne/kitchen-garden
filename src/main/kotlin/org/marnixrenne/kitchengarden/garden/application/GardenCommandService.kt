@@ -37,7 +37,7 @@ class GardenCommandService(
         if (!deleted) throw ResponseStatusException(HttpStatus.NOT_FOUND)
     }
 
-    fun add(authentication: Authentication, gardenId: GardenId, plantId: PlantId, zoneId: ZoneId?) {
+    fun add(authentication: Authentication, gardenId: GardenId, plantId: PlantId, zoneId: ZoneId?): PlantInstance {
         accessGuard.validate(authentication, gardenId)
         val zone = if (zoneId != null) {
             zoneRepository.find(gardenId, zoneId) ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Zone is not in this garden")
@@ -46,11 +46,14 @@ class GardenCommandService(
             zoneRepository.findAll(gardenId).singleOrNull()
                 ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Garden has several zones; choose one")
         }
-        repository.add(gardenId, plantId, zone.id)
+        val instanceId = repository.add(gardenId, plantId, zone.id)
+        return repository.findInstances(gardenId).first { it.id == instanceId }
     }
 
-    fun remove(authentication: Authentication, gardenId: GardenId, plantId: PlantId) =
-        repository.remove(accessGuard.validate(authentication, gardenId), plantId)
+    fun removeInstance(authentication: Authentication, gardenId: GardenId, instanceId: PlantInstanceId) {
+        val removed = repository.removeInstance(accessGuard.validate(authentication, gardenId), instanceId)
+        if (!removed) throw ResponseStatusException(HttpStatus.NOT_FOUND)
+    }
 
     fun logAction(authentication: Authentication, gardenId: GardenId, request: PlantLogRequest): PlantLogResponse {
         accessGuard.validate(authentication, gardenId)

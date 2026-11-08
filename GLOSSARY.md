@@ -25,7 +25,7 @@ A bounded growing area within a Garden that holds Plant instances; it can be in-
 _Avoid_: Bed, region, area, patch, section
 
 **Plant instance**:
-One specific planting of a Plant, growing in exactly one Zone.
+One specific planting of a Plant, growing in exactly one Zone. A Plant can have several, even in the same Zone, each with its own log and plan.
 _Avoid_: Garden plant, entry
 
 **Sun exposure**:

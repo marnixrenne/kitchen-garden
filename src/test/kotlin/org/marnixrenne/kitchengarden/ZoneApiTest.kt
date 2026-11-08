@@ -52,7 +52,7 @@ class ZoneApiTest : IntegrationTestBase() {
     }
 
     private fun addPlant(gardenId: String, plant: String, zoneId: String? = null): ResultActionsDsl =
-        mvc.put("/api/gardens/$gardenId/plants/${plantId(plant)}" + (zoneId?.let { "?zoneId=$it" } ?: "")) {
+        mvc.post("/api/gardens/$gardenId/plants/${plantId(plant)}" + (zoneId?.let { "?zoneId=$it" } ?: "")) {
             with(user("admin")); with(csrf())
         }
 
@@ -176,7 +176,7 @@ class ZoneApiTest : IntegrationTestBase() {
     fun `with one zone a plant is added without naming a zone`() {
         val gardenId = createGarden()
 
-        addPlant(gardenId, "Tomato").andExpect { status { isNoContent() } }
+        addPlant(gardenId, "Tomato").andExpect { status { isCreated() } }
 
         assertEquals(initialZone(gardenId), zoneOf(instanceId(gardenId, "Tomato")))
         mvc.get("/api/gardens/$gardenId/instances") { with(user("admin")) }.andExpect {
@@ -192,7 +192,7 @@ class ZoneApiTest : IntegrationTestBase() {
 
         addPlant(gardenId, "Basil").andExpect { status { isBadRequest() } }
         addPlant(gardenId, "Basil", otherGardenZone).andExpect { status { isBadRequest() } }
-        addPlant(gardenId, "Basil", herbs).andExpect { status { isNoContent() } }
+        addPlant(gardenId, "Basil", herbs).andExpect { status { isCreated() } }
 
         assertEquals(herbs, zoneOf(instanceId(gardenId, "Basil")))
     }

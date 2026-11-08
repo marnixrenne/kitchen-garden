@@ -97,8 +97,8 @@ const PLANTS = {
 // ---------------------------------------------------------------------------
 function makeFetch(gardenIds = []) {
   return vi.fn(async (url, options) => {
-    if (url.match(/^\/api\/gardens\/[^/]+$/) && (!options || options.method === undefined)) {
-      return { ok: true, json: async () => gardenIds }
+    if (url.match(/^\/api\/gardens\/[^/]+\/instances$/)) {
+      return { ok: true, json: async () => gardenIds.map(plantId => ({ plantId })) }
     }
     if (url.match(/^\/api\/gardens\//)) {
       return { ok: true, json: async () => ({}) }
@@ -167,51 +167,40 @@ describe('PlantDetailView', () => {
     expect(wrapper.text()).toContain('Tomato')    // Nasturtium's companion
   })
 
-  it('companion garden button toggles from + to ✓ when clicked', async () => {
+  it('adding a companion creates a planting and shows the new count', async () => {
     const router = makeRouter()
-    const wrapper = await mountAt(router, TOMATO.id, []) // garden is empty
+    const wrapper = await mountAt(router, TOMATO.id, [])
+    expect(wrapper.find('.garden-count').exists()).toBe(false)
 
-    const addBtn = wrapper.find('.companion-garden-btn')
-    expect(addBtn.text()).toBe('+')
-
-    await addBtn.trigger('click')
+    await wrapper.find('.companion-garden-btn').trigger('click')
     await flushPromises()
 
-    expect(addBtn.text()).toBe('✓')
+    const [url, options] = global.fetch.mock.calls.find(([, o]) => o?.method === 'POST')
+    expect(url).toContain(`/plants/${TOMATO.companions[0].id}`)
+    expect(options.method).toBe('POST')
+    expect(wrapper.find('.garden-count').text()).toBe('1×')
   })
 
-  it('companion garden button shows ✓ when companion is already in garden', async () => {
+  it('adds another planting of a companion already in the garden, never removing it', async () => {
     const router = makeRouter()
     const wrapper = await mountAt(router, TOMATO.id, [TOMATO.companions[0].id])
+    expect(wrapper.find('.companion-garden-btn').text()).toBe('+')
+    expect(wrapper.find('.garden-count').text()).toBe('1×')
 
-    const addBtn = wrapper.find('.companion-garden-btn')
-    expect(addBtn.text()).toBe('✓')
-  })
-
-  it('companion garden button toggles back to + when removing from garden', async () => {
-    const router = makeRouter()
-    const wrapper = await mountAt(router, TOMATO.id, [TOMATO.companions[0].id])
-
-    const addBtn = wrapper.find('.companion-garden-btn')
-    expect(addBtn.text()).toBe('✓')
-
-    await addBtn.trigger('click')
+    await wrapper.find('.companion-garden-btn').trigger('click')
     await flushPromises()
 
-    expect(addBtn.text()).toBe('+')
+    expect(global.fetch.mock.calls.some(([, o]) => o?.method === 'DELETE')).toBe(false)
+    expect(wrapper.find('.garden-count').text()).toBe('2×')
   })
 
-  it('companion chip click does not also trigger the garden toggle', async () => {
+  it('companion button click does not also navigate to the companion', async () => {
     const router = makeRouter()
     const wrapper = await mountAt(router, TOMATO.id, [])
 
-    const addBtn = wrapper.find('.companion-garden-btn')
-    await addBtn.trigger('click')
+    await wrapper.find('.companion-garden-btn').trigger('click')
     await flushPromises()
 
-    // Still on Tomato's page
     expect(router.currentRoute.value.params.id).toBe(TOMATO.id)
-    // Button toggled
-    expect(addBtn.text()).toBe('✓')
   })
 })
