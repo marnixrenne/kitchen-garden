@@ -25,17 +25,19 @@ const INSTANCES = [
   { id: 'i-basil',  plantId: BASIL.id,  zoneId: HERBS.id },
 ]
 
+const SEEDED = { 'i-tomato': { nextState: null }, 'i-beans': { nextState: null }, 'i-basil': { nextState: null } }
+
 function planned(action, start) {
   return { id: `${action}-${start}`, action, plannedDateStart: start, plannedDateEnd: start, seedDate: '2026-05-01', seedAction: 'seeding_indoor' }
 }
 
-async function mountCard({ zoneId = null, plan = {}, log = {}, week = WEEK } = {}) {
+async function mountCard({ zoneId = null, plan = {}, log = {}, week = WEEK, instances = INSTANCES, lifecycle = SEEDED } = {}) {
   const routes = {
     [`/api/gardens/${GARDEN}/week`]:      week,
-    [`/api/gardens/${GARDEN}/instances`]: INSTANCES,
+    [`/api/gardens/${GARDEN}/instances`]: instances,
     [`/api/gardens/${GARDEN}/plant-log`]: log,
     [`/api/gardens/${GARDEN}/plan`]:      plan,
-    [`/api/gardens/${GARDEN}/lifecycle`]: { 'i-tomato': { nextState: null }, 'i-beans': { nextState: null }, 'i-basil': { nextState: null } },
+    [`/api/gardens/${GARDEN}/lifecycle`]: lifecycle,
     [`/api/gardens/${GARDEN}/details`]:   [TOMATO, BEANS, BASIL],
   }
   global.fetch = vi.fn(async (url) =>
@@ -132,6 +134,84 @@ describe('ThisWeekCard', () => {
     const byLabel = Object.fromEntries(rows.map(r => [r.find('.week-action-label').text(), r]))
     expect(byLabel[en.garden.job.watering].find('.wi-overdue').text()).toBe(en.garden.overdue)
     expect(byLabel[en.garden.job.pruning].find('.wi-overdue').exists()).toBe(false)
+  })
+
+  describe('several plantings of one plant', () => {
+    const TWINS = [
+      { id: 'i-early', plantId: TOMATO.id, zoneId: VEG.id },
+      { id: 'i-late',  plantId: TOMATO.id, zoneId: VEG.id },
+    ]
+
+    it('tells them apart by sowing date, and says when one is not sown yet', async () => {
+      const wrapper = await mountCard({
+        zoneId: VEG.id,
+        instances: TWINS,
+        log: { 'i-early': [{ action: 'seeding_outdoor', date: '2026-05-01' }] },
+      })
+
+      const tags = plantRows(wrapper).map(r => r.find('.wi-seeded-on').text())
+      expect(tags).toEqual(expect.arrayContaining(['Seeded May 1', en.garden.notSownYet]))
+    })
+
+    it('does not label a single unsown planting', async () => {
+      const wrapper = await mountCard({ zoneId: VEG.id })
+
+      expect(wrapper.find('.wi-seeded-on').exists()).toBe(false)
+    })
+
+    it('gives each unsown planting its own sow job', async () => {
+      const wrapper = await mountCard({
+        zoneId: VEG.id,
+        instances: TWINS,
+        lifecycle: {},
+        week: { ...WEEK, actions: [{ type: 'sow', plant: TOMATO }] },
+      })
+
+      expect(wrapper.findAll('.wi-btn--seed')).toHaveLength(2)
+    })
+  })
+
+  describe('removing a planting', () => {
+    it('is only offered on a zone page', async () => {
+      expect((await mountCard()).find('.week-plant-remove').exists()).toBe(false)
+      expect((await mountCard({ zoneId: VEG.id })).find('.week-plant-remove').exists()).toBe(true)
+    })
+
+    it('asks for confirmation before deleting', async () => {
+      const wrapper = await mountCard({ zoneId: VEG.id })
+
+      await wrapper.find('.week-plant-remove').trigger('click')
+
+      expect(global.fetch.mock.calls.some(([, o]) => o?.method === 'DELETE')).toBe(false)
+      expect(wrapper.find('[role="dialog"]').text()).toContain('Bean')
+    })
+
+    it('deletes that planting when confirmed, and tells the page to refresh', async () => {
+      const wrapper = await mountCard({ zoneId: VEG.id })
+      const realFetch = global.fetch
+      global.fetch = vi.fn(async (url, options) => options?.method === 'DELETE' ? { ok: true } : realFetch(url, options))
+
+      await wrapper.find('.week-plant-remove').trigger('click')
+      await wrapper.find('form.modal-body').trigger('submit')
+      await flushPromises()
+
+      const [url] = global.fetch.mock.calls.find(([, o]) => o?.method === 'DELETE')
+      expect(url).toBe(`/api/gardens/${GARDEN}/instances/i-beans`)
+      expect(wrapper.emitted('refresh')).toHaveLength(1)
+      expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+    })
+
+    it('keeps the popup open with an error when the delete fails', async () => {
+      const wrapper = await mountCard({ zoneId: VEG.id })
+      const realFetch = global.fetch
+      global.fetch = vi.fn(async (url, options) => options?.method === 'DELETE' ? { ok: false } : realFetch(url, options))
+
+      await wrapper.find('.week-plant-remove').trigger('click')
+      await wrapper.find('form.modal-body').trigger('submit')
+      await flushPromises()
+
+      expect(wrapper.find('.modal-error').text()).toBe(en.garden.removePlantingFailed)
+    })
   })
 
   it('leaves out actions planned for another week', async () => {

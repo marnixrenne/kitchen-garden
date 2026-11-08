@@ -7,11 +7,11 @@ const props = defineProps({
   monthName: String,
   total:     Number,
   loading:   Boolean,
-  gardenIds: Set,
+  counts: Object,
   query:     { type: String, default: '' },
 })
 
-const emit = defineEmits(['toggle-garden'])
+const emit = defineEmits(['add-to-garden'])
 
 const router = useRouter()
 const { t, te } = useI18n()
@@ -55,14 +55,13 @@ const plantName = (plant) => {
         >
           <span class="plant-emoji">{{ plant.emoji ?? '🌱' }}</span>
           <span class="plant-name">{{ plantName(plant) }}</span>
+          <span v-if="counts?.[plant.id]" class="garden-count" :title="t('garden.inGardenCount', counts[plant.id], { n: counts[plant.id] })">{{ counts[plant.id] }}×</span>
           <button
             class="garden-btn"
-            :class="{ added: gardenIds?.has(plant.id) }"
-            :title="gardenIds?.has(plant.id) ? t('garden.removeTooltip') : t('garden.addTooltip')"
-            @click.stop="emit('toggle-garden', plant.id)"
-          >
-            {{ gardenIds?.has(plant.id) ? '✓' : '+' }}
-          </button>
+            :class="{ added: counts?.[plant.id] }"
+            :title="t('garden.addTooltip')"
+            @click.stop="emit('add-to-garden', plant.id)"
+          >+</button>
         </div>
       </div>
     </div>
@@ -70,6 +69,12 @@ const plantName = (plant) => {
 </template>
 
 <style scoped>
+.garden-count {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+
 .results-header {
   font-size: 1.1rem;
   font-weight: 600;

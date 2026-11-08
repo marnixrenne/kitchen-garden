@@ -45,34 +45,95 @@ class GardenApiTest : IntegrationTestBase() {
         }
     }
 
+    private fun addInstance(gardenId: String, plantId: String): String {
+        val json = mvc.post("/api/gardens/$gardenId/plants/$plantId") { with(user("admin")); with(csrf()) }
+            .andExpect { status { isCreated() } }
+            .andReturn().response.contentAsString
+        return com.jayway.jsonpath.JsonPath.read(json, "$.id")
+    }
+
+    private fun logAction(gardenId: String, instanceId: String, date: String) =
+        mvc.post("/api/gardens/$gardenId/plant-log") {
+            with(user("admin")); with(csrf())
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"instanceId":"$instanceId","action":"seeding_outdoor","date":"$date","comment":null}"""
+        }.andExpect { status { isCreated() } }
+
     @Test
-    fun `user can add and remove a plant from garden`() {
+    fun `user can add and remove a planting`() {
         val gardenId = createGardenId()
         val id = tomatoId()
 
-        mvc.put("/api/gardens/$gardenId/plants/$id") {
-            with(user("admin"))
-            with(csrf())
-        }.andExpect { status { isNoContent() } }
+        val instanceId = addInstance(gardenId, id)
 
-        mvc.get("/api/gardens/$gardenId") {
-            with(user("admin"))
-        }.andExpect {
+        mvc.get("/api/gardens/$gardenId") { with(user("admin")) }.andExpect {
             status { isOk() }
             jsonPath("$") { value(hasItem(id)) }
         }
 
-        mvc.delete("/api/gardens/$gardenId/plants/$id") {
-            with(user("admin"))
-            with(csrf())
+        mvc.delete("/api/gardens/$gardenId/instances/$instanceId") {
+            with(user("admin")); with(csrf())
         }.andExpect { status { isNoContent() } }
 
-        mvc.get("/api/gardens/$gardenId") {
-            with(user("admin"))
-        }.andExpect {
+        mvc.get("/api/gardens/$gardenId") { with(user("admin")) }.andExpect {
             status { isOk() }
             jsonPath("$") { value(not(hasItem(id))) }
         }
+    }
+
+    @Test
+    fun `a plant can have several plantings in one zone, each with its own log`() {
+        val gardenId = createGardenId()
+        val id = tomatoId()
+
+        val first = addInstance(gardenId, id)
+        val second = addInstance(gardenId, id)
+        logAction(gardenId, first, "2025-04-01")
+        logAction(gardenId, second, "2025-05-01")
+
+        mvc.get("/api/gardens/$gardenId/instances") { with(user("admin")) }.andExpect {
+            jsonPath("$.length()") { value(2) }
+        }
+        mvc.get("/api/gardens/$gardenId/details") { with(user("admin")) }.andExpect {
+            jsonPath("$.length()") { value(1) }
+        }
+        mvc.get("/api/gardens/$gardenId/plant-log") { with(user("admin")) }.andExpect {
+            jsonPath("$['$first'][0].date") { value("2025-04-01") }
+            jsonPath("$['$second'][0].date") { value("2025-05-01") }
+        }
+    }
+
+    @Test
+    fun `removing a planting leaves other plantings and deletes its own log`() {
+        val gardenId = createGardenId()
+        val id = tomatoId()
+        val removed = addInstance(gardenId, id)
+        val kept = addInstance(gardenId, id)
+        logAction(gardenId, removed, "2025-04-01")
+        logAction(gardenId, kept, "2025-05-01")
+
+        mvc.delete("/api/gardens/$gardenId/instances/$removed") {
+            with(user("admin")); with(csrf())
+        }.andExpect { status { isNoContent() } }
+
+        mvc.get("/api/gardens/$gardenId/instances") { with(user("admin")) }.andExpect {
+            jsonPath("$.length()") { value(1) }
+            jsonPath("$[0].id") { value(kept) }
+        }
+        val orphans = jdbc.queryForObject(
+            "SELECT COUNT(*) FROM pts_plant_log WHERE instance_id IS NULL AND plant_id = ?::uuid", Int::class.java, id)
+        assertEquals(0, orphans)
+    }
+
+    @Test
+    fun `a planting from another garden cannot be removed`() {
+        val gardenId = createGardenId()
+        val otherGarden = createGardenId()
+        val instanceId = addInstance(gardenId, tomatoId())
+
+        mvc.delete("/api/gardens/$otherGarden/instances/$instanceId") {
+            with(user("admin")); with(csrf())
+        }.andExpect { status { isNotFound() } }
     }
 
     @Test
@@ -80,7 +141,7 @@ class GardenApiTest : IntegrationTestBase() {
         val gardenId = createGardenId()
         val id = tomatoId()
 
-        mvc.put("/api/gardens/$gardenId/plants/$id") { with(user("admin")); with(csrf()) }
+        mvc.post("/api/gardens/$gardenId/plants/$id") { with(user("admin")); with(csrf()) }
 
         mvc.get("/api/gardens/$gardenId/details") {
             with(user("admin"))
@@ -90,8 +151,6 @@ class GardenApiTest : IntegrationTestBase() {
             jsonPath("$[?(@.name=='Tomato')].countries") { value(hasSize<Any>(greaterThan(0))) }
             jsonPath("$[?(@.name=='Tomato')].seedingMonths") { value(hasSize<Any>(greaterThan(0))) }
         }
-
-        mvc.delete("/api/gardens/$gardenId/plants/$id") { with(user("admin")); with(csrf()) }
     }
 
     @Test
@@ -100,9 +159,9 @@ class GardenApiTest : IntegrationTestBase() {
         val gardenId = createGardenId(name = "Delete Cascade Test Garden ${System.nanoTime()}")
 
         // Add tomato to the garden, creating an instance
-        mvc.put("/api/gardens/$gardenId/plants/$tomatoId") {
+        mvc.post("/api/gardens/$gardenId/plants/$tomatoId") {
             with(user("admin")); with(csrf())
-        }.andExpect { status { isNoContent() } }
+        }.andExpect { status { isCreated() } }
 
         val instanceId = jdbc.queryForObject(
             "SELECT id FROM garden_plant_instances WHERE garden_id = ?::uuid",

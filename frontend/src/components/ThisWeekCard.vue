@@ -6,6 +6,7 @@ import { csrfHeaders } from '../stores/auth.js'
 import { activeGardenId } from '../stores/garden.js'
 import ZoneGround from './ZoneGround.vue'
 import { zoneLabel } from '../utils/zones.js'
+import { latestSowing } from '../utils/plantings.js'
 import { ACTION_ICON, ACTION_LABEL_KEY, allActions, buildActionBuckets, weekRangeLabel as formatWeekRange } from '../utils/openActions.js'
 
 const props = defineProps({
@@ -26,6 +27,7 @@ const loading     = ref(true)
 
 const seedModal    = ref({ open: false, plant: null, instanceId: null, method: 'seeding_indoor', date: '', comment: '', saving: false, error: '' })
 const actionModal  = ref({ open: false, plant: null, instanceId: null, action: '', date: '', comment: '', saving: false, error: '' })
+const removeModal  = ref({ open: false, row: null, saving: false, error: '' })
 const advanceModal = ref({ open: false, item: null, date: '', comment: '', saving: false, error: '' })
 
 function todayIso() { return new Date().toISOString().slice(0, 10) }
@@ -37,15 +39,6 @@ function formatDate(d) {
 function pName(plant) {
   const k = `plants.${plant.name}`
   return te(k) ? t(k) : plant.name
-}
-
-function instanceSeedDate(instanceId) {
-  const entries = plantLog.value[instanceId] ?? []
-  for (let i = entries.length - 1; i >= 0; i--) {
-    const e = entries[i]
-    if (e.action === 'seeding_indoor' || e.action === 'seeding_outdoor' || e.action === 'planting') return formatDate(e.date)
-  }
-  return null
 }
 
 function weekRangeLabel() {
@@ -105,12 +98,16 @@ const zoneGroups = computed(() => {
   return props.zones
     .filter(zone => !props.zoneId || zone.id === props.zoneId)
     .map(zone => {
-      const allRows = instances.value
-        .filter(inst => inst.zoneId === zone.id && plantById[inst.plantId])
-        .map(inst => {
-          const rowActions = actionsByInstance[inst.id] ?? []
-          return { instanceId: inst.id, plant: plantById[inst.plantId], actions: rowActions, seeded: rowActions.find(a => a.seedDate) ?? null }
-        })
+      const zoneInstances = instances.value.filter(inst => inst.zoneId === zone.id && plantById[inst.plantId])
+      const allRows = zoneInstances
+        .map(inst => ({
+          instanceId: inst.id,
+          plant: plantById[inst.plantId],
+          actions: actionsByInstance[inst.id] ?? [],
+          sowing: latestSowing(plantLog.value[inst.id]),
+          // Only a second planting of the same Plant needs telling apart while unsown
+          hasTwin: zoneInstances.filter(other => other.plantId === inst.plantId).length > 1,
+        }))
         .sort((x, y) => pName(x.plant).localeCompare(pName(y.plant)))
       return {
         zone,
@@ -149,6 +146,31 @@ async function fetchAll() {
   if (lcRes.ok)     lifecycle.value    = await lcRes.json()
   if (detailRes.ok) plants.value       = await detailRes.json()
   loading.value = false
+}
+
+function openRemoveModal(row) {
+  removeModal.value = { open: true, row, saving: false, error: '' }
+}
+
+async function submitRemove() {
+  const m = removeModal.value
+  if (m.saving) return
+  m.saving = true
+  m.error = ''
+  try {
+    const res = await fetch(`/api/gardens/${activeGardenId.value}/instances/${m.row.instanceId}`, {
+      method: 'DELETE',
+      headers: csrfHeaders(),
+    })
+    if (!res.ok) { m.error = t('garden.removePlantingFailed'); return }
+    m.open = false
+    await fetchAll()
+    emit('refresh')
+  } catch {
+    m.error = t('garden.removePlantingFailed')
+  } finally {
+    m.saving = false
+  }
 }
 
 function openAdvanceModal(item) {
@@ -252,9 +274,11 @@ defineOptions({ inheritAttrs: false })
           <span v-if="zoneId" class="wi-emoji">{{ row.plant.emoji ?? '🌱' }}</span>
           <a class="wi-name" @click.prevent="router.push(`/plant/${row.plant.id}`)">
             {{ pName(row.plant) }}
-            <span v-if="row.seeded" class="wi-seeded-on">{{ row.seeded.seedAction === 'planting' ? t('garden.plantedOn', { date: row.seeded.seedDate }) : t('garden.seededOn', { date: row.seeded.seedDate }) }}</span>
+            <span v-if="row.sowing" class="wi-seeded-on">{{ row.sowing.action === 'planting' ? t('garden.plantedOn', { date: formatDate(row.sowing.date) }) : t('garden.seededOn', { date: formatDate(row.sowing.date) }) }}</span>
+            <span v-else-if="row.hasTwin" class="wi-seeded-on">{{ t('garden.notSownYet') }}</span>
           </a>
           <span v-if="row.actions.length === 0" class="week-plant-none">{{ t('dashboard.nothingOpen') }}</span>
+          <button v-if="zoneId" class="week-plant-remove" @click="openRemoveModal(row)">{{ t('garden.removePlanting') }}</button>
         </div>
 
         <div
@@ -404,6 +428,25 @@ defineOptions({ inheritAttrs: false })
     </div>
   </Teleport>
 
+  <!-- Remove planting modal -->
+  <Teleport to="body">
+    <div v-if="removeModal.open" class="modal-backdrop" @click.self="removeModal.open = false">
+      <div class="modal" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <span class="modal-title">{{ t('garden.removePlanting') }}</span>
+        </div>
+        <form class="modal-body" @submit.prevent="submitRemove">
+          <p class="remove-warning">{{ t('garden.removePlantingConfirm', { plant: pName(removeModal.row.plant) }) }}</p>
+          <p v-if="removeModal.error" class="modal-error" role="alert">{{ removeModal.error }}</p>
+          <div class="modal-actions">
+            <button type="button" class="modal-cancel" @click="removeModal.open = false">{{ t('garden.seedModal.cancel') }}</button>
+            <button type="submit" class="modal-save remove-confirm" :disabled="removeModal.saving">{{ t('garden.removePlanting') }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </Teleport>
+
   <!-- Log action modal -->
   <Teleport to="body">
     <div v-if="actionModal.open" class="modal-backdrop" @click.self="actionModal.open = false">
@@ -530,6 +573,28 @@ defineOptions({ inheritAttrs: false })
   margin-left: auto;
   font-size: 0.8rem;
   color: var(--text-soft);
+}
+
+.week-plant-remove {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.week-plant-remove:hover {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.remove-warning {
+  font-size: 0.9rem;
+}
+
+.remove-confirm {
+  background: #b91c1c;
 }
 
 .week-action {

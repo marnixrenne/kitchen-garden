@@ -98,6 +98,53 @@ describe('GardenView zones', () => {
     expect(wrapper.findAll('.move-btn')).toHaveLength(2)
   })
 
+  it('shows one calendar row per planting, telling plantings of one plant in a zone apart', async () => {
+    const wrapper = await mountGarden({
+      zones: [MAIN_ZONE, HERBS_ZONE],
+      instances: [
+        { id: 'i-a', plantId: TOMATO.id, zoneId: MAIN_ZONE.id,  sunShortfall: false },
+        { id: 'i-b', plantId: TOMATO.id, zoneId: MAIN_ZONE.id,  sunShortfall: false },
+        { id: 'i-c', plantId: TOMATO.id, zoneId: HERBS_ZONE.id, sunShortfall: false },
+      ],
+      extra: { [`/api/gardens/${GARDEN}/plant-log`]: { 'i-a': [{ id: 'e1', action: 'planting', date: '2025-05-02', comment: null }] } },
+    })
+
+    const rows = wrapper.findAll('.plant-row')
+    expect(rows).toHaveLength(3)
+    expect(wrapper.findAll('.planting-tag').map(tag => tag.text())).toEqual(expect.arrayContaining([expect.stringContaining('May'), en.garden.notSownYet]))
+    expect(wrapper.findAll('.planting-tag')).toHaveLength(2)
+  })
+
+  it('moves the planting whose row was used', async () => {
+    const wrapper = await mountGarden({
+      zones: [MAIN_ZONE, HERBS_ZONE],
+      instances: [
+        { id: 'i-a', plantId: TOMATO.id, zoneId: MAIN_ZONE.id,  sunShortfall: false },
+        { id: 'i-b', plantId: TOMATO.id, zoneId: HERBS_ZONE.id, sunShortfall: false },
+      ],
+    })
+
+    await wrapper.findAll('.move-btn')[1].trigger('click')
+
+    const options = wrapper.findAll('[role="dialog"] option').map(o => o.attributes('value'))
+    expect(options).toContain(MAIN_ZONE.id)
+    expect(options).not.toContain(HERBS_ZONE.id)
+  })
+
+  it('lists a plant once in the month summary however many plantings it has', async () => {
+    const wrapper = await mountGarden({
+      zones: [MAIN_ZONE, HERBS_ZONE],
+      instances: [
+        { id: 'i-a', plantId: TOMATO.id, zoneId: MAIN_ZONE.id,  sunShortfall: false },
+        { id: 'i-b', plantId: TOMATO.id, zoneId: HERBS_ZONE.id, sunShortfall: false },
+      ],
+    })
+
+    await wrapper.findAll('.month-header')[2].trigger('click')
+
+    expect(wrapper.find('.activity').text().match(/Tomato/g)).toHaveLength(1)
+  })
+
   it('shows a sun warning only on plants whose zone gets too little sun', async () => {
     const wrapper = await mountGarden({
       zones: [MAIN_ZONE, HERBS_ZONE],

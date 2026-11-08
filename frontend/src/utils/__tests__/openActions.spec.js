@@ -47,6 +47,19 @@ describe('open actions', () => {
     expect(open[0]).toMatchObject({ action: 'seeding', zoneId: 'zone-a' })
   })
 
+  it('gives every unsown planting its own sowing action', () => {
+    const weekSummary = { ...WEEK, actions: [{ type: 'sow', plant: TOMATO }] }
+    const instances = [
+      { id: 'i-a', plantId: TOMATO.id, zoneId: 'zone-a' },
+      { id: 'i-b', plantId: TOMATO.id, zoneId: 'zone-b' },
+      { id: 'i-sown', plantId: TOMATO.id, zoneId: 'zone-c' },
+    ]
+
+    const open = openActions(buildActionBuckets(data({ weekSummary, instances, lifecycle: { 'i-sown': {} } }), formatDate))
+
+    expect(open.map(a => a.instanceId)).toEqual(['i-a', 'i-b'])
+  })
+
   it('leaves out an action already logged within its planned dates', () => {
     const open = openActions(buildActionBuckets(data({
       plantPlan: { 'i-tomato': [water('2026-06-09', '2026-06-12')] },

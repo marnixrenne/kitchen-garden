@@ -6,6 +6,7 @@ import ThisWeekCard from '../components/ThisWeekCard.vue'
 import { activeGardenName, activeGardenId, gardens, setActiveGarden } from '../stores/garden.js'
 import { csrfHeaders } from '../stores/auth.js'
 import { ZONE_TYPES, ASPECTS, SUN_LEVELS, MAX_DIMENSION_CM, zoneLabel } from '../utils/zones.js'
+import { latestSowing } from '../utils/plantings.js'
 
 const router = useRouter()
 const route  = useRoute()
@@ -28,7 +29,7 @@ const zones           = ref([])   // creation order
 const plantLog       = ref({})   // keyed by instanceId
 const plantPlan      = ref({})   // keyed by instanceId
 const lifecycle      = ref({})   // keyed by instanceId
-const expandedPlants = ref(new Set())
+const expandedPlantings = ref(new Set())
 const activeTab      = ref(
   route.query.tab === 'calendar' ? 'calendar' :
   route.query.tab === 'log'      ? 'log'      : 'week'
@@ -84,22 +85,6 @@ const filteredLogEntries = computed(() => {
   )
 })
 
-const instancesByPlantId = computed(() => {
-  const map = {}
-  for (const inst of instances.value) {
-    if (!map[inst.plantId]) map[inst.plantId] = []
-    map[inst.plantId].push(inst.id)
-  }
-  return map
-})
-
-function lcForPlant(plantId) {
-  for (const iid of (instancesByPlantId.value[plantId] ?? [])) {
-    if (lifecycle.value[iid]) return lifecycle.value[iid]
-  }
-  return null
-}
-
 function dotTooltip(entry) {
   const action = te(`garden.loggedAction.${entry.action}`) ? t(`garden.loggedAction.${entry.action}`) : entry.action
   const date   = formatDate(entry.date)
@@ -114,37 +99,28 @@ function planDotTooltip(entry) {
 }
 
 function toggleExpand(plantId) {
-  const s = new Set(expandedPlants.value)
+  const s = new Set(expandedPlantings.value)
   if (s.has(plantId)) s.delete(plantId)
   else s.add(plantId)
-  expandedPlants.value = s
+  expandedPlantings.value = s
 }
 
-function entriesForMonth(plantId, month) {
-  const iids = instancesByPlantId.value[plantId] ?? []
-  return iids.flatMap(iid =>
-    (plantLog.value[iid] ?? []).filter(e => new Date(e.date + 'T00:00:00').getMonth() + 1 === month)
-  )
+function entriesForMonth(instanceId, month) {
+  return (plantLog.value[instanceId] ?? []).filter(e => new Date(e.date + 'T00:00:00').getMonth() + 1 === month)
 }
 
-function planEntriesForMonth(plantId, month) {
-  const iids = instancesByPlantId.value[plantId] ?? []
-  return iids.flatMap(iid =>
-    (plantPlan.value[iid] ?? []).filter(e => {
-      const startM = new Date(e.plannedDateStart + 'T00:00:00').getMonth() + 1
-      const endM   = new Date(e.plannedDateEnd   + 'T00:00:00').getMonth() + 1
-      return startM <= endM
-        ? month >= startM && month <= endM
-        : month >= startM || month <= endM
-    })
-  )
+function planEntriesForMonth(instanceId, month) {
+  return (plantPlan.value[instanceId] ?? []).filter(e => {
+    const startM = new Date(e.plannedDateStart + 'T00:00:00').getMonth() + 1
+    const endM   = new Date(e.plannedDateEnd   + 'T00:00:00').getMonth() + 1
+    return startM <= endM
+      ? month >= startM && month <= endM
+      : month >= startM || month <= endM
+  })
 }
 
-function hasExpandContent(plantId) {
-  const iids = instancesByPlantId.value[plantId] ?? []
-  return iids.some(iid =>
-    (plantLog.value[iid]?.length ?? 0) > 0 || (plantPlan.value[iid]?.length ?? 0) > 0
-  )
+function hasExpandContent(instanceId) {
+  return (plantLog.value[instanceId]?.length ?? 0) > 0 || (plantPlan.value[instanceId]?.length ?? 0) > 0
 }
 
 async function fetchInstances() {
@@ -177,25 +153,38 @@ async function fetchLifecycle() {
   if (res.ok) lifecycle.value = await res.json()
 }
 
-function isPlanEntryDone(plantId, entry) {
-  const iids = instancesByPlantId.value[plantId] ?? []
-  return iids.some(iid =>
-    (plantLog.value[iid] ?? []).some(log =>
-      log.action === entry.action &&
-      log.date >= entry.plannedDateStart &&
-      log.date <= entry.plannedDateEnd
-    )
+function isPlanEntryDone(instanceId, entry) {
+  return (plantLog.value[instanceId] ?? []).some(log =>
+    log.action === entry.action &&
+    log.date >= entry.plannedDateStart &&
+    log.date <= entry.plannedDateEnd
   )
 }
 
 // ── Zones ──────────────────────────────────────────────────────────────────────
 
-// A plant is in a garden at most once, so each plant maps to a single instance
-const instanceByPlantId = computed(() => {
-  const map = {}
-  for (const inst of instances.value) map[inst.plantId] = inst
-  return map
+// Plantings by Plant name; plantings of one Plant stay in the order they were added
+const plantings = computed(() => {
+  const plantById = Object.fromEntries(plants.value.map(p => [p.id, p]))
+  return instances.value
+    .filter(instance => plantById[instance.plantId])
+    .map(instance => ({ instance, plant: plantById[instance.plantId] }))
+    .sort((a, b) => plantName(a.plant).localeCompare(plantName(b.plant)))
 })
+
+function sowingTag(instanceId) {
+  const sowing = latestSowing(plantLog.value[instanceId])
+  if (!sowing) return t('garden.notSownYet')
+  return t(sowing.action === 'planting' ? 'garden.plantedOn' : 'garden.seededOn', { date: formatDate(sowing.date) })
+}
+
+// Two plantings of one Plant in the same group need something to tell them apart
+function calendarRows(rows) {
+  return rows.map(row => ({
+    ...row,
+    tag: rows.filter(r => r.plant.id === row.plant.id).length > 1 ? sowingTag(row.instance.id) : null,
+  }))
+}
 
 const hasSeveralZones = computed(() => zones.value.length > 1)
 
@@ -203,12 +192,10 @@ const focusedZone = computed(() => zones.value.find(z => z.id === zoneId.value) 
 
 // With one zone the calendar looks as it did before zones existed: a single headerless group
 const calendarGroups = computed(() => {
-  if (focusedZone.value) return [{ zone: focusedZone.value, plants: sortedPlants.value }]
-  if (!hasSeveralZones.value) return [{ zone: null, plants: sortedPlants.value }]
-  return zones.value.map(zone => ({
-    zone,
-    plants: sortedPlants.value.filter(p => instanceByPlantId.value[p.id]?.zoneId === zone.id),
-  }))
+  const inZone = id => plantings.value.filter(row => row.instance.zoneId === id)
+  if (focusedZone.value) return [{ zone: focusedZone.value, rows: calendarRows(inZone(focusedZone.value.id)) }]
+  if (!hasSeveralZones.value) return [{ zone: null, rows: calendarRows(plantings.value) }]
+  return zones.value.map(zone => ({ zone, rows: calendarRows(inZone(zone.id)) }))
 })
 
 function zoneDetails(zone) {
@@ -332,9 +319,7 @@ async function confirmDeleteZone() {
 
 const moveModal = ref({ open: false })
 
-function openMoveModal(plant) {
-  const instance = instanceByPlantId.value[plant.id]
-  if (!instance) return
+function openMoveModal(plant, instance) {
   moveModal.value = { open: true, plant, instance, zoneId: null, date: todayIso(), comment: '', saving: false, error: '' }
 }
 
@@ -389,7 +374,7 @@ function moveDescription(entry) {
 const months = computed(() => tm('months'))
 const sortedPlants = computed(() =>
   plants.value
-    .filter(p => !zoneId.value || instanceByPlantId.value[p.id]?.zoneId === zoneId.value)
+    .filter(p => !zoneId.value || instances.value.some(i => i.plantId === p.id && i.zoneId === zoneId.value))
     .sort((a, b) => plantName(a).localeCompare(plantName(b)))
 )
 
@@ -569,7 +554,7 @@ async function loadAll() {
   plantLog.value = {}
   plantPlan.value = {}
   lifecycle.value = {}
-  expandedPlants.value = new Set()
+  expandedPlantings.value = new Set()
   const [detailsRes, suggestionsRes] = await Promise.all([
     fetch(`/api/gardens/${activeGardenId.value}/details`),
     fetch(`/api/gardens/${activeGardenId.value}/suggestions`),
@@ -717,7 +702,7 @@ watch(gardens, (list) => {
                 <div class="zone-row-inner">
                   <span class="zone-name">{{ zoneLabel(t, group.zone.name) }}</span>
                   <span v-if="zoneDetails(group.zone)" class="zone-details">{{ zoneDetails(group.zone) }}</span>
-                  <span v-if="group.plants.length === 0" class="zone-empty">{{ t('zones.empty') }}</span>
+                  <span v-if="group.rows.length === 0" class="zone-empty">{{ t('zones.empty') }}</span>
                   <span class="zone-actions">
                     <button class="zone-icon-btn" :title="t('zones.edit')" @click="openZoneModal(group.zone)">✎</button>
                     <button v-if="hasSeveralZones" class="zone-icon-btn danger" :title="t('zones.delete')" @click="openDeleteZoneModal(group.zone)">🗑</button>
@@ -725,7 +710,7 @@ watch(gardens, (list) => {
                 </div>
               </td>
             </tr>
-            <template v-for="plant in group.plants" :key="plant.id">
+            <template v-for="{ plant, instance, tag } in group.rows" :key="instance.id">
               <tr class="plant-row">
                 <td
                   class="plant-name"
@@ -735,32 +720,33 @@ watch(gardens, (list) => {
                   @keydown.enter="router.push(`/plant/${plant.id}`)"
                 >
                   <button
-                    v-if="hasExpandContent(plant.id)"
+                    v-if="hasExpandContent(instance.id)"
                     class="expand-btn"
-                    :class="{ open: expandedPlants.has(plant.id) }"
-                    @click.stop="toggleExpand(plant.id)"
-                    :aria-label="expandedPlants.has(plant.id) ? 'Collapse' : 'Expand'"
-                  >{{ expandedPlants.has(plant.id) ? '−' : '+' }}</button>
+                    :class="{ open: expandedPlantings.has(instance.id) }"
+                    @click.stop="toggleExpand(instance.id)"
+                    :aria-label="expandedPlantings.has(instance.id) ? 'Collapse' : 'Expand'"
+                  >{{ expandedPlantings.has(instance.id) ? '−' : '+' }}</button>
                   <span v-else class="expand-btn-placeholder" />
                   <span class="plant-emoji">{{ plant.emoji ?? '🌱' }}</span>
                   <span>{{ plantName(plant) }}</span>
+                  <span v-if="tag" class="planting-tag">{{ tag }}</span>
                   <span
-                    v-if="instanceByPlantId[plant.id]?.sunShortfall"
+                    v-if="instance.sunShortfall"
                     class="sun-warning"
                     :title="t('zones.sunWarning')"
                     :aria-label="t('zones.sunWarning')"
                   >⚠️</span>
                   <span
-                    v-if="lcForPlant(plant.id)"
+                    v-if="lifecycle[instance.id]"
                     class="lifecycle-badge"
-                    :class="'lc-' + lcForPlant(plant.id).state"
-                  >{{ te(`garden.lifecycle.${lcForPlant(plant.id).state}`) ? t(`garden.lifecycle.${lcForPlant(plant.id).state}`) : lcForPlant(plant.id).state }}</span>
+                    :class="'lc-' + lifecycle[instance.id].state"
+                  >{{ te(`garden.lifecycle.${lifecycle[instance.id].state}`) ? t(`garden.lifecycle.${lifecycle[instance.id].state}`) : lifecycle[instance.id].state }}</span>
                   <button
-                    v-if="hasSeveralZones && instanceByPlantId[plant.id]"
+                    v-if="hasSeveralZones"
                     class="move-btn"
-                    :class="{ 'push-right': !lcForPlant(plant.id) }"
+                    :class="{ 'push-right': !lifecycle[instance.id] }"
                     :title="t('zones.moveToZone')"
-                    @click.stop="openMoveModal(plant)"
+                    @click.stop="openMoveModal(plant, instance)"
                   >⇄</button>
                 </td>
                 <td
@@ -776,7 +762,7 @@ watch(gardens, (list) => {
                 </td>
               </tr>
               <tr
-                v-if="hasExpandContent(plant.id) && expandedPlants.has(plant.id)"
+                v-if="hasExpandContent(instance.id) && expandedPlantings.has(instance.id)"
                 class="log-expand-row"
               >
                 <td class="log-expand-name-cell" />
@@ -787,15 +773,15 @@ watch(gardens, (list) => {
                   :class="{ selected: selectedMonth === m }"
                 >
                   <span
-                    v-for="entry in entriesForMonth(plant.id, m)"
+                    v-for="entry in entriesForMonth(instance.id, m)"
                     :key="entry.id"
                     class="log-entry-dot"
                     :title="dotTooltip(entry)"
                   />
                   <span
-                    v-for="entry in planEntriesForMonth(plant.id, m)"
+                    v-for="entry in planEntriesForMonth(instance.id, m)"
                     :key="entry.id"
-                    :class="['plan-entry-dot', `plan-dot-${entry.action}`, { 'plan-dot-done': isPlanEntryDone(plant.id, entry) }]"
+                    :class="['plan-entry-dot', `plan-dot-${entry.action}`, { 'plan-dot-done': isPlanEntryDone(instance.id, entry) }]"
                     :title="planDotTooltip(entry)"
                   />
                 </td>
@@ -1848,6 +1834,12 @@ main {
 }
 
 /* Zones */
+.planting-tag {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-soft);
+}
+
 .zone-settings-link {
   background: none;
   border: none;

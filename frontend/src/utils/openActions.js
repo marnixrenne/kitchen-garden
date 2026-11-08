@@ -44,14 +44,15 @@ export function buildActionBuckets({ weekSummary, instances, plantLog, plantPlan
 
   for (const wa of (weekSummary.actions ?? [])) {
     if (wa.type === 'sow' || wa.type === 'both') {
-      const iid = (instanceIdsByPlant[wa.plant.id] ?? []).find(id => !lifecycle[id]) ?? null
-      if (!iid) continue  // all instances already seeded
-      buckets.seeding.push({
-        plant: wa.plant, instanceId: iid, zoneId: instanceById[iid]?.zoneId ?? null,
-        seedDate: null,
-        dateRange: null, done: false,
-        planEntry: null, lc: null, sowAction: wa,
-      })
+      for (const iid of instanceIdsByPlant[wa.plant.id] ?? []) {
+        if (lifecycle[iid]) continue  // already seeded
+        buckets.seeding.push({
+          plant: wa.plant, instanceId: iid, zoneId: instanceById[iid]?.zoneId ?? null,
+          seedDate: null,
+          dateRange: null, done: false,
+          planEntry: null, lc: null, sowAction: wa,
+        })
+      }
     }
   }
 

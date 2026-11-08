@@ -103,27 +103,28 @@ class ExposedGardenRepository : GardenRepository {
             .toSet()
     }
 
-    override fun add(gardenId: GardenId, plantId: PlantId, zoneId: ZoneId) {
-        try {
-            transaction {
-                GardenPlantInstances.insert {
-                    it[GardenPlantInstances.id]        = UUID.randomUUID()
-                    it[GardenPlantInstances.gardenId]  = gardenId.value
-                    it[GardenPlantInstances.zoneId]     = zoneId.value
-                    it[GardenPlantInstances.plantId]   = plantId.value
-                    it[GardenPlantInstances.createdAt] = Instant.now()
-                }
-            }
-        } catch (e: ExposedSQLException) {
-            val msg = e.message.orEmpty().lowercase()
-            if ("unique" !in msg && "duplicate" !in msg) throw e
+    override fun add(gardenId: GardenId, plantId: PlantId, zoneId: ZoneId): PlantInstanceId = transaction {
+        val id = UUID.randomUUID()
+        GardenPlantInstances.insert {
+            it[GardenPlantInstances.id]        = id
+            it[GardenPlantInstances.gardenId]  = gardenId.value
+            it[GardenPlantInstances.zoneId]    = zoneId.value
+            it[GardenPlantInstances.plantId]   = plantId.value
+            it[GardenPlantInstances.createdAt] = Instant.now()
         }
+        PlantInstanceId(id)
     }
 
-    override fun remove(gardenId: GardenId, plantId: PlantId): Unit = transaction {
-        GardenPlantInstances.deleteWhere {
-            (GardenPlantInstances.gardenId eq gardenId.value) and (GardenPlantInstances.plantId eq plantId.value)
+    override fun removeInstance(gardenId: GardenId, instanceId: PlantInstanceId): Boolean = transaction {
+        val exists = GardenPlantInstances.select(GardenPlantInstances.id)
+            .where { (GardenPlantInstances.id eq instanceId.value) and (GardenPlantInstances.gardenId eq gardenId.value) }
+            .any()
+        if (exists) {
+            // Entries and plan entries cascade from the log; the log itself would only lose its link
+            PlantLog.deleteWhere { PlantLog.instanceId eq instanceId.value }
+            GardenPlantInstances.deleteWhere { GardenPlantInstances.id eq instanceId.value }
         }
+        exists
     }
 
     override fun findInstances(gardenId: GardenId): List<PlantInstance> = transaction {
