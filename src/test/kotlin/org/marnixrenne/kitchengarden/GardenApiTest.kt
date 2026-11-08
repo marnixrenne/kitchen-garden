@@ -5,16 +5,20 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
 
 class GardenApiTest : IntegrationTestBase() {
+
+    @Value("\${app.base-url}") lateinit var baseUrl: String
 
     @Autowired lateinit var jdbc: JdbcTemplate
 
@@ -139,5 +143,21 @@ class GardenApiTest : IntegrationTestBase() {
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM pts_plant_log WHERE id = ?::uuid", Int::class.java, logId))
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM pts_plant_log_entry WHERE log_id = ?::uuid", Int::class.java, logId))
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM pts_plant_plan_entry WHERE log_entry_id = ?::uuid", Int::class.java, logEntryId))
+    }
+
+    // Browsers send Origin on a PATCH, and the Vite proxy makes the request cross-origin in dev
+    @Test
+    fun `a garden can be renamed from the app's own origin`() {
+        val gardenId = createGardenId()
+
+        mvc.patch("/api/gardens/$gardenId") {
+            with(user("admin")); with(csrf())
+            header("Origin", baseUrl)
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"name":"Renamed"}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.name") { value("Renamed") }
+        }
     }
 }
