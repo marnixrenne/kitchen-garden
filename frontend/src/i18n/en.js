@@ -290,7 +290,6 @@ export default {
     thisWeek: 'This week',
     openActions: '{n} open action | {n} open actions',
     week: 'Week',
-    nothingThisWeek: 'Nothing to sow or harvest in your garden this month.',
     actionSow: 'Sow',
     actionHarvest: 'Harvest',
     actionBoth: 'Sow & harvest',

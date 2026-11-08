@@ -1,10 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRouter, RouterLink } from 'vue-router'
 import { csrfHeaders } from '../stores/auth.js'
 import { activeGardenId } from '../stores/garden.js'
-import { ACTION_ORDER, ACTION_ICON, ACTION_LABEL_KEY, buildActionBuckets } from '../utils/openActions.js'
+import { zoneLabel } from '../utils/zones.js'
+import { ACTION_ICON, ACTION_LABEL_KEY, allActions, buildActionBuckets } from '../utils/openActions.js'
 
 const props = defineProps({ zoneId: { type: String, default: null } })
 const emit = defineEmits(['refresh'])
@@ -12,6 +13,7 @@ const { t, te, tm, locale } = useI18n()
 const router = useRouter()
 
 const weekSummary = ref(null)
+const zones       = ref([])
 const instances   = ref([])
 const plantLog    = ref({})
 const plantPlan   = ref({})
@@ -22,17 +24,6 @@ const loading     = ref(true)
 const seedModal    = ref({ open: false, plant: null, instanceId: null, method: 'seeding_indoor', date: '', comment: '', saving: false, error: '' })
 const actionModal  = ref({ open: false, plant: null, instanceId: null, action: '', date: '', comment: '', saving: false, error: '' })
 const advanceModal = ref({ open: false, item: null, date: '', comment: '', saving: false, error: '' })
-
-const openActionCount = computed(() =>
-  actionGroups.value.reduce((sum, g) => sum + g.items.filter(i => !i.done).length, 0)
-)
-
-const collapsedGroups = ref(new Set())
-function toggleGroup(action) {
-  if (collapsedGroups.value.has(action)) collapsedGroups.value.delete(action)
-  else collapsedGroups.value.add(action)
-  collapsedGroups.value = new Set(collapsedGroups.value)
-}
 
 function todayIso() { return new Date().toISOString().slice(0, 10) }
 
@@ -94,33 +85,54 @@ function hintsFor(action) {
   return hints
 }
 
-const actionGroups = computed(() => {
+const actions = computed(() => {
   if (!weekSummary.value) return []
-  const buckets = buildActionBuckets({
+  return allActions(buildActionBuckets({
     weekSummary: weekSummary.value,
     instances:   instances.value,
     plantLog:    plantLog.value,
     plantPlan:   plantPlan.value,
     lifecycle:   lifecycle.value,
     plants:      plants.value,
-  }, formatDate)
+  }, formatDate))
+})
 
-  return ACTION_ORDER
-    .map(a => ({
-      action: a,
-      icon:   ACTION_ICON[a],
-      label:  te(ACTION_LABEL_KEY[a]) ? t(ACTION_LABEL_KEY[a]) : a,
-      items:  buckets[a]
-        .filter(i => !props.zoneId || i.zoneId === props.zoneId)
+function actionLabel(action) {
+  const key = ACTION_LABEL_KEY[action]
+  return te(key) ? t(key) : action
+}
+
+const zoneGroups = computed(() => {
+  const plantById = Object.fromEntries(plants.value.map(p => [p.id, p]))
+  const actionsByInstance = {}
+  for (const item of actions.value) (actionsByInstance[item.instanceId] ??= []).push(item)
+
+  return zones.value
+    .filter(zone => !props.zoneId || zone.id === props.zoneId)
+    .map(zone => ({
+      zone,
+      rows: instances.value
+        .filter(inst => inst.zoneId === zone.id && plantById[inst.plantId])
+        .map(inst => {
+          const rowActions = actionsByInstance[inst.id] ?? []
+          return { instanceId: inst.id, plant: plantById[inst.plantId], actions: rowActions, seeded: rowActions.find(a => a.seedDate) ?? null }
+        })
+        // The Garden shows what needs doing; a Zone's own page shows all its Plants
+        .filter(row => props.zoneId || row.actions.length > 0)
         .sort((x, y) => pName(x.plant).localeCompare(pName(y.plant))),
     }))
-    .filter(g => g.items.length > 0)
 })
+
+const openActionCount = computed(() =>
+  zoneGroups.value.reduce((sum, group) =>
+    sum + group.rows.reduce((n, row) => n + row.actions.filter(a => !a.done).length, 0), 0)
+)
 
 async function fetchAll() {
   loading.value = true
   const gid = activeGardenId.value
-  const [weekRes, instRes, logRes, planRes, lcRes, detailRes] = await Promise.all([
+  const [zonesRes, weekRes, instRes, logRes, planRes, lcRes, detailRes] = await Promise.all([
+    fetch(`/api/gardens/${gid}/zones`),
     fetch(`/api/gardens/${gid}/week`),
     fetch(`/api/gardens/${gid}/instances`),
     fetch(`/api/gardens/${gid}/plant-log`),
@@ -128,6 +140,7 @@ async function fetchAll() {
     fetch(`/api/gardens/${gid}/lifecycle`),
     fetch(`/api/gardens/${gid}/details`),
   ])
+  if (zonesRes.ok)  zones.value       = await zonesRes.json()
   if (weekRes.ok)   weekSummary.value = await weekRes.json()
   if (instRes.ok)   instances.value   = await instRes.json()
   if (logRes.ok)    plantLog.value     = await logRes.json()
@@ -222,74 +235,49 @@ defineOptions({ inheritAttrs: false })
       <span class="week-card-range">{{ weekRangeLabel() }}</span>
     </div>
 
-    <div v-if="actionGroups.length === 0" class="week-empty">
-      {{ t('garden.nothingThisWeek') }}
-    </div>
+    <section v-for="{ zone, rows } in zoneGroups" :key="zone.id" class="week-zone">
+      <h3 v-if="!zoneId" class="week-zone-name">
+        <RouterLink :to="`/gardens/${activeGardenId}/zones/${zone.id}`">{{ zoneLabel(t, zone.name) }}</RouterLink>
+      </h3>
 
-    <template v-else>
-      <div v-for="group in actionGroups" :key="group.action" class="week-group">
-        <div class="week-group-header" @click="toggleGroup(group.action)">
-          <button class="week-group-toggle" :aria-expanded="!collapsedGroups.has(group.action)" tabindex="-1">
-            {{ collapsedGroups.has(group.action) ? '+' : '−' }}
-          </button>
-          <span class="week-group-icon">{{ group.icon }}</span>
-          <span class="week-group-label">{{ group.label }}</span>
+      <p v-if="rows.length === 0" class="week-empty">{{ zoneId ? t('zones.empty') : t('dashboard.nothingOpen') }}</p>
+
+      <div v-for="row in rows" :key="row.instanceId" class="week-plant">
+        <div class="week-plant-header">
+          <span class="wi-emoji">{{ row.plant.emoji ?? '🌱' }}</span>
+          <a class="wi-name" @click.prevent="router.push(`/plant/${row.plant.id}`)">
+            {{ pName(row.plant) }}
+            <span v-if="row.seeded" class="wi-seeded-on"> – {{ row.seeded.seedAction === 'planting' ? t('garden.plantedOn', { date: row.seeded.seedDate }) : t('garden.seededOn', { date: row.seeded.seedDate }) }}</span>
+          </a>
+          <span v-if="row.actions.length === 0" class="week-plant-none">{{ t('dashboard.nothingOpen') }}</span>
         </div>
 
-        <template v-if="!collapsedGroups.has(group.action)">
-          <!-- Seeding: no seed date or date range column -->
-          <template v-if="group.action === 'seeding'">
-            <div v-for="(item, i) in group.items" :key="i" class="week-item week-item--seed">
-              <span class="wi-emoji">{{ item.plant.emoji ?? '🌱' }}</span>
-              <div class="wi-seed-body">
-                <a class="wi-name" @click.prevent="router.push(`/plant/${item.plant.id}`)">{{ pName(item.plant) }}</a>
-                <span v-if="hintsFor(item.sowAction).length" class="wi-hints">
-                  {{ hintsFor(item.sowAction).join(' · ') }}
-                </span>
-              </div>
-              <button
-                class="wi-btn wi-btn--seed"
-                :disabled="!item.instanceId"
-                @click.stop="openSeedModal(item.plant, item.instanceId)"
-              >🌱 {{ t('garden.seedNow') }}</button>
-            </div>
-          </template>
-
-          <!-- All other groups: seed date + date range columns -->
-          <template v-else>
-            <div
-              v-for="(item, i) in group.items"
-              :key="i"
-              class="week-item"
-            >
-              <span class="wi-emoji">{{ item.plant.emoji ?? '🌱' }}</span>
-              <a class="wi-name" @click.prevent="router.push(`/plant/${item.plant.id}`)">
-                {{ pName(item.plant) }}
-                <span v-if="item.seedDate" class="wi-seeded-on"> – {{ item.seedAction === 'planting' ? t('garden.plantedOn', { date: item.seedDate }) : t('garden.seededOn', { date: item.seedDate }) }}</span>
-              </a>
-              <span class="wi-date">
-                <span v-if="item.dateRange" class="wi-daterange">{{ item.dateRange }}</span>
-              </span>
-              <div class="wi-action">
-                <template v-if="item.lc">
-                  <button class="wi-btn wi-btn--advance" @click.stop="openAdvanceModal(item)">
-                    {{ t(`garden.advanceLabel.${item.lc.nextState}`, t('garden.advanceStage')) }}
-                  </button>
-                </template>
-                <template v-else-if="item.done">
-                  <span class="wi-done-mark">✓</span>
-                </template>
-                <template v-else>
-                  <button class="wi-btn wi-btn--log" :title="t('garden.logDone')" @click.stop="openActionModal(item.plant, item.planEntry.action, item.instanceId)">
-                    ✓
-                  </button>
-                </template>
-              </div>
-            </div>
-          </template>
-        </template>
+        <div
+          v-for="item in row.actions"
+          :key="`${item.action}-${item.planEntry?.id ?? 'sow'}`"
+          class="week-action"
+        >
+          <span class="week-action-icon" aria-hidden="true">{{ ACTION_ICON[item.action] }}</span>
+          <div class="week-action-body">
+            <span class="week-action-label">{{ actionLabel(item.action) }}</span>
+            <span v-if="item.sowAction && hintsFor(item.sowAction).length" class="wi-hints">{{ hintsFor(item.sowAction).join(' · ') }}</span>
+            <span v-if="item.dateRange" class="wi-daterange">{{ item.dateRange }}</span>
+          </div>
+          <div class="wi-action">
+            <button
+              v-if="item.action === 'seeding'"
+              class="wi-btn wi-btn--seed"
+              @click.stop="openSeedModal(item.plant, item.instanceId)"
+            >🌱 {{ t('garden.seedNow') }}</button>
+            <button v-else-if="item.lc" class="wi-btn wi-btn--advance" @click.stop="openAdvanceModal(item)">
+              {{ t(`garden.advanceLabel.${item.lc.nextState}`, t('garden.advanceStage')) }}
+            </button>
+            <span v-else-if="item.done" class="wi-done-mark">✓</span>
+            <button v-else class="wi-btn wi-btn--log" :title="t('garden.logDone')" @click.stop="openActionModal(item.plant, item.planEntry.action, item.instanceId)">✓</button>
+          </div>
+        </div>
       </div>
-    </template>
+    </section>
   </div>
   </div>
 
@@ -490,56 +478,75 @@ defineOptions({ inheritAttrs: false })
 }
 
 /* Groups */
-.week-group {
+.week-zone {
   border-top: 1px solid var(--green-pale);
 }
 
-.week-group:first-of-type {
+.week-zone:first-of-type {
   border-top: none;
 }
 
-.week-group-header {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.45rem 1.25rem;
+.week-zone-name {
+  padding: 0.5rem 1.25rem;
   background: var(--bg);
   border-bottom: 1px solid var(--green-pale);
-  cursor: pointer;
-  user-select: none;
-}
-
-.week-group-header:hover {
-  background: var(--green-pale);
-}
-
-.week-group-icon {
-  font-size: 0.95rem;
-}
-
-.week-group-label {
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  color: var(--green-dark);
 }
 
-.week-group-toggle {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  line-height: 1;
-  font-size: 1rem;
+.week-zone-name a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.week-zone-name a:hover {
+  text-decoration: underline;
+}
+
+.week-plant {
+  padding: 0.55rem 1.25rem;
+  border-bottom: 1px solid var(--green-pale);
+}
+
+.week-plant:last-child {
+  border-bottom: none;
+}
+
+.week-plant-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.week-plant-none {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.week-action {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0 0 1.75rem;
+}
+
+.week-action-body {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.6rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.week-action-label {
+  font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-muted);
-  width: 1rem;
-  text-align: center;
-  flex-shrink: 0;
 }
 
-/* Items */
 .week-item {
   display: flex;
   align-items: center;
