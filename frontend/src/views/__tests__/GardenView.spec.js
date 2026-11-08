@@ -5,6 +5,7 @@ import { createI18n } from 'vue-i18n'
 import en from '../../i18n/en.js'
 import GardenView from '../GardenView.vue'
 import ThisWeekCard from '../../components/ThisWeekCard.vue'
+import AddPlantsModal from '../../components/AddPlantsModal.vue'
 import ZonePickerModal from '../../components/ZonePickerModal.vue'
 import { gardens, setActiveGarden } from '../../stores/garden.js'
 import { chooseZone } from '../../stores/zonePicker.js'
@@ -51,7 +52,7 @@ async function mountGarden(fetchConfig) {
   })
   await router.push('/garden?tab=calendar')
   const wrapper = mount(GardenView, {
-    global: { plugins: [router, i18n], stubs: { ThisWeekCard: true, Teleport: true } },
+    global: { plugins: [router, i18n], stubs: { ThisWeekCard: true, AddPlantsModal: true, Teleport: true } },
   })
   await flushPromises()
   return wrapper
@@ -171,7 +172,7 @@ describe('GardenView zones', () => {
     })
     const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/garden', component: GardenView }] })
     await router.push('/garden?tab=log')
-    const wrapper = mount(GardenView, { global: { plugins: [router, i18n], stubs: { ThisWeekCard: true, Teleport: true } } })
+    const wrapper = mount(GardenView, { global: { plugins: [router, i18n], stubs: { ThisWeekCard: true, AddPlantsModal: true, Teleport: true } } })
     await flushPromises()
 
     expect(wrapper.find('.log-move').text()).toBe('Main zone → Herbs')
@@ -245,7 +246,7 @@ describe('GardenView scoped to one zone', () => {
     })
     await router.push(path)
     const wrapper = mount(GardenView, {
-      global: { plugins: [router, i18n], stubs: { ThisWeekCard: true, Teleport: true } },
+      global: { plugins: [router, i18n], stubs: { ThisWeekCard: true, AddPlantsModal: true, Teleport: true } },
     })
     await flushPromises()
     return { wrapper, router }
@@ -435,6 +436,71 @@ describe('GardenView scoped to one zone', () => {
       await wrapper.find('.delete-garden-btn').trigger('click')
 
       expect(wrapper.find('.bf-error').exists()).toBe(false)
+    })
+  })
+
+  describe('adding plants', () => {
+    const config = { zones: [MAIN_ZONE, HERBS_ZONE], instances: INSTANCES }
+
+    it('is offered next to the zone name on a zone page, not on the garden page', async () => {
+      expect((await mountAt(`/gardens/${GARDEN}/zones/${HERBS_ZONE.id}`, config)).wrapper.find('.page-header .add-plants-btn').exists()).toBe(true)
+      expect((await mountAt(`/gardens/${GARDEN}`, config)).wrapper.find('.add-plants-btn').exists()).toBe(false)
+    })
+
+    it('opens for this zone and refreshes the page when a plant is added, staying open', async () => {
+      const { wrapper } = await mountAt(`/gardens/${GARDEN}/zones/${HERBS_ZONE.id}`, config)
+
+      await wrapper.find('.add-plants-btn').trigger('click')
+      const popup = wrapper.findComponent(AddPlantsModal)
+      expect(popup.props('zone').id).toBe(HERBS_ZONE.id)
+
+      global.fetch.mockClear()
+      popup.vm.$emit('added')
+      await flushPromises()
+
+      const urls = global.fetch.mock.calls.map(([url]) => url)
+      expect(urls).toContain(`/api/gardens/${GARDEN}/details`)
+      expect(urls).toContain(`/api/gardens/${GARDEN}/instances`)
+      expect(wrapper.findComponent(AddPlantsModal).exists()).toBe(true)
+    })
+
+    it('shows the new planting in the real this-week list behind the popup', async () => {
+      const instances = [INSTANCES[1]]
+      const api = makeFetch({
+        zones: [MAIN_ZONE, HERBS_ZONE],
+        instances,
+        extra: { [`/api/gardens/${GARDEN}/week`]: { week: 24, weekStartDay: 8, weekStartMonth: 6, weekEndDay: 14, weekEndMonth: 6, actions: [] } },
+      })
+      global.fetch = vi.fn(async (url, options) => url === `/api/gardens/${GARDEN}/instances`
+        ? { ok: true, json: async () => [...instances] }
+        : api(url, options))
+      const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [{ path: '/gardens/:gardenId/zones/:zoneId', component: { template: '<div />' } }, { path: '/:p(.*)*', component: { template: '<div />' } }],
+      })
+      await router.push(`/gardens/${GARDEN}/zones/${HERBS_ZONE.id}`)
+      const wrapper = mount(GardenView, { global: { plugins: [router, i18n], stubs: { AddPlantsModal: true, Teleport: true } } })
+      await flushPromises()
+      expect(wrapper.findAll('.week-plant')).toHaveLength(1)
+
+      await wrapper.find('.add-plants-btn').trigger('click')
+      instances.push({ id: 'i-new', plantId: TOMATO.id, zoneId: HERBS_ZONE.id, sunShortfall: false })
+      wrapper.findComponent(AddPlantsModal).vm.$emit('added')
+      await flushPromises()
+
+      expect(wrapper.findAll('.week-plant')).toHaveLength(2)
+      expect(wrapper.find('.week-loading').exists()).toBe(false)
+    })
+
+    it('swaps to the zone settings when asked to set the sun exposure', async () => {
+      const { wrapper } = await mountAt(`/gardens/${GARDEN}/zones/${HERBS_ZONE.id}`, config)
+      await wrapper.find('.add-plants-btn').trigger('click')
+
+      wrapper.findComponent(AddPlantsModal).vm.$emit('edit-zone')
+      await flushPromises()
+
+      expect(wrapper.findComponent(AddPlantsModal).exists()).toBe(false)
+      expect(wrapper.find('.bf-field input').element.value).toBe('Herbs')
     })
   })
 

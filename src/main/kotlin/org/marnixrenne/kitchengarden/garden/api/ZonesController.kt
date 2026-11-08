@@ -22,6 +22,13 @@ class ZonesController(
         authentication: Authentication,
     ): List<Zone> = zoneQueryService.list(authentication, gardenId)
 
+    @GetMapping("/zones/{zoneId}/plant-options")
+    fun plantOptions(
+        @PathVariable gardenId: GardenId,
+        @PathVariable zoneId: ZoneId,
+        authentication: Authentication,
+    ): List<PlantOption> = zoneQueryService.plantOptions(authentication, gardenId, zoneId)
+
     @PostMapping("/zones")
     fun createZone(
         @PathVariable gardenId: GardenId,

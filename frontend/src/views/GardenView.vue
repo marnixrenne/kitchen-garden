@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ThisWeekCard from '../components/ThisWeekCard.vue'
+import AddPlantsModal from '../components/AddPlantsModal.vue'
 import { activeGardenName, activeGardenId, gardens, setActiveGarden } from '../stores/garden.js'
 import { csrfHeaders } from '../stores/auth.js'
 import { ZONE_TYPES, ASPECTS, SUN_LEVELS, MAX_DIMENSION_CM, zoneLabel } from '../utils/zones.js'
@@ -477,6 +478,23 @@ function plantName(plant) {
   return te(key) ? t(key) : plant.name
 }
 
+// Add plants
+
+const addPlantsOpen = ref(false)
+const weekCard = ref(null)
+
+async function onPlantAdded() {
+  const res = await fetch(`/api/gardens/${activeGardenId.value}/details`)
+  if (res.ok) plants.value = await res.json()
+  await fetchInstances()
+  weekCard.value?.reload?.()
+}
+
+function editZoneFromAddPlants() {
+  addPlantsOpen.value = false
+  openZoneModal(focusedZone.value)
+}
+
 async function onWeekRefresh() {
   await Promise.all([fetchZones(), fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
 }
@@ -590,6 +608,7 @@ watch(gardens, (list) => {
     <div class="page-header">
       <h2 class="page-title" :class="{ 'page-title--zone': zoneId }">{{ focusedZone ? zoneLabel(t, focusedZone.name) : (activeGardenName ?? t('myGarden')) }}</h2>
       <button v-if="focusedZone" class="zone-settings-link" @click="openZoneModal(focusedZone)">{{ t('zones.settings') }}</button>
+      <button v-if="focusedZone" class="add-plants-btn" @click="addPlantsOpen = true">+ {{ t('addPlants.button') }}</button>
       <div v-if="!zoneId" class="page-header-actions">
         <button class="add-zone-btn" @click="openZoneModal()">+ {{ t('zones.add') }}</button>
         <button class="edit-garden-btn" @click="openEditModal" :title="t('garden.editGarden')">
@@ -608,6 +627,14 @@ watch(gardens, (list) => {
         </button>
       </div>
     </div>
+
+    <AddPlantsModal
+      v-if="addPlantsOpen && focusedZone"
+      :zone="focusedZone"
+      @close="addPlantsOpen = false"
+      @added="onPlantAdded"
+      @edit-zone="editZoneFromAddPlants"
+    />
 
     <div class="garden-tabs">
       <button class="garden-tab" :class="{ active: activeTab === 'week' }" @click="setTab('week')">{{ t('garden.thisWeek') }}</button>
@@ -835,7 +862,7 @@ watch(gardens, (list) => {
         </template>
       </div>
       <!-- This week -->
-      <ThisWeekCard v-if="activeTab === 'week'" class="this-week-card" :zones="zones" :zone-id="zoneId" @refresh="onWeekRefresh" @edit-zone="openZoneModal" />
+      <ThisWeekCard v-if="activeTab === 'week'" ref="weekCard" class="this-week-card" :zones="zones" :zone-id="zoneId" @refresh="onWeekRefresh" @edit-zone="openZoneModal" />
 
       <!-- Planting suggestions -->
       <div v-if="activeTab === 'calendar' && !zoneId && suggestions && (suggestions.sunGroups.length > 0 || suggestions.conflicts.length > 0)" class="suggestions">
@@ -1851,7 +1878,8 @@ main {
   cursor: pointer;
 }
 
-.add-zone-btn {
+.add-zone-btn,
+.add-plants-btn {
   padding: 0.4rem 0.9rem;
   border: 1.5px solid var(--green-pale);
   border-radius: var(--radius);
@@ -1862,7 +1890,10 @@ main {
   cursor: pointer;
 }
 
-.add-zone-btn:hover { border-color: var(--green-mid); }
+.add-zone-btn:hover,
+.add-plants-btn:hover { border-color: var(--green-mid); }
+
+.add-plants-btn { margin-left: auto; }
 
 .zone-row td {
   background: var(--green-pale);
