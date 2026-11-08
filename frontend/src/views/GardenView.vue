@@ -589,6 +589,7 @@ watch(gardens, (list) => {
       <h2 class="page-title" :class="{ 'page-title--zone': zoneId }">{{ focusedZone ? zoneLabel(t, focusedZone.name) : (activeGardenName ?? t('myGarden')) }}</h2>
       <button v-if="focusedZone" class="zone-settings-link" @click="openZoneModal(focusedZone)">{{ t('zones.settings') }}</button>
       <div v-if="!zoneId" class="page-header-actions">
+        <button class="add-zone-btn" @click="openZoneModal()">+ {{ t('zones.add') }}</button>
         <button class="edit-garden-btn" @click="openEditModal" :title="t('garden.editGarden')">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -604,10 +605,6 @@ watch(gardens, (list) => {
           </svg>
         </button>
       </div>
-    </div>
-
-    <div v-if="!zoneId" class="zone-toolbar">
-      <button class="add-zone-btn" @click="openZoneModal()">+ {{ t('zones.add') }}</button>
     </div>
 
     <div class="garden-tabs">
@@ -1123,8 +1120,9 @@ main {
 }
 
 .page-title {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--green-dark);
   flex: 1;
 }
@@ -1141,33 +1139,35 @@ main {
 
 .edit-garden-btn {
   padding: 0.35rem 0.6rem;
-  border: none;
+  background: none;
+  border: 1.5px solid var(--green-pale);
   border-radius: var(--radius);
-  background: var(--green-mid);
-  color: #fff;
-  font-size: 0.85rem;
+  color: var(--text-soft);
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: background 0.15s;
 }
 
-.edit-garden-btn:hover { background: var(--green-dark); }
+.edit-garden-btn:hover {
+  border-color: var(--green-mid);
+  color: var(--green-dark);
+}
 
 .delete-garden-btn {
   padding: 0.35rem 0.6rem;
-  border: none;
+  background: none;
+  border: 1.5px solid var(--green-pale);
   border-radius: var(--radius);
-  background: #dc2626;
-  color: #fff;
-  font-size: 0.85rem;
+  color: var(--text-soft);
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: background 0.15s;
 }
 
-.delete-garden-btn:hover { background: #b91c1c; }
+.delete-garden-btn:hover {
+  border-color: #b91c1c;
+  color: #b91c1c;
+}
 
 /* Edit / rename garden modal */
 .eg-header {
@@ -1829,14 +1829,6 @@ main {
 }
 
 /* Zones */
-.zone-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
 .zone-settings-link {
   background: none;
   border: none;

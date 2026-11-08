@@ -273,6 +273,10 @@ export default {
   home: 'Explore',
   myGarden: 'My garden',
   garden: {
+    job: {
+      seeding: 'Sow', germination: 'Germination', harvest: 'Harvest',
+      pruning: 'Prune', fertilizing: 'Feed', watering: 'Water',
+    },
     add: '+ Add to my garden',
     added: '✓ In my garden',
     addTooltip: 'Add to my garden',

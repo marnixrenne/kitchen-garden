@@ -271,6 +271,10 @@ export default {
   home: 'Explorar',
   myGarden: 'Mi huerto',
   garden: {
+    job: {
+      seeding: 'Sembrar', germination: 'Germinación', harvest: 'Cosechar',
+      pruning: 'Podar', fertilizing: 'Abonar', watering: 'Regar',
+    },
     add: '+ Añadir a mi huerto',
     added: '✓ En mi huerto',
     addTooltip: 'Añadir a mi huerto',

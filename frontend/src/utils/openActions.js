@@ -2,14 +2,7 @@ export const ACTION_ORDER = ['seeding', 'germination', 'harvest', 'pruning', 'fe
 
 export const ACTION_ICON = { seeding: '🌱', germination: '🌿', harvest: '🧺', pruning: '✂️', fertilizing: '🌻', watering: '💧' }
 
-export const ACTION_LABEL_KEY = {
-  seeding:     'garden.toSow',
-  germination: 'garden.planAction.germination',
-  harvest:     'garden.planAction.harvest',
-  pruning:     'garden.planAction.pruning',
-  fertilizing: 'garden.planAction.fertilizing',
-  watering:    'garden.planAction.watering',
-}
+export const ACTION_LABEL_KEY = Object.fromEntries(ACTION_ORDER.map(a => [a, `garden.job.${a}`]))
 
 const LOGGABLE = new Set(['fertilizing', 'pruning', 'watering'])
 
@@ -115,4 +108,14 @@ export function allActions(buckets) {
 
 export function openActions(buckets) {
   return allActions(buckets).filter(item => !item.done)
+}
+
+export function weekRangeLabel(week, t, tm) {
+  const months = tm('months')
+  const startMonth = months[week.weekStartMonth - 1]
+  const endMonth   = months[week.weekEndMonth - 1]
+  const range = week.weekStartMonth === week.weekEndMonth
+    ? `${week.weekStartDay}–${week.weekEndDay} ${endMonth}`
+    : `${week.weekStartDay} ${startMonth} – ${week.weekEndDay} ${endMonth}`
+  return `${t('garden.week')} ${week.week}, ${range}`
 }

@@ -68,7 +68,7 @@ describe('DashboardView', () => {
 
     const [main, herbs] = sections[0].findAll('.dash-zone')
     expect(main.find('.dash-zone-name').text()).toBe('Main zone')
-    expect(main.find('.dash-nothing').exists()).toBe(true)
+    expect(main.find('.dash-zone-plants').text()).toBe('No plants yet')
     expect(herbs.find('.dash-zone-name').text()).toBe('Herbs')
     expect(herbs.find('.dash-action-plant').text()).toBe('Tomato')
   })
@@ -83,19 +83,56 @@ describe('DashboardView', () => {
     expect(wrapper.find('.dash-zone').attributes('href')).toBe('/gardens/g1/zones/zone-herbs')
   })
 
-  it('caps the actions listed on a zone and says how many are left', async () => {
-    const dates = ['2026-06-08', '2026-06-09', '2026-06-10', '2026-06-11', '2026-06-12', '2026-06-13', '2026-06-14']
+  it('lists a plant once, with all its jobs', async () => {
+    const pruning = { ...watering('2026-06-11'), id: 'plan-prune', action: 'pruning' }
     const wrapper = await mountDashboard(
       [{ id: 'g1', name: 'Backyard' }],
       gardenRoutes('g1', {
         zones: [HERBS],
         instances: [{ id: 'i1', plantId: TOMATO.id, zoneId: HERBS.id }],
-        plan: { i1: dates.map(watering) },
+        plan: { i1: [watering('2026-06-10'), watering('2026-06-12'), pruning] },
       }),
+    )
+
+    expect(wrapper.findAll('.dash-action')).toHaveLength(1)
+    expect(wrapper.findAll('.dash-job').map(j => j.text())).toEqual(['✂️ Prune', '💧 Water'])
+  })
+
+  it('caps the plants listed on a zone and says how many are left', async () => {
+    const plants = Array.from({ length: 7 }, (_, i) => ({ id: `p${i}`, name: `Plant ${i}` }))
+    const wrapper = await mountDashboard(
+      [{ id: 'g1', name: 'Backyard' }],
+      {
+        ...gardenRoutes('g1', {
+          zones: [HERBS],
+          instances: plants.map((p, i) => ({ id: `i${i}`, plantId: p.id, zoneId: HERBS.id })),
+          plan: Object.fromEntries(plants.map((_, i) => [`i${i}`, [watering('2026-06-10')]])),
+        }),
+        '/api/gardens/g1/details': plants,
+      },
     )
 
     expect(wrapper.findAll('.dash-action')).toHaveLength(5)
     expect(wrapper.find('.dash-more').text()).toBe('+2 more')
+  })
+
+  it('draws every plant of a zone on its ground, fading those with no job', async () => {
+    const basil = { id: 'p-basil', name: 'Basil' }
+    const wrapper = await mountDashboard(
+      [{ id: 'g1', name: 'Backyard' }],
+      {
+        ...gardenRoutes('g1', {
+          zones: [HERBS],
+          instances: [{ id: 'i1', plantId: TOMATO.id, zoneId: HERBS.id }, { id: 'i2', plantId: basil.id, zoneId: HERBS.id }],
+          plan: { i1: [watering('2026-06-10')] },
+        }),
+        '/api/gardens/g1/details': [TOMATO, basil],
+      },
+    )
+
+    const plants = wrapper.findAll('.ground-plant')
+    expect(plants.map(p => p.attributes('title'))).toEqual(['Basil', 'Tomato'])
+    expect(plants.map(p => p.classes('ground-plant--resting'))).toEqual([true, false])
   })
 
   it('reports a garden that failed to load rather than showing it as having nothing to do', async () => {

@@ -180,6 +180,8 @@ async function submitNewGarden() {
   --card-bg:     #ffffff;
   --text:        #1b4332;
   --text-muted:  #52796f;
+  --text-soft:   #3f6258;
+  --soil:        #8b6b4a;
   --radius:      10px;
 }
 

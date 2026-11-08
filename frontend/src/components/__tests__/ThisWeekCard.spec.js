@@ -70,7 +70,7 @@ describe('ThisWeekCard', () => {
     expect(veg.find('.week-plant').text()).toContain('Tomato')
     expect(veg.text()).not.toContain('Bean')
     expect(herbs.find('.week-empty').text()).toBe('Nothing to do this week')
-    expect(empty.find('.week-empty').text()).toBe('Nothing to do this week')
+    expect(empty.find('.week-empty').text()).toBe('No plants yet')
   })
 
   it('shows a zone added while the card is open', async () => {
@@ -89,6 +89,14 @@ describe('ThisWeekCard', () => {
     expect(wrapper.emitted('edit-zone')).toEqual([[HERBS]])
   })
 
+  it('draws all of a zone\'s plants on its ground, fading those with no open job', async () => {
+    const wrapper = await mountCard({ plan: { 'i-tomato': [planned('watering', '2026-06-10')] } })
+
+    const plants = wrapper.findAll('.week-zone')[0].findAll('.ground-plant')
+    expect(plants.map(p => p.attributes('title'))).toEqual(['Bean', 'Tomato'])
+    expect(plants.map(p => p.classes('ground-plant--resting'))).toEqual([true, false])
+  })
+
   it('links each zone on the garden page to its own page', async () => {
     const wrapper = await mountCard()
 
@@ -102,7 +110,7 @@ describe('ThisWeekCard', () => {
     })
 
     const [beans, tomato] = plantRows(wrapper)
-    expect(tomato.findAll('.week-action-label').map(a => a.text())).toEqual([en.garden.planAction.pruning, en.garden.planAction.watering])
+    expect(tomato.findAll('.week-action-label').map(a => a.text())).toEqual([en.garden.job.pruning, en.garden.job.watering])
     expect(tomato.find('.week-plant-none').exists()).toBe(false)
     expect(beans.findAll('.week-action')).toHaveLength(0)
     expect(beans.find('.week-plant-none').text()).toBe('Nothing to do this week')
