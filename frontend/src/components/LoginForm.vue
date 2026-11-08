@@ -18,7 +18,7 @@ async function submit() {
   try {
     const ok = await login(username.value, password.value)
     if (ok) {
-      router.push('/garden')
+      router.push('/')
     } else {
       error.value = true
     }

@@ -9,7 +9,7 @@ const router = useRouter()
 
 function goBack() {
   if (window.history.state?.back) router.back()
-  else router.push('/garden')
+  else router.push('/')
 }
 
 const country = ref('')

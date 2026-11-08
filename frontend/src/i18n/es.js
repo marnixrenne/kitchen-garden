@@ -378,6 +378,15 @@ export default {
     logEmpty:     'Aún no hay actividad registrada.',
     logNoResults: 'No hay entradas que coincidan con "{query}".',
   },
+  dashboard: {
+    title:       'Panel',
+    noGardens:   'Aún no tienes ningún huerto.',
+    explore:     'Explorar plantas',
+    loadFailed:  'No se ha podido cargar este huerto.',
+    nothingOpen: 'Nada que hacer esta semana',
+    more:        '+{n} más',
+    plantCount:  '{n} planta | {n} plantas',
+  },
   zones: {
     mainZone:          'Zona principal',
     add:               'Añadir zona',

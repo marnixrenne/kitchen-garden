@@ -1,0 +1,64 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { buildActionBuckets, openActions } from '../openActions.js'
+
+const formatDate = d => d
+
+const TOMATO = { id: 'p-tomato', name: 'Tomato' }
+const BASIL  = { id: 'p-basil',  name: 'Basil' }
+
+const WEEK = { weekStartDay: 8, weekStartMonth: 6, weekEndDay: 14, weekEndMonth: 6, actions: [] }
+
+function water(start, end = start) {
+  return { id: `plan-${start}`, action: 'watering', plannedDateStart: start, plannedDateEnd: end, seedDate: '2026-05-01', seedAction: 'seeding_indoor' }
+}
+
+function data(overrides) {
+  return {
+    weekSummary: WEEK,
+    instances: [
+      { id: 'i-tomato', plantId: TOMATO.id, zoneId: 'zone-a' },
+      { id: 'i-basil',  plantId: BASIL.id,  zoneId: 'zone-b' },
+    ],
+    plantLog: {},
+    plantPlan: {},
+    lifecycle: {},
+    plants: [TOMATO, BASIL],
+    ...overrides,
+  }
+}
+
+describe('open actions', () => {
+  beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date(2026, 5, 10)) })
+  afterEach(() => vi.useRealTimers())
+
+  it('tags a planned action with the zone of its plant instance', () => {
+    const open = openActions(buildActionBuckets(data({ plantPlan: { 'i-basil': [water('2026-06-10')] } }), formatDate))
+
+    expect(open).toHaveLength(1)
+    expect(open[0]).toMatchObject({ action: 'watering', zoneId: 'zone-b', plant: BASIL })
+  })
+
+  it('tags a sowing action with the zone of the unseeded instance', () => {
+    const weekSummary = { ...WEEK, actions: [{ type: 'sow', plant: TOMATO }] }
+
+    const open = openActions(buildActionBuckets(data({ weekSummary }), formatDate))
+
+    expect(open).toHaveLength(1)
+    expect(open[0]).toMatchObject({ action: 'seeding', zoneId: 'zone-a' })
+  })
+
+  it('leaves out an action already logged within its planned dates', () => {
+    const open = openActions(buildActionBuckets(data({
+      plantPlan: { 'i-tomato': [water('2026-06-09', '2026-06-12')] },
+      plantLog:  { 'i-tomato': [{ action: 'watering', date: '2026-06-10' }] },
+    }), formatDate))
+
+    expect(open).toHaveLength(0)
+  })
+
+  it('leaves out an action planned outside the current week', () => {
+    const open = openActions(buildActionBuckets(data({ plantPlan: { 'i-tomato': [water('2026-06-20')] } }), formatDate))
+
+    expect(open).toHaveLength(0)
+  })
+})
