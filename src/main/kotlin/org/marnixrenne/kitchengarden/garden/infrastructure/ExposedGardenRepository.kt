@@ -72,7 +72,7 @@ class ExposedGardenRepository : GardenRepository {
             it[Garden.name]      = name
             it[Garden.createdAt] = Instant.now()
         }
-        insertInitialBed(id)
+        insertInitialZone(id)
         return id
     }
 
@@ -103,13 +103,13 @@ class ExposedGardenRepository : GardenRepository {
             .toSet()
     }
 
-    override fun add(gardenId: GardenId, plantId: PlantId, bedId: BedId) {
+    override fun add(gardenId: GardenId, plantId: PlantId, zoneId: ZoneId) {
         try {
             transaction {
                 GardenPlantInstances.insert {
                     it[GardenPlantInstances.id]        = UUID.randomUUID()
                     it[GardenPlantInstances.gardenId]  = gardenId.value
-                    it[GardenPlantInstances.bedId]     = bedId.value
+                    it[GardenPlantInstances.zoneId]     = zoneId.value
                     it[GardenPlantInstances.plantId]   = plantId.value
                     it[GardenPlantInstances.createdAt] = Instant.now()
                 }
@@ -127,17 +127,17 @@ class ExposedGardenRepository : GardenRepository {
     }
 
     override fun findInstances(gardenId: GardenId): List<PlantInstance> = transaction {
-        (GardenPlantInstances innerJoin GardenBeds innerJoin Plants)
-            .select(GardenPlantInstances.id, GardenPlantInstances.plantId, GardenPlantInstances.bedId, GardenBeds.sunExposure, Plants.sunRequirement)
+        (GardenPlantInstances innerJoin GardenZones innerJoin Plants)
+            .select(GardenPlantInstances.id, GardenPlantInstances.plantId, GardenPlantInstances.zoneId, GardenZones.sunExposure, Plants.sunRequirement)
             .where { GardenPlantInstances.gardenId eq gardenId.value }
             .orderBy(GardenPlantInstances.createdAt)
             .map {
                 PlantInstance(
                     id           = PlantInstanceId(it[GardenPlantInstances.id]),
                     plantId      = PlantId(it[GardenPlantInstances.plantId]),
-                    bedId        = BedId(it[GardenPlantInstances.bedId]),
+                    zoneId       = ZoneId(it[GardenPlantInstances.zoneId]),
                     sunShortfall = SunExposure.isShortfall(
-                        exposure    = it[GardenBeds.sunExposure]?.let { s -> SunExposure.from(s) },
+                        exposure    = it[GardenZones.sunExposure]?.let { s -> SunExposure.from(s) },
                         requirement = it[Plants.sunRequirement]?.let { s -> SunExposure.from(s) },
                     ),
                 )

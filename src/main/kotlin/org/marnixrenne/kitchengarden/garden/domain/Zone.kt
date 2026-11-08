@@ -7,11 +7,11 @@ import org.marnixrenne.kitchengarden.plants.domain.SunExposure
 import java.time.LocalDate
 import java.util.UUID
 
-data class BedId @JsonCreator(mode = DELEGATING) constructor(@get:JsonValue val value: UUID) {
+data class ZoneId @JsonCreator(mode = DELEGATING) constructor(@get:JsonValue val value: UUID) {
     override fun toString() = value.toString()
 }
 
-enum class BedType(@JsonValue val key: String) {
+enum class ZoneType(@JsonValue val key: String) {
     IN_GROUND("in_ground"),
     RAISED("raised"),
     CONTAINER("container"),
@@ -20,11 +20,11 @@ enum class BedType(@JsonValue val key: String) {
     companion object {
         @JsonCreator
         @JvmStatic
-        fun from(key: String): BedType = entries.first { it.key == key }
+        fun from(key: String): ZoneType = entries.first { it.key == key }
     }
 }
 
-/** The compass direction a bed faces or slopes toward. */
+/** The compass direction a zone faces or slopes toward. */
 enum class Aspect(@JsonValue val key: String) {
     N("N"), NE("NE"), E("E"), SE("SE"), S("S"), SW("SW"), W("W"), NW("NW");
 
@@ -35,40 +35,40 @@ enum class Aspect(@JsonValue val key: String) {
     }
 }
 
-/** A null [name] marks the bed created together with its garden; the UI labels it "Main bed". */
-data class Bed(
-    val id: BedId,
+/** A null [name] marks the zone created together with its garden; the UI labels it "Main zone". */
+data class Zone(
+    val id: ZoneId,
     val name: String?,
-    val type: BedType?,
+    val type: ZoneType?,
     val lengthCm: Int?,
     val widthCm: Int?,
     val sunExposure: SunExposure?,
     val aspect: Aspect?,
 )
 
-data class BedRequest(
+data class ZoneRequest(
     val name: String?,
-    val type: BedType?,
+    val type: ZoneType?,
     val lengthCm: Int?,
     val widthCm: Int?,
     val sunExposure: SunExposure?,
     val aspect: Aspect?,
 )
 
-/** What happens to a bed's plant instances when the bed is deleted. */
-enum class BedPlantsDisposition(@JsonValue val key: String) {
+/** What happens to a zone's plant instances when the zone is deleted. */
+enum class ZonePlantsDisposition(@JsonValue val key: String) {
     MOVE("move"),
     DELETE("delete");
 
     companion object {
         @JsonCreator
         @JvmStatic
-        fun from(key: String): BedPlantsDisposition = entries.first { it.key == key }
+        fun from(key: String): ZonePlantsDisposition = entries.first { it.key == key }
     }
 }
 
 data class MoveRequest(
-    val bedId: BedId,
+    val zoneId: ZoneId,
     val date: LocalDate?,
     val comment: String?,
 )

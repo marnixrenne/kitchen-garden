@@ -32,7 +32,7 @@ enum class SowingMethod(@JsonValue val key: String) {
     }
 }
 
-/** How much direct sun a plant needs (Sun requirement) or a bed receives (Sun exposure). Declared from least to most sun. */
+/** How much direct sun a plant needs (Sun requirement) or a zone receives (Sun exposure). Declared from least to most sun. */
 enum class SunExposure(@JsonValue val key: String) {
     SHADE("shade"),
     PARTIAL_SHADE("partial_shade"),
@@ -45,7 +45,7 @@ enum class SunExposure(@JsonValue val key: String) {
         @JvmStatic
         fun from(key: String): SunExposure = entries.first { it.key == key }
 
-        /** True only when both are known and the bed gets less sun than the plant needs. */
+        /** True only when both are known and the zone gets less sun than the plant needs. */
         fun isShortfall(exposure: SunExposure?, requirement: SunExposure?): Boolean =
             exposure != null && requirement != null && !exposure.isSufficientFor(requirement)
     }

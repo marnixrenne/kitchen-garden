@@ -4,7 +4,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { csrfHeaders } from '../stores/auth.js'
 import { activeGardenId } from '../stores/garden.js'
-import { chooseBed, addPlantUrl } from '../stores/bedPicker.js'
+import { chooseZone, addPlantUrl } from '../stores/zonePicker.js'
 
 const route  = useRoute()
 const router = useRouter()
@@ -58,18 +58,18 @@ const fertilizerTipText = computed(() => {
 })
 
 async function toggleGarden() {
-  const bedId = inGarden.value ? undefined : await chooseBed(route.params.id)
-  if (bedId === null) return
+  const zoneId = inGarden.value ? undefined : await chooseZone(route.params.id)
+  if (zoneId === null) return
   const method = inGarden.value ? 'DELETE' : 'PUT'
-  const res = await fetch(addPlantUrl(route.params.id, bedId), { method, headers: csrfHeaders() })
+  const res = await fetch(addPlantUrl(route.params.id, zoneId), { method, headers: csrfHeaders() })
   if (res.ok) inGarden.value = !inGarden.value
 }
 
 async function toggleCompanionGarden(id) {
   const inG = gardenIds.value.has(id)
-  const bedId = inG ? undefined : await chooseBed(id)
-  if (bedId === null) return
-  const res = await fetch(addPlantUrl(id, bedId), { method: inG ? 'DELETE' : 'PUT', headers: csrfHeaders() })
+  const zoneId = inG ? undefined : await chooseZone(id)
+  if (zoneId === null) return
+  const res = await fetch(addPlantUrl(id, zoneId), { method: inG ? 'DELETE' : 'PUT', headers: csrfHeaders() })
   if (!res.ok) return
   const next = new Set(gardenIds.value)
   inG ? next.delete(id) : next.add(id)

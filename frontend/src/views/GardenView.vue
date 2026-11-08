@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import ThisWeekCard from '../components/ThisWeekCard.vue'
 import { activeGardenName, activeGardenId, gardens, setActiveGarden } from '../stores/garden.js'
 import { csrfHeaders } from '../stores/auth.js'
-import { BED_TYPES, ASPECTS, SUN_LEVELS, MAX_DIMENSION_CM, bedLabel } from '../utils/beds.js'
+import { ZONE_TYPES, ASPECTS, SUN_LEVELS, MAX_DIMENSION_CM, zoneLabel } from '../utils/zones.js'
 
 const router = useRouter()
 const route  = useRoute()
@@ -20,8 +20,8 @@ const suggestions   = ref(null)
 const loading       = ref(true)
 const selectedMonth = ref(null)
 
-const instances      = ref([])   // [{id: instanceId, plantId, bedId, sunShortfall}]
-const beds           = ref([])   // creation order
+const instances      = ref([])   // [{id: instanceId, plantId, zoneId, sunShortfall}]
+const zones           = ref([])   // creation order
 const plantLog       = ref({})   // keyed by instanceId
 const plantPlan      = ref({})   // keyed by instanceId
 const lifecycle      = ref({})   // keyed by instanceId
@@ -148,9 +148,9 @@ async function fetchInstances() {
   if (res.ok) instances.value = await res.json()
 }
 
-async function fetchBeds() {
-  const res = await fetch(`/api/gardens/${activeGardenId.value}/beds`)
-  if (res.ok) beds.value = await res.json()
+async function fetchZones() {
+  const res = await fetch(`/api/gardens/${activeGardenId.value}/zones`)
+  if (res.ok) zones.value = await res.json()
 }
 
 async function fetchPlantLog() {
@@ -179,7 +179,7 @@ function isPlanEntryDone(plantId, entry) {
   )
 }
 
-// ── Beds ──────────────────────────────────────────────────────────────────────
+// ── Zones ──────────────────────────────────────────────────────────────────────
 
 // A plant is in a garden at most once, so each plant maps to a single instance
 const instanceByPlantId = computed(() => {
@@ -188,24 +188,24 @@ const instanceByPlantId = computed(() => {
   return map
 })
 
-const hasSeveralBeds = computed(() => beds.value.length > 1)
+const hasSeveralZones = computed(() => zones.value.length > 1)
 
-// With one bed the calendar looks as it did before beds existed: a single headerless group
+// With one zone the calendar looks as it did before zones existed: a single headerless group
 const calendarGroups = computed(() => {
-  if (!hasSeveralBeds.value) return [{ bed: null, plants: sortedPlants.value }]
-  return beds.value.map(bed => ({
-    bed,
-    plants: sortedPlants.value.filter(p => instanceByPlantId.value[p.id]?.bedId === bed.id),
+  if (!hasSeveralZones.value) return [{ zone: null, plants: sortedPlants.value }]
+  return zones.value.map(zone => ({
+    zone,
+    plants: sortedPlants.value.filter(p => instanceByPlantId.value[p.id]?.zoneId === zone.id),
   }))
 })
 
-function bedDetails(bed) {
+function zoneDetails(zone) {
   const parts = []
-  if (bed.type)                  parts.push(t(`beds.type.${bed.type}`))
-  if (bed.lengthCm && bed.widthCm) parts.push(t('beds.dimensionsValue', { length: bed.lengthCm, width: bed.widthCm }))
-  else if (bed.lengthCm || bed.widthCm) parts.push(`${bed.lengthCm ?? bed.widthCm} cm`)
-  if (bed.sunExposure)           parts.push(t(`sunRequirement.${bed.sunExposure}`))
-  if (bed.aspect)                parts.push(t('beds.facing', { aspect: t(`beds.aspect.${bed.aspect}`) }))
+  if (zone.type)                  parts.push(t(`zones.type.${zone.type}`))
+  if (zone.lengthCm && zone.widthCm) parts.push(t('zones.dimensionsValue', { length: zone.lengthCm, width: zone.widthCm }))
+  else if (zone.lengthCm || zone.widthCm) parts.push(`${zone.lengthCm ?? zone.widthCm} cm`)
+  if (zone.sunExposure)           parts.push(t(`sunRequirement.${zone.sunExposure}`))
+  if (zone.aspect)                parts.push(t('zones.facing', { aspect: t(`zones.aspect.${zone.aspect}`) }))
   return parts.join(' · ')
 }
 
@@ -217,20 +217,20 @@ async function errorText(res) {
   try { return (await res.json()).message || `Error ${res.status}` } catch { return `Error ${res.status}` }
 }
 
-// Create / edit bed
+// Create / edit zone
 
-const bedModal = ref({ open: false })
+const zoneModal = ref({ open: false })
 
-function openBedModal(bed = null) {
-  bedModal.value = {
+function openZoneModal(zone = null) {
+  zoneModal.value = {
     open: true,
-    bed,
-    name:        bed?.name ?? '',
-    type:        bed?.type ?? '',
-    lengthCm:    bed?.lengthCm ?? '',
-    widthCm:     bed?.widthCm ?? '',
-    sunExposure: bed?.sunExposure ?? '',
-    aspect:      bed?.aspect ?? '',
+    zone,
+    name:        zone?.name ?? '',
+    type:        zone?.type ?? '',
+    lengthCm:    zone?.lengthCm ?? '',
+    widthCm:     zone?.widthCm ?? '',
+    sunExposure: zone?.sunExposure ?? '',
+    aspect:      zone?.aspect ?? '',
     saving: false,
     error: '',
   }
@@ -242,19 +242,19 @@ function validDimension(value) {
   return Number.isInteger(n) && n >= 1 && n <= MAX_DIMENSION_CM
 }
 
-// The unnamed bed a garden starts with may stay unnamed; every other bed needs a name
-const bedFormError = computed(() => {
-  const m = bedModal.value
+// The unnamed zone a garden starts with may stay unnamed; every other zone needs a name
+const zoneFormError = computed(() => {
+  const m = zoneModal.value
   if (!m.open) return ''
-  const mayStayUnnamed = m.bed && m.bed.name === null
-  if (!m.name.trim() && !mayStayUnnamed) return t('beds.nameRequired')
-  if (!validDimension(m.lengthCm) || !validDimension(m.widthCm)) return t('beds.dimensionsInvalid', { max: MAX_DIMENSION_CM })
+  const mayStayUnnamed = m.zone && m.zone.name === null
+  if (!m.name.trim() && !mayStayUnnamed) return t('zones.nameRequired')
+  if (!validDimension(m.lengthCm) || !validDimension(m.widthCm)) return t('zones.dimensionsInvalid', { max: MAX_DIMENSION_CM })
   return ''
 })
 
-async function saveBed() {
-  const m = bedModal.value
-  if (bedFormError.value || m.saving) return
+async function saveZone() {
+  const m = zoneModal.value
+  if (zoneFormError.value || m.saving) return
   m.saving = true
   m.error = ''
   const body = {
@@ -266,46 +266,46 @@ async function saveBed() {
     aspect:      m.aspect || null,
   }
   const res = await fetch(
-    m.bed ? `/api/gardens/${activeGardenId.value}/beds/${m.bed.id}` : `/api/gardens/${activeGardenId.value}/beds`,
-    { method: m.bed ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json', ...csrfHeaders() }, body: JSON.stringify(body) },
+    m.zone ? `/api/gardens/${activeGardenId.value}/zones/${m.zone.id}` : `/api/gardens/${activeGardenId.value}/zones`,
+    { method: m.zone ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json', ...csrfHeaders() }, body: JSON.stringify(body) },
   )
   m.saving = false
   if (!res.ok) { m.error = await errorText(res); return }
   m.open = false
-  // A bed's sun exposure changes the instances' sun warnings
-  await Promise.all([fetchBeds(), fetchInstances()])
+  // A zone's sun exposure changes the instances' sun warnings
+  await Promise.all([fetchZones(), fetchInstances()])
 }
 
-// Delete bed
+// Delete zone
 
-const deleteBedModal = ref({ open: false })
+const deleteZoneModal = ref({ open: false })
 
-function plantsInBed(bed) {
-  return instances.value.filter(i => i.bedId === bed.id).length
+function plantsInZone(zone) {
+  return instances.value.filter(i => i.zoneId === zone.id).length
 }
 
-function openDeleteBedModal(bed) {
-  const others = beds.value.filter(b => b.id !== bed.id)
-  deleteBedModal.value = {
+function openDeleteZoneModal(zone) {
+  const others = zones.value.filter(b => b.id !== zone.id)
+  deleteZoneModal.value = {
     open: true,
-    bed,
-    plantCount: plantsInBed(bed),
+    zone,
+    plantCount: plantsInZone(zone),
     disposition: 'move',
-    targetBedId: others[0]?.id ?? null,
+    targetZoneId: others[0]?.id ?? null,
     deleting: false,
     error: '',
   }
 }
 
-async function confirmDeleteBed() {
-  const m = deleteBedModal.value
+async function confirmDeleteZone() {
+  const m = deleteZoneModal.value
   if (m.deleting) return
   const params = m.plantCount === 0 ? ''
-    : m.disposition === 'move' ? `?plants=move&targetBedId=${m.targetBedId}`
+    : m.disposition === 'move' ? `?plants=move&targetZoneId=${m.targetZoneId}`
     : '?plants=delete'
   m.deleting = true
   m.error = ''
-  const res = await fetch(`/api/gardens/${activeGardenId.value}/beds/${m.bed.id}${params}`, {
+  const res = await fetch(`/api/gardens/${activeGardenId.value}/zones/${m.zone.id}${params}`, {
     method: 'DELETE',
     headers: csrfHeaders(),
   })
@@ -313,7 +313,7 @@ async function confirmDeleteBed() {
   if (!res.ok) { m.error = await errorText(res); return }
   m.open = false
   if (m.plantCount > 0 && m.disposition === 'delete') await loadAll()
-  else await Promise.all([fetchBeds(), fetchInstances(), fetchPlantLog()])
+  else await Promise.all([fetchZones(), fetchInstances(), fetchPlantLog()])
 }
 
 // Move a plant
@@ -323,22 +323,22 @@ const moveModal = ref({ open: false })
 function openMoveModal(plant) {
   const instance = instanceByPlantId.value[plant.id]
   if (!instance) return
-  moveModal.value = { open: true, plant, instance, bedId: null, date: todayIso(), comment: '', saving: false, error: '' }
+  moveModal.value = { open: true, plant, instance, zoneId: null, date: todayIso(), comment: '', saving: false, error: '' }
 }
 
 const moveTargets = computed(() =>
-  moveModal.value.open ? beds.value.filter(b => b.id !== moveModal.value.instance.bedId) : []
+  moveModal.value.open ? zones.value.filter(b => b.id !== moveModal.value.instance.zoneId) : []
 )
 
 async function confirmMove() {
   const m = moveModal.value
-  if (!m.bedId || m.saving) return
+  if (!m.zoneId || m.saving) return
   m.saving = true
   m.error = ''
   const res = await fetch(`/api/gardens/${activeGardenId.value}/instances/${m.instance.id}/move`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-    body: JSON.stringify({ bedId: m.bedId, date: m.date || null, comment: m.comment.trim() || null }),
+    body: JSON.stringify({ zoneId: m.zoneId, date: m.date || null, comment: m.comment.trim() || null }),
   })
   m.saving = false
   if (!res.ok) { m.error = await errorText(res); return }
@@ -371,7 +371,7 @@ async function saveEntry() {
 }
 
 function moveDescription(entry) {
-  return t('beds.movedFromTo', { from: bedLabel(t, entry.fromBedName), to: bedLabel(t, entry.toBedName) })
+  return t('zones.movedFromTo', { from: zoneLabel(t, entry.fromZoneName), to: zoneLabel(t, entry.toZoneName) })
 }
 
 const months = computed(() => tm('months'))
@@ -479,7 +479,7 @@ function plantName(plant) {
 }
 
 async function onWeekRefresh() {
-  await Promise.all([fetchBeds(), fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
+  await Promise.all([fetchZones(), fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
 }
 
 // ── Rename garden ─────────────────────────────────────────────────────────────
@@ -534,7 +534,7 @@ async function loadAll() {
   plants.value = []
   suggestions.value = null
   instances.value = []
-  beds.value = []
+  zones.value = []
   plantLog.value = {}
   plantPlan.value = {}
   lifecycle.value = {}
@@ -546,7 +546,7 @@ async function loadAll() {
   if (detailsRes.ok)     plants.value      = await detailsRes.json()
   if (suggestionsRes.ok) suggestions.value = await suggestionsRes.json()
   loading.value = false
-  await Promise.all([fetchBeds(), fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
+  await Promise.all([fetchZones(), fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
 }
 
 onMounted(loadAll)
@@ -581,11 +581,11 @@ watch(activeGardenId, loadAll)
       <button class="garden-tab" :class="{ active: activeTab === 'log' }" @click="setTab('log')">{{ t('garden.logNav') }}</button>
     </div>
 
-    <div v-if="!loading && activeTab === 'calendar'" class="bed-toolbar">
-      <button v-if="!hasSeveralBeds && beds.length === 1" class="bed-settings-link" @click="openBedModal(beds[0])">
-        {{ t('beds.settings') }}
+    <div v-if="!loading && activeTab === 'calendar'" class="zone-toolbar">
+      <button v-if="!hasSeveralZones && zones.length === 1" class="zone-settings-link" @click="openZoneModal(zones[0])">
+        {{ t('zones.settings') }}
       </button>
-      <button class="add-bed-btn" @click="openBedModal()">+ {{ t('beds.add') }}</button>
+      <button class="add-zone-btn" @click="openZoneModal()">+ {{ t('zones.add') }}</button>
     </div>
 
     <div v-if="loading" class="loading">{{ t('loading') }}</div>
@@ -618,7 +618,7 @@ watch(activeGardenId, loadAll)
             <button
               v-if="entry.action === 'moved'"
               class="log-edit-btn"
-              :title="t('beds.editEntry')"
+              :title="t('zones.editEntry')"
               @click="openEntryModal(entry)"
             >✎</button>
           </div>
@@ -669,16 +669,16 @@ watch(activeGardenId, loadAll)
             </tr>
           </thead>
           <tbody>
-            <template v-for="group in calendarGroups" :key="group.bed?.id ?? 'all'">
-            <tr v-if="group.bed" class="bed-row">
+            <template v-for="group in calendarGroups" :key="group.zone?.id ?? 'all'">
+            <tr v-if="group.zone" class="zone-row">
               <td colspan="13">
-                <div class="bed-row-inner">
-                  <span class="bed-name">{{ bedLabel(t, group.bed.name) }}</span>
-                  <span v-if="bedDetails(group.bed)" class="bed-details">{{ bedDetails(group.bed) }}</span>
-                  <span v-if="group.plants.length === 0" class="bed-empty">{{ t('beds.empty') }}</span>
-                  <span class="bed-actions">
-                    <button class="bed-icon-btn" :title="t('beds.edit')" @click="openBedModal(group.bed)">✎</button>
-                    <button class="bed-icon-btn danger" :title="t('beds.delete')" @click="openDeleteBedModal(group.bed)">🗑</button>
+                <div class="zone-row-inner">
+                  <span class="zone-name">{{ zoneLabel(t, group.zone.name) }}</span>
+                  <span v-if="zoneDetails(group.zone)" class="zone-details">{{ zoneDetails(group.zone) }}</span>
+                  <span v-if="group.plants.length === 0" class="zone-empty">{{ t('zones.empty') }}</span>
+                  <span class="zone-actions">
+                    <button class="zone-icon-btn" :title="t('zones.edit')" @click="openZoneModal(group.zone)">✎</button>
+                    <button class="zone-icon-btn danger" :title="t('zones.delete')" @click="openDeleteZoneModal(group.zone)">🗑</button>
                   </span>
                 </div>
               </td>
@@ -705,8 +705,8 @@ watch(activeGardenId, loadAll)
                   <span
                     v-if="instanceByPlantId[plant.id]?.sunShortfall"
                     class="sun-warning"
-                    :title="t('beds.sunWarning')"
-                    :aria-label="t('beds.sunWarning')"
+                    :title="t('zones.sunWarning')"
+                    :aria-label="t('zones.sunWarning')"
                   >⚠️</span>
                   <span
                     v-if="lcForPlant(plant.id)"
@@ -714,10 +714,10 @@ watch(activeGardenId, loadAll)
                     :class="'lc-' + lcForPlant(plant.id).state"
                   >{{ te(`garden.lifecycle.${lcForPlant(plant.id).state}`) ? t(`garden.lifecycle.${lcForPlant(plant.id).state}`) : lcForPlant(plant.id).state }}</span>
                   <button
-                    v-if="hasSeveralBeds && instanceByPlantId[plant.id]"
+                    v-if="hasSeveralZones && instanceByPlantId[plant.id]"
                     class="move-btn"
                     :class="{ 'push-right': !lcForPlant(plant.id) }"
-                    :title="t('beds.moveToBed')"
+                    :title="t('zones.moveToZone')"
                     @click.stop="openMoveModal(plant)"
                   >⇄</button>
                 </td>
@@ -897,58 +897,58 @@ watch(activeGardenId, loadAll)
   </Teleport>
 
   <Teleport to="body">
-    <div v-if="bedModal.open" class="dg-backdrop" @click.self="bedModal.open = false">
+    <div v-if="zoneModal.open" class="dg-backdrop" @click.self="zoneModal.open = false">
       <div class="dg-modal" role="dialog" aria-modal="true">
-        <div class="eg-header">{{ bedModal.bed ? t('beds.edit') : t('beds.add') }}</div>
+        <div class="eg-header">{{ zoneModal.zone ? t('zones.edit') : t('zones.add') }}</div>
         <div class="dg-body">
           <label class="bf-field">
-            <span class="bf-label">{{ t('beds.name') }}</span>
+            <span class="bf-label">{{ t('zones.name') }}</span>
             <input
-              v-model="bedModal.name"
+              v-model="zoneModal.name"
               class="eg-input"
               maxlength="100"
-              :placeholder="bedModal.bed && bedModal.bed.name === null ? t('beds.mainBed') : t('beds.namePlaceholder')"
+              :placeholder="zoneModal.zone && zoneModal.zone.name === null ? t('zones.mainZone') : t('zones.namePlaceholder')"
             />
           </label>
           <label class="bf-field">
-            <span class="bf-label">{{ t('beds.typeLabel') }}</span>
-            <select v-model="bedModal.type" class="eg-input">
-              <option value="">{{ t('beds.notSet') }}</option>
-              <option v-for="type in BED_TYPES" :key="type" :value="type">{{ t(`beds.type.${type}`) }}</option>
+            <span class="bf-label">{{ t('zones.typeLabel') }}</span>
+            <select v-model="zoneModal.type" class="eg-input">
+              <option value="">{{ t('zones.notSet') }}</option>
+              <option v-for="type in ZONE_TYPES" :key="type" :value="type">{{ t(`zones.type.${type}`) }}</option>
             </select>
           </label>
           <div class="bf-row">
             <label class="bf-field">
-              <span class="bf-label">{{ t('beds.lengthCm') }}</span>
-              <input v-model="bedModal.lengthCm" class="eg-input" type="number" min="1" :max="MAX_DIMENSION_CM" step="1" />
+              <span class="bf-label">{{ t('zones.lengthCm') }}</span>
+              <input v-model="zoneModal.lengthCm" class="eg-input" type="number" min="1" :max="MAX_DIMENSION_CM" step="1" />
             </label>
             <label class="bf-field">
-              <span class="bf-label">{{ t('beds.widthCm') }}</span>
-              <input v-model="bedModal.widthCm" class="eg-input" type="number" min="1" :max="MAX_DIMENSION_CM" step="1" />
+              <span class="bf-label">{{ t('zones.widthCm') }}</span>
+              <input v-model="zoneModal.widthCm" class="eg-input" type="number" min="1" :max="MAX_DIMENSION_CM" step="1" />
             </label>
           </div>
           <div class="bf-row">
             <label class="bf-field">
-              <span class="bf-label">{{ t('beds.sunLabel') }}</span>
-              <select v-model="bedModal.sunExposure" class="eg-input">
-                <option value="">{{ t('beds.notSet') }}</option>
+              <span class="bf-label">{{ t('zones.sunLabel') }}</span>
+              <select v-model="zoneModal.sunExposure" class="eg-input">
+                <option value="">{{ t('zones.notSet') }}</option>
                 <option v-for="sun in SUN_LEVELS" :key="sun" :value="sun">{{ t(`sunRequirement.${sun}`) }}</option>
               </select>
             </label>
             <label class="bf-field">
-              <span class="bf-label">{{ t('beds.aspectLabel') }}</span>
-              <select v-model="bedModal.aspect" class="eg-input">
-                <option value="">{{ t('beds.notSet') }}</option>
-                <option v-for="aspect in ASPECTS" :key="aspect" :value="aspect">{{ t(`beds.aspect.${aspect}`) }}</option>
+              <span class="bf-label">{{ t('zones.aspectLabel') }}</span>
+              <select v-model="zoneModal.aspect" class="eg-input">
+                <option value="">{{ t('zones.notSet') }}</option>
+                <option v-for="aspect in ASPECTS" :key="aspect" :value="aspect">{{ t(`zones.aspect.${aspect}`) }}</option>
               </select>
             </label>
           </div>
-          <p v-if="bedFormError || bedModal.error" class="bf-error">{{ bedModal.error || bedFormError }}</p>
+          <p v-if="zoneFormError || zoneModal.error" class="bf-error">{{ zoneModal.error || zoneFormError }}</p>
           <div class="dg-actions">
-            <button class="dg-cancel" @click="bedModal.open = false" :disabled="bedModal.saving">
+            <button class="dg-cancel" @click="zoneModal.open = false" :disabled="zoneModal.saving">
               {{ t('garden.seedModal.cancel') }}
             </button>
-            <button class="eg-save" @click="saveBed" :disabled="bedModal.saving || !!bedFormError">
+            <button class="eg-save" @click="saveZone" :disabled="zoneModal.saving || !!zoneFormError">
               {{ t('garden.editGardenSave') }}
             </button>
           </div>
@@ -958,36 +958,36 @@ watch(activeGardenId, loadAll)
   </Teleport>
 
   <Teleport to="body">
-    <div v-if="deleteBedModal.open" class="dg-backdrop" @click.self="deleteBedModal.open = false">
+    <div v-if="deleteZoneModal.open" class="dg-backdrop" @click.self="deleteZoneModal.open = false">
       <div class="dg-modal" role="dialog" aria-modal="true">
-        <div class="dg-header">{{ t('beds.delete') }}</div>
+        <div class="dg-header">{{ t('zones.delete') }}</div>
         <div class="dg-body">
-          <p class="dg-warning">{{ t('beds.deleteConfirm', { name: bedLabel(t, deleteBedModal.bed.name) }) }}</p>
-          <template v-if="deleteBedModal.plantCount > 0">
-            <p class="dg-warning">{{ t('beds.deleteHasPlants', deleteBedModal.plantCount) }}</p>
+          <p class="dg-warning">{{ t('zones.deleteConfirm', { name: zoneLabel(t, deleteZoneModal.zone.name) }) }}</p>
+          <template v-if="deleteZoneModal.plantCount > 0">
+            <p class="dg-warning">{{ t('zones.deleteHasPlants', deleteZoneModal.plantCount) }}</p>
             <label class="bf-radio">
-              <input v-model="deleteBedModal.disposition" type="radio" value="move" />
-              {{ t('beds.deleteMovePlants') }}
+              <input v-model="deleteZoneModal.disposition" type="radio" value="move" />
+              {{ t('zones.deleteMovePlants') }}
             </label>
-            <select v-if="deleteBedModal.disposition === 'move'" v-model="deleteBedModal.targetBedId" class="eg-input">
+            <select v-if="deleteZoneModal.disposition === 'move'" v-model="deleteZoneModal.targetZoneId" class="eg-input">
               <option
-                v-for="bed in beds.filter(b => b.id !== deleteBedModal.bed.id)"
-                :key="bed.id"
-                :value="bed.id"
-              >{{ bedLabel(t, bed.name) }}</option>
+                v-for="zone in zones.filter(b => b.id !== deleteZoneModal.zone.id)"
+                :key="zone.id"
+                :value="zone.id"
+              >{{ zoneLabel(t, zone.name) }}</option>
             </select>
             <label class="bf-radio">
-              <input v-model="deleteBedModal.disposition" type="radio" value="delete" />
-              {{ t('beds.deleteRemovePlants') }}
+              <input v-model="deleteZoneModal.disposition" type="radio" value="delete" />
+              {{ t('zones.deleteRemovePlants') }}
             </label>
           </template>
-          <p v-if="deleteBedModal.error" class="bf-error">{{ deleteBedModal.error }}</p>
+          <p v-if="deleteZoneModal.error" class="bf-error">{{ deleteZoneModal.error }}</p>
           <div class="dg-actions">
-            <button class="dg-cancel" @click="deleteBedModal.open = false" :disabled="deleteBedModal.deleting">
+            <button class="dg-cancel" @click="deleteZoneModal.open = false" :disabled="deleteZoneModal.deleting">
               {{ t('garden.seedModal.cancel') }}
             </button>
-            <button class="dg-confirm" @click="confirmDeleteBed" :disabled="deleteBedModal.deleting">
-              {{ t('beds.deleteConfirmBtn') }}
+            <button class="dg-confirm" @click="confirmDeleteZone" :disabled="deleteZoneModal.deleting">
+              {{ t('zones.deleteConfirmBtn') }}
             </button>
           </div>
         </div>
@@ -998,13 +998,13 @@ watch(activeGardenId, loadAll)
   <Teleport to="body">
     <div v-if="moveModal.open" class="dg-backdrop" @click.self="moveModal.open = false">
       <div class="dg-modal" role="dialog" aria-modal="true">
-        <div class="eg-header">{{ t('beds.moveTitle', { plant: plantName(moveModal.plant) }) }}</div>
+        <div class="eg-header">{{ t('zones.moveTitle', { plant: plantName(moveModal.plant) }) }}</div>
         <div class="dg-body">
           <label class="bf-field">
-            <span class="bf-label">{{ t('beds.moveTo') }}</span>
-            <select v-model="moveModal.bedId" class="eg-input">
-              <option :value="null" disabled>{{ t('beds.chooseBed') }}</option>
-              <option v-for="bed in moveTargets" :key="bed.id" :value="bed.id">{{ bedLabel(t, bed.name) }}</option>
+            <span class="bf-label">{{ t('zones.moveTo') }}</span>
+            <select v-model="moveModal.zoneId" class="eg-input">
+              <option :value="null" disabled>{{ t('zones.chooseZone') }}</option>
+              <option v-for="zone in moveTargets" :key="zone.id" :value="zone.id">{{ zoneLabel(t, zone.name) }}</option>
             </select>
           </label>
           <label class="bf-field">
@@ -1020,8 +1020,8 @@ watch(activeGardenId, loadAll)
             <button class="dg-cancel" @click="moveModal.open = false" :disabled="moveModal.saving">
               {{ t('garden.seedModal.cancel') }}
             </button>
-            <button class="eg-save" @click="confirmMove" :disabled="moveModal.saving || !moveModal.bedId">
-              {{ t('beds.moveConfirm') }}
+            <button class="eg-save" @click="confirmMove" :disabled="moveModal.saving || !moveModal.zoneId">
+              {{ t('zones.moveConfirm') }}
             </button>
           </div>
         </div>
@@ -1032,7 +1032,7 @@ watch(activeGardenId, loadAll)
   <Teleport to="body">
     <div v-if="entryModal.open" class="dg-backdrop" @click.self="entryModal.open = false">
       <div class="dg-modal" role="dialog" aria-modal="true">
-        <div class="eg-header">{{ t('beds.editEntry') }}</div>
+        <div class="eg-header">{{ t('zones.editEntry') }}</div>
         <div class="dg-body">
           <p class="dg-warning">{{ moveDescription(entryModal.entry) }}</p>
           <label class="bf-field">
@@ -1777,8 +1777,8 @@ main {
   padding-left: 1.6rem;
 }
 
-/* Beds */
-.bed-toolbar {
+/* Zones */
+.zone-toolbar {
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -1786,7 +1786,7 @@ main {
   margin-bottom: 0.75rem;
 }
 
-.bed-settings-link {
+.zone-settings-link {
   background: none;
   border: none;
   padding: 0;
@@ -1797,7 +1797,7 @@ main {
   cursor: pointer;
 }
 
-.add-bed-btn {
+.add-zone-btn {
   padding: 0.4rem 0.9rem;
   border: 1.5px solid var(--green-pale);
   border-radius: var(--radius);
@@ -1808,27 +1808,27 @@ main {
   cursor: pointer;
 }
 
-.add-bed-btn:hover { border-color: var(--green-mid); }
+.add-zone-btn:hover { border-color: var(--green-mid); }
 
-.bed-row td {
+.zone-row td {
   background: var(--green-pale);
   padding: 0.45rem 0.75rem;
   border-bottom: 1px solid var(--green-pale);
 }
 
-.bed-row-inner {
+.zone-row-inner {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.6rem;
 }
 
-.bed-name { font-size: 0.85rem; font-weight: 700; color: var(--green-dark); }
-.bed-details, .bed-empty { font-size: 0.78rem; color: var(--text-muted); }
-.bed-empty { font-style: italic; }
-.bed-actions { margin-left: auto; display: flex; gap: 0.25rem; }
+.zone-name { font-size: 0.85rem; font-weight: 700; color: var(--green-dark); }
+.zone-details, .zone-empty { font-size: 0.78rem; color: var(--text-muted); }
+.zone-empty { font-style: italic; }
+.zone-actions { margin-left: auto; display: flex; gap: 0.25rem; }
 
-.bed-icon-btn {
+.zone-icon-btn {
   border: none;
   background: none;
   cursor: pointer;
@@ -1838,7 +1838,7 @@ main {
   color: var(--green-dark);
 }
 
-.bed-icon-btn:hover { background: rgba(255,255,255,0.6); }
+.zone-icon-btn:hover { background: rgba(255,255,255,0.6); }
 
 .sun-warning { font-size: 0.8rem; cursor: help; }
 

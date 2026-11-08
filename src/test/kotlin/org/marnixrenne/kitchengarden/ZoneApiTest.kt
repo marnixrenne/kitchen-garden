@@ -14,7 +14,7 @@ import org.springframework.test.web.servlet.*
 import java.time.LocalDate
 import java.util.UUID
 
-class BedApiTest : IntegrationTestBase() {
+class ZoneApiTest : IntegrationTestBase() {
 
     @Autowired lateinit var jdbc: JdbcTemplate
 
@@ -24,7 +24,7 @@ class BedApiTest : IntegrationTestBase() {
         jdbc.queryForObject("SELECT id FROM pts_plants WHERE name = ?", String::class.java, name)!!
 
     private fun createGarden(username: String = "admin"): String {
-        val name = "Beds-${System.nanoTime()}"
+        val name = "Zones-${System.nanoTime()}"
         mvc.post("/api/gardens") {
             with(user(username)); with(csrf())
             contentType = MediaType.APPLICATION_JSON
@@ -33,26 +33,26 @@ class BedApiTest : IntegrationTestBase() {
         return jdbc.queryForObject("SELECT id FROM pts_garden WHERE name = ?", String::class.java, name)!!
     }
 
-    private fun initialBed(gardenId: String) =
-        jdbc.queryForObject("SELECT id FROM pts_garden_bed WHERE garden_id = ?::uuid AND name IS NULL", String::class.java, gardenId)!!
+    private fun initialZone(gardenId: String) =
+        jdbc.queryForObject("SELECT id FROM pts_garden_zone WHERE garden_id = ?::uuid AND name IS NULL", String::class.java, gardenId)!!
 
-    private fun createBed(gardenId: String, body: String): ResultActionsDsl =
-        mvc.post("/api/gardens/$gardenId/beds") {
+    private fun createZone(gardenId: String, body: String): ResultActionsDsl =
+        mvc.post("/api/gardens/$gardenId/zones") {
             with(user("admin")); with(csrf())
             contentType = MediaType.APPLICATION_JSON
             content = body
         }
 
-    private fun createBedId(gardenId: String, name: String, sun: String? = null): String {
+    private fun createZoneId(gardenId: String, name: String, sun: String? = null): String {
         val sunJson = sun?.let { "\"$it\"" } ?: "null"
-        val json = createBed(gardenId, """{"name":"$name","sunExposure":$sunJson}""")
+        val json = createZone(gardenId, """{"name":"$name","sunExposure":$sunJson}""")
             .andExpect { status { isCreated() } }
             .andReturn().response.contentAsString
         return JsonPath.read(json, "$.id")
     }
 
-    private fun addPlant(gardenId: String, plant: String, bedId: String? = null): ResultActionsDsl =
-        mvc.put("/api/gardens/$gardenId/plants/${plantId(plant)}" + (bedId?.let { "?bedId=$it" } ?: "")) {
+    private fun addPlant(gardenId: String, plant: String, zoneId: String? = null): ResultActionsDsl =
+        mvc.put("/api/gardens/$gardenId/plants/${plantId(plant)}" + (zoneId?.let { "?zoneId=$it" } ?: "")) {
             with(user("admin")); with(csrf())
         }
 
@@ -60,35 +60,35 @@ class BedApiTest : IntegrationTestBase() {
         "SELECT id FROM garden_plant_instances WHERE garden_id = ?::uuid AND plant_id = ?::uuid",
         String::class.java, gardenId, plantId(plant))!!
 
-    private fun bedOf(instanceId: String) =
-        jdbc.queryForObject("SELECT bed_id FROM garden_plant_instances WHERE id = ?::uuid", String::class.java, instanceId)
+    private fun zoneOf(instanceId: String) =
+        jdbc.queryForObject("SELECT zone_id FROM garden_plant_instances WHERE id = ?::uuid", String::class.java, instanceId)
 
-    private fun move(gardenId: String, instanceId: String, bedId: String, extra: String = ""): ResultActionsDsl =
+    private fun move(gardenId: String, instanceId: String, zoneId: String, extra: String = ""): ResultActionsDsl =
         mvc.post("/api/gardens/$gardenId/instances/$instanceId/move") {
             with(user("admin")); with(csrf())
             contentType = MediaType.APPLICATION_JSON
-            content = """{"bedId":"$bedId"$extra}"""
+            content = """{"zoneId":"$zoneId"$extra}"""
         }
 
-    private fun deleteBed(gardenId: String, bedId: String, query: String = ""): ResultActionsDsl =
-        mvc.delete("/api/gardens/$gardenId/beds/$bedId$query") { with(user("admin")); with(csrf()) }
+    private fun deleteZone(gardenId: String, zoneId: String, query: String = ""): ResultActionsDsl =
+        mvc.delete("/api/gardens/$gardenId/zones/$zoneId$query") { with(user("admin")); with(csrf()) }
 
     private fun movedEntries(instanceId: String) = jdbc.queryForList(
         """
-        SELECT e.id::text AS id, e.date, e.comment, e.from_bed_id::text AS from_bed_id, e.to_bed_id::text AS to_bed_id,
-               e.from_bed_name, e.to_bed_name
+        SELECT e.id::text AS id, e.date, e.comment, e.from_zone_id::text AS from_zone_id, e.to_zone_id::text AS to_zone_id,
+               e.from_zone_name, e.to_zone_name
         FROM pts_plant_log_entry e JOIN pts_plant_log l ON l.id = e.log_id
         WHERE l.instance_id = ?::uuid AND e.action = 'moved'
         ORDER BY e.created_at
         """, instanceId)
 
-    // ── Beds ──────────────────────────────────────────────────────────────────
+    // ── Zones ──────────────────────────────────────────────────────────────────
 
     @Test
-    fun `a new garden starts with exactly one unnamed bed`() {
+    fun `a new garden starts with exactly one unnamed zone`() {
         val gardenId = createGarden()
 
-        mvc.get("/api/gardens/$gardenId/beds") { with(user("admin")) }.andExpect {
+        mvc.get("/api/gardens/$gardenId/zones") { with(user("admin")) }.andExpect {
             status { isOk() }
             jsonPath("$") { value(hasSize<Any>(1)) }
             jsonPath("$[0].name") { value(nullValue()) }
@@ -96,10 +96,10 @@ class BedApiTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `beds are created with all properties and listed in creation order`() {
+    fun `zones are created with all properties and listed in creation order`() {
         val gardenId = createGarden()
 
-        createBed(gardenId, """{"name":"Raised one","type":"raised","lengthCm":240,"widthCm":120,"sunExposure":"partial_shade","aspect":"SW"}""")
+        createZone(gardenId, """{"name":"Raised one","type":"raised","lengthCm":240,"widthCm":120,"sunExposure":"partial_shade","aspect":"SW"}""")
             .andExpect {
                 status { isCreated() }
                 jsonPath("$.name") { value("Raised one") }
@@ -109,29 +109,29 @@ class BedApiTest : IntegrationTestBase() {
                 jsonPath("$.sunExposure") { value("partial_shade") }
                 jsonPath("$.aspect") { value("SW") }
             }
-        createBedId(gardenId, "Second")
+        createZoneId(gardenId, "Second")
 
-        mvc.get("/api/gardens/$gardenId/beds") { with(user("admin")) }.andExpect {
+        mvc.get("/api/gardens/$gardenId/zones") { with(user("admin")) }.andExpect {
             jsonPath("$[*].name") { value(contains(null, "Raised one", "Second")) }
         }
     }
 
     @Test
-    fun `a created bed needs a name and dimensions between 1 and 10000 cm`() {
+    fun `a created zone needs a name and dimensions between 1 and 10000 cm`() {
         val gardenId = createGarden()
 
-        createBed(gardenId, """{"name":"  "}""").andExpect { status { isBadRequest() } }
-        createBed(gardenId, """{"name":"Tiny","lengthCm":0}""").andExpect { status { isBadRequest() } }
-        createBed(gardenId, """{"name":"Huge","widthCm":10001}""").andExpect { status { isBadRequest() } }
-        createBed(gardenId, """{"name":"Edges","lengthCm":1,"widthCm":10000}""").andExpect { status { isCreated() } }
+        createZone(gardenId, """{"name":"  "}""").andExpect { status { isBadRequest() } }
+        createZone(gardenId, """{"name":"Tiny","lengthCm":0}""").andExpect { status { isBadRequest() } }
+        createZone(gardenId, """{"name":"Huge","widthCm":10001}""").andExpect { status { isBadRequest() } }
+        createZone(gardenId, """{"name":"Edges","lengthCm":1,"widthCm":10000}""").andExpect { status { isCreated() } }
     }
 
     @Test
-    fun `the initial bed can be updated while staying unnamed, but a named bed keeps a name`() {
+    fun `the initial zone can be updated while staying unnamed, but a named zone keeps a name`() {
         val gardenId = createGarden()
-        val bedId = initialBed(gardenId)
+        val zoneId = initialZone(gardenId)
 
-        mvc.put("/api/gardens/$gardenId/beds/$bedId") {
+        mvc.put("/api/gardens/$gardenId/zones/$zoneId") {
             with(user("admin")); with(csrf())
             contentType = MediaType.APPLICATION_JSON
             content = """{"name":null,"sunExposure":"full_sun","aspect":"S"}"""
@@ -141,8 +141,8 @@ class BedApiTest : IntegrationTestBase() {
             jsonPath("$.sunExposure") { value("full_sun") }
         }
 
-        val namedId = createBedId(gardenId, "Herbs")
-        mvc.put("/api/gardens/$gardenId/beds/$namedId") {
+        val namedId = createZoneId(gardenId, "Herbs")
+        mvc.put("/api/gardens/$gardenId/zones/$namedId") {
             with(user("admin")); with(csrf())
             contentType = MediaType.APPLICATION_JSON
             content = """{"name":""}"""
@@ -150,63 +150,63 @@ class BedApiTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `another user cannot see or change beds`() {
+    fun `another user cannot see or change zones`() {
         val gardenId = createGarden()
-        val bedId = initialBed(gardenId)
-        val otherUser = "bed-intruder-${System.nanoTime()}"
+        val zoneId = initialZone(gardenId)
+        val otherUser = "zone-intruder-${System.nanoTime()}"
         jdbc.update(
             "INSERT INTO sec_users (id, username, password, display_name) VALUES (?, ?, 'x', 'Intruder')",
             UUID.randomUUID(), otherUser,
         )
 
-        mvc.get("/api/gardens/$gardenId/beds") { with(user(otherUser)) }
+        mvc.get("/api/gardens/$gardenId/zones") { with(user(otherUser)) }
             .andExpect { status { isNotFound() } }
-        mvc.put("/api/gardens/$gardenId/beds/$bedId") {
+        mvc.put("/api/gardens/$gardenId/zones/$zoneId") {
             with(user(otherUser)); with(csrf())
             contentType = MediaType.APPLICATION_JSON
             content = """{"name":"Mine now"}"""
         }.andExpect { status { isNotFound() } }
-        mvc.delete("/api/gardens/$gardenId/beds/$bedId") { with(user(otherUser)); with(csrf()) }
+        mvc.delete("/api/gardens/$gardenId/zones/$zoneId") { with(user(otherUser)); with(csrf()) }
             .andExpect { status { isNotFound() } }
     }
 
     // ── Adding plants ─────────────────────────────────────────────────────────
 
     @Test
-    fun `with one bed a plant is added without naming a bed`() {
+    fun `with one zone a plant is added without naming a zone`() {
         val gardenId = createGarden()
 
         addPlant(gardenId, "Tomato").andExpect { status { isNoContent() } }
 
-        assertEquals(initialBed(gardenId), bedOf(instanceId(gardenId, "Tomato")))
+        assertEquals(initialZone(gardenId), zoneOf(instanceId(gardenId, "Tomato")))
         mvc.get("/api/gardens/$gardenId/instances") { with(user("admin")) }.andExpect {
-            jsonPath("$[0].bedId") { value(initialBed(gardenId)) }
+            jsonPath("$[0].zoneId") { value(initialZone(gardenId)) }
         }
     }
 
     @Test
-    fun `with several beds a plant needs an explicit bed from the same garden`() {
+    fun `with several zones a plant needs an explicit zone from the same garden`() {
         val gardenId = createGarden()
-        val herbs = createBedId(gardenId, "Herbs")
-        val otherGardenBed = initialBed(createGarden())
+        val herbs = createZoneId(gardenId, "Herbs")
+        val otherGardenZone = initialZone(createGarden())
 
         addPlant(gardenId, "Basil").andExpect { status { isBadRequest() } }
-        addPlant(gardenId, "Basil", otherGardenBed).andExpect { status { isBadRequest() } }
+        addPlant(gardenId, "Basil", otherGardenZone).andExpect { status { isBadRequest() } }
         addPlant(gardenId, "Basil", herbs).andExpect { status { isNoContent() } }
 
-        assertEquals(herbs, bedOf(instanceId(gardenId, "Basil")))
+        assertEquals(herbs, zoneOf(instanceId(gardenId, "Basil")))
     }
 
     @Test
-    fun `instances flag a sun shortfall only when the bed gets less sun than the plant needs`() {
+    fun `instances flag a sun shortfall only when the zone gets less sun than the plant needs`() {
         val gardenId = createGarden()
-        val shady = createBedId(gardenId, "Shady", sun = "shade")
-        val sunny = createBedId(gardenId, "Sunny", sun = "full_sun")
-        val unknown = initialBed(gardenId)
+        val shady = createZoneId(gardenId, "Shady", sun = "shade")
+        val sunny = createZoneId(gardenId, "Sunny", sun = "full_sun")
+        val unknown = initialZone(gardenId)
 
         addPlant(gardenId, "Tomato", shady)     // full sun plant in shade
         addPlant(gardenId, "Lettuce", sunny)    // partial shade plant in full sun
-        addPlant(gardenId, "Carrot", unknown)   // bed sun unknown
+        addPlant(gardenId, "Carrot", unknown)   // zone sun unknown
 
         mvc.get("/api/gardens/$gardenId/instances") { with(user("admin")) }.andExpect {
             jsonPath("$[?(@.plantId=='${plantId("Tomato")}')].sunShortfall") { value(contains(true)) }
@@ -218,9 +218,9 @@ class BedApiTest : IntegrationTestBase() {
     // ── Moves ─────────────────────────────────────────────────────────────────
 
     @Test
-    fun `moving a plant changes its bed and logs a move without touching lifecycle or plan`() {
+    fun `moving a plant changes its zone and logs a move without touching lifecycle or plan`() {
         val gardenId = createGarden()
-        val main = initialBed(gardenId)
+        val main = initialZone(gardenId)
         addPlant(gardenId, "Tomato")
         val instance = instanceId(gardenId, "Tomato")
         mvc.post("/api/gardens/$gardenId/plant-log") {
@@ -229,18 +229,18 @@ class BedApiTest : IntegrationTestBase() {
             content = """{"instanceId":"$instance","action":"seeding_outdoor","date":"2025-04-01","comment":null}"""
         }.andExpect { status { isCreated() } }
         val planBefore = jdbc.queryForObject("SELECT COUNT(*) FROM pts_plant_plan_entry", Int::class.java)
-        val greenhouse = createBedId(gardenId, "Greenhouse")
+        val greenhouse = createZoneId(gardenId, "Greenhouse")
 
         move(gardenId, instance, greenhouse, ""","date":"2025-05-02","comment":"Too cold outside"""").andExpect {
             status { isCreated() }
             jsonPath("$.action") { value("moved") }
-            jsonPath("$.fromBedId") { value(main) }
-            jsonPath("$.toBedId") { value(greenhouse) }
-            jsonPath("$.fromBedName") { value(nullValue()) }
-            jsonPath("$.toBedName") { value("Greenhouse") }
+            jsonPath("$.fromZoneId") { value(main) }
+            jsonPath("$.toZoneId") { value(greenhouse) }
+            jsonPath("$.fromZoneName") { value(nullValue()) }
+            jsonPath("$.toZoneName") { value("Greenhouse") }
         }
 
-        assertEquals(greenhouse, bedOf(instance))
+        assertEquals(greenhouse, zoneOf(instance))
         val entry = movedEntries(instance).single()
         assertEquals("2025-05-02", entry["date"].toString())
         assertEquals("Too cold outside", entry["comment"])
@@ -255,9 +255,9 @@ class BedApiTest : IntegrationTestBase() {
         val gardenId = createGarden()
         addPlant(gardenId, "Carrot")
         val instance = instanceId(gardenId, "Carrot")
-        val bed = createBedId(gardenId, "Roots")
+        val zone = createZoneId(gardenId, "Roots")
 
-        move(gardenId, instance, bed).andExpect { status { isCreated() } }
+        move(gardenId, instance, zone).andExpect { status { isCreated() } }
 
         assertEquals(LocalDate.now().toString(), movedEntries(instance).single()["date"].toString())
         mvc.get("/api/gardens/$gardenId/lifecycle") { with(user("admin")) }.andExpect {
@@ -276,13 +276,13 @@ class BedApiTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `a move needs a different bed in the same garden`() {
+    fun `a move needs a different zone in the same garden`() {
         val gardenId = createGarden()
         addPlant(gardenId, "Carrot")
         val instance = instanceId(gardenId, "Carrot")
 
-        move(gardenId, instance, initialBed(gardenId)).andExpect { status { isBadRequest() } }
-        move(gardenId, instance, initialBed(createGarden())).andExpect { status { isBadRequest() } }
+        move(gardenId, instance, initialZone(gardenId)).andExpect { status { isBadRequest() } }
+        move(gardenId, instance, initialZone(createGarden())).andExpect { status { isBadRequest() } }
     }
 
     @Test
@@ -302,24 +302,24 @@ class BedApiTest : IntegrationTestBase() {
         val gardenId = createGarden()
         addPlant(gardenId, "Carrot")
         val instance = instanceId(gardenId, "Carrot")
-        val roots = createBedId(gardenId, "Roots")
+        val roots = createZoneId(gardenId, "Roots")
         move(gardenId, instance, roots)
         val entryId = movedEntries(instance).single()["id"] as String
 
         mvc.patch("/api/gardens/$gardenId/plant-log/$entryId") {
             with(user("admin")); with(csrf())
             contentType = MediaType.APPLICATION_JSON
-            content = """{"date":"2025-06-10","comment":"Fixed date","toBedId":"${initialBed(gardenId)}"}"""
+            content = """{"date":"2025-06-10","comment":"Fixed date","toZoneId":"${initialZone(gardenId)}"}"""
         }.andExpect {
             status { isOk() }
             jsonPath("$.date") { value("2025-06-10") }
-            jsonPath("$.toBedId") { value(roots) }
+            jsonPath("$.toZoneId") { value(roots) }
         }
 
         val entry = movedEntries(instance).single()
         assertEquals("2025-06-10", entry["date"].toString())
         assertEquals("Fixed date", entry["comment"])
-        assertEquals(roots, entry["to_bed_id"])
+        assertEquals(roots, entry["to_zone_id"])
 
         mvc.delete("/api/gardens/$gardenId/plant-log/$entryId") { with(user("admin")); with(csrf()) }
             .andExpect { status { isMethodNotAllowed() } }
@@ -344,61 +344,61 @@ class BedApiTest : IntegrationTestBase() {
         }.andExpect { status { isBadRequest() } }
     }
 
-    // ── Deleting beds ─────────────────────────────────────────────────────────
+    // ── Deleting zones ─────────────────────────────────────────────────────────
 
     @Test
-    fun `the last bed of a garden cannot be deleted`() {
+    fun `the last zone of a garden cannot be deleted`() {
         val gardenId = createGarden()
 
-        deleteBed(gardenId, initialBed(gardenId)).andExpect { status { isConflict() } }
+        deleteZone(gardenId, initialZone(gardenId)).andExpect { status { isConflict() } }
     }
 
     @Test
-    fun `an empty bed is deleted without further questions`() {
+    fun `an empty zone is deleted without further questions`() {
         val gardenId = createGarden()
-        val spare = createBedId(gardenId, "Spare")
+        val spare = createZoneId(gardenId, "Spare")
 
-        deleteBed(gardenId, spare).andExpect { status { isNoContent() } }
+        deleteZone(gardenId, spare).andExpect { status { isNoContent() } }
 
-        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM pts_garden_bed WHERE id = ?::uuid", Int::class.java, spare))
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM pts_garden_zone WHERE id = ?::uuid", Int::class.java, spare))
     }
 
     @Test
-    fun `a bed with plants needs to be told what happens to them`() {
+    fun `a zone with plants needs to be told what happens to them`() {
         val gardenId = createGarden()
-        val herbs = createBedId(gardenId, "Herbs")
+        val herbs = createZoneId(gardenId, "Herbs")
         addPlant(gardenId, "Basil", herbs)
 
-        deleteBed(gardenId, herbs).andExpect { status { isConflict() } }
-        deleteBed(gardenId, herbs, "?plants=move").andExpect { status { isBadRequest() } }
-        deleteBed(gardenId, herbs, "?plants=move&targetBedId=$herbs").andExpect { status { isBadRequest() } }
+        deleteZone(gardenId, herbs).andExpect { status { isConflict() } }
+        deleteZone(gardenId, herbs, "?plants=move").andExpect { status { isBadRequest() } }
+        deleteZone(gardenId, herbs, "?plants=move&targetZoneId=$herbs").andExpect { status { isBadRequest() } }
     }
 
     @Test
-    fun `deleting a bed while moving its plants logs a move for each one dated today`() {
+    fun `deleting a zone while moving its plants logs a move for each one dated today`() {
         val gardenId = createGarden()
-        val main = initialBed(gardenId)
-        val herbs = createBedId(gardenId, "Herbs")
+        val main = initialZone(gardenId)
+        val herbs = createZoneId(gardenId, "Herbs")
         addPlant(gardenId, "Basil", herbs)
         addPlant(gardenId, "Parsley", herbs)
 
-        deleteBed(gardenId, herbs, "?plants=move&targetBedId=$main").andExpect { status { isNoContent() } }
+        deleteZone(gardenId, herbs, "?plants=move&targetZoneId=$main").andExpect { status { isNoContent() } }
 
         for (plant in listOf("Basil", "Parsley")) {
             val instance = instanceId(gardenId, plant)
-            assertEquals(main, bedOf(instance))
+            assertEquals(main, zoneOf(instance))
             val entry = movedEntries(instance).single()
             assertEquals(LocalDate.now().toString(), entry["date"].toString())
-            assertNull(entry["from_bed_id"], "The deleted bed's id is cleared")
-            assertEquals("Herbs", entry["from_bed_name"], "The deleted bed's name survives")
-            assertEquals(main, entry["to_bed_id"])
+            assertNull(entry["from_zone_id"], "The deleted zone's id is cleared")
+            assertEquals("Herbs", entry["from_zone_name"], "The deleted zone's name survives")
+            assertEquals(main, entry["to_zone_id"])
         }
     }
 
     @Test
-    fun `deleting a bed with its plants removes their instances, logs and plans`() {
+    fun `deleting a zone with its plants removes their instances, logs and plans`() {
         val gardenId = createGarden()
-        val herbs = createBedId(gardenId, "Herbs")
+        val herbs = createZoneId(gardenId, "Herbs")
         addPlant(gardenId, "Basil", herbs)
         val instance = instanceId(gardenId, "Basil")
         mvc.post("/api/gardens/$gardenId/plant-log") {
@@ -408,7 +408,7 @@ class BedApiTest : IntegrationTestBase() {
         }.andExpect { status { isCreated() } }
         val logId = jdbc.queryForObject("SELECT id FROM pts_plant_log WHERE instance_id = ?::uuid", String::class.java, instance)!!
 
-        deleteBed(gardenId, herbs, "?plants=delete").andExpect { status { isNoContent() } }
+        deleteZone(gardenId, herbs, "?plants=delete").andExpect { status { isNoContent() } }
 
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM garden_plant_instances WHERE id = ?::uuid", Int::class.java, instance))
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM pts_plant_log WHERE id = ?::uuid", Int::class.java, logId))
@@ -418,41 +418,41 @@ class BedApiTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `renaming or deleting a bed keeps the names recorded in earlier moves`() {
+    fun `renaming or deleting a zone keeps the names recorded in earlier moves`() {
         val gardenId = createGarden()
         addPlant(gardenId, "Carrot")
         val instance = instanceId(gardenId, "Carrot")
-        val roots = createBedId(gardenId, "Roots")
+        val roots = createZoneId(gardenId, "Roots")
         move(gardenId, instance, roots)
-        move(gardenId, instance, initialBed(gardenId))
+        move(gardenId, instance, initialZone(gardenId))
 
-        mvc.put("/api/gardens/$gardenId/beds/$roots") {
+        mvc.put("/api/gardens/$gardenId/zones/$roots") {
             with(user("admin")); with(csrf())
             contentType = MediaType.APPLICATION_JSON
             content = """{"name":"Renamed"}"""
         }.andExpect { status { isOk() } }
-        deleteBed(gardenId, roots).andExpect { status { isNoContent() } }
+        deleteZone(gardenId, roots).andExpect { status { isNoContent() } }
 
         val (first, second) = movedEntries(instance)
-        assertNull(first["to_bed_id"])
-        assertEquals("Roots", first["to_bed_name"])
-        assertNull(second["from_bed_id"])
-        assertEquals("Roots", second["from_bed_name"])
+        assertNull(first["to_zone_id"])
+        assertEquals("Roots", first["to_zone_name"])
+        assertNull(second["from_zone_id"])
+        assertEquals("Roots", second["from_zone_name"])
         mvc.get("/api/gardens/$gardenId/plant-log") { with(user("admin")) }.andExpect {
             jsonPath("$['$instance'][*].action") { value(everyItem(equalTo("moved"))) }
         }
     }
 
     @Test
-    fun `deleting a garden removes its beds`() {
+    fun `deleting a garden removes its zones`() {
         val gardenId = createGarden()
         addPlant(gardenId, "Carrot")
         val instance = instanceId(gardenId, "Carrot")
-        move(gardenId, instance, createBedId(gardenId, "Roots"))
+        move(gardenId, instance, createZoneId(gardenId, "Roots"))
 
         mvc.delete("/api/gardens/$gardenId") { with(user("admin")); with(csrf()) }
             .andExpect { status { isNoContent() } }
 
-        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM pts_garden_bed WHERE garden_id = ?::uuid", Int::class.java, gardenId))
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM pts_garden_zone WHERE garden_id = ?::uuid", Int::class.java, gardenId))
     }
 }

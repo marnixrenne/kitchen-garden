@@ -1,13 +1,13 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { bedPicker, closeBedPicker } from '../stores/bedPicker.js'
-import { bedLabel, isSunShortfall } from '../utils/beds.js'
+import { zonePicker, closeZonePicker } from '../stores/zonePicker.js'
+import { zoneLabel, isSunShortfall } from '../utils/zones.js'
 
 const { t, te } = useI18n()
 
 const selected = ref(null)
-watch(() => bedPicker.value.open, () => { selected.value = null })
+watch(() => zonePicker.value.open, () => { selected.value = null })
 
 function plantName(plant) {
   if (!plant) return ''
@@ -15,26 +15,26 @@ function plantName(plant) {
   return te(key) ? t(key) : plant.name
 }
 
-function shortfall(bed) {
-  return isSunShortfall(bed.sunExposure, bedPicker.value.plant?.sunRequirement)
+function shortfall(zone) {
+  return isSunShortfall(zone.sunExposure, zonePicker.value.plant?.sunRequirement)
 }
 </script>
 
 <template>
   <Teleport to="body">
-    <div v-if="bedPicker.open" class="bp-backdrop" @click.self="closeBedPicker(null)">
+    <div v-if="zonePicker.open" class="bp-backdrop" @click.self="closeZonePicker(null)">
       <div class="bp-modal" role="dialog" aria-modal="true">
-        <div class="bp-header">{{ t('beds.pickTitle', { plant: plantName(bedPicker.plant) }) }}</div>
+        <div class="bp-header">{{ t('zones.pickTitle', { plant: plantName(zonePicker.plant) }) }}</div>
         <div class="bp-body">
-          <label v-for="bed in bedPicker.beds" :key="bed.id" class="bp-option" :class="{ chosen: selected === bed.id }">
-            <input v-model="selected" type="radio" name="bed" :value="bed.id" />
-            <span class="bp-name">{{ bedLabel(t, bed.name) }}</span>
-            <span v-if="bed.sunExposure" class="bp-sun">{{ t(`sunRequirement.${bed.sunExposure}`) }}</span>
-            <span v-if="shortfall(bed)" class="bp-warning">⚠️ {{ t('beds.sunWarning') }}</span>
+          <label v-for="zone in zonePicker.zones" :key="zone.id" class="bp-option" :class="{ chosen: selected === zone.id }">
+            <input v-model="selected" type="radio" name="zone" :value="zone.id" />
+            <span class="bp-name">{{ zoneLabel(t, zone.name) }}</span>
+            <span v-if="zone.sunExposure" class="bp-sun">{{ t(`sunRequirement.${zone.sunExposure}`) }}</span>
+            <span v-if="shortfall(zone)" class="bp-warning">⚠️ {{ t('zones.sunWarning') }}</span>
           </label>
           <div class="bp-actions">
-            <button class="bp-cancel" @click="closeBedPicker(null)">{{ t('garden.seedModal.cancel') }}</button>
-            <button class="bp-confirm" :disabled="!selected" @click="closeBedPicker(selected)">{{ t('beds.pickConfirm') }}</button>
+            <button class="bp-cancel" @click="closeZonePicker(null)">{{ t('garden.seedModal.cancel') }}</button>
+            <button class="bp-confirm" :disabled="!selected" @click="closeZonePicker(selected)">{{ t('zones.pickConfirm') }}</button>
           </div>
         </div>
       </div>

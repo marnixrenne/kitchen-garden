@@ -1,0 +1,22 @@
+ALTER TABLE pts_garden_bed RENAME TO pts_garden_zone;
+ALTER TABLE pts_garden_zone RENAME COLUMN bed_type TO zone_type;
+ALTER TABLE pts_garden_zone RENAME CONSTRAINT pts_garden_bed_pkey TO pts_garden_zone_pkey;
+ALTER TABLE pts_garden_zone RENAME CONSTRAINT pts_garden_bed_garden_id_fkey TO pts_garden_zone_garden_id_fkey;
+ALTER TABLE pts_garden_zone RENAME CONSTRAINT pts_garden_bed_bed_type_check TO pts_garden_zone_zone_type_check;
+ALTER TABLE pts_garden_zone RENAME CONSTRAINT pts_garden_bed_length_cm_check TO pts_garden_zone_length_cm_check;
+ALTER TABLE pts_garden_zone RENAME CONSTRAINT pts_garden_bed_width_cm_check TO pts_garden_zone_width_cm_check;
+ALTER TABLE pts_garden_zone RENAME CONSTRAINT pts_garden_bed_sun_exposure_check TO pts_garden_zone_sun_exposure_check;
+ALTER TABLE pts_garden_zone RENAME CONSTRAINT pts_garden_bed_aspect_check TO pts_garden_zone_aspect_check;
+ALTER TABLE pts_garden_zone RENAME CONSTRAINT uq_garden_bed_garden TO uq_garden_zone_garden;
+ALTER INDEX idx_garden_bed_garden RENAME TO idx_garden_zone_garden;
+
+ALTER TABLE garden_plant_instances RENAME COLUMN bed_id TO zone_id;
+ALTER TABLE garden_plant_instances RENAME CONSTRAINT fk_garden_plant_instance_bed TO fk_garden_plant_instance_zone;
+ALTER INDEX idx_garden_plant_instances_bed RENAME TO idx_garden_plant_instances_zone;
+
+ALTER TABLE pts_plant_log_entry RENAME COLUMN from_bed_id TO from_zone_id;
+ALTER TABLE pts_plant_log_entry RENAME COLUMN to_bed_id TO to_zone_id;
+ALTER TABLE pts_plant_log_entry RENAME COLUMN from_bed_name TO from_zone_name;
+ALTER TABLE pts_plant_log_entry RENAME COLUMN to_bed_name TO to_zone_name;
+ALTER TABLE pts_plant_log_entry RENAME CONSTRAINT pts_plant_log_entry_from_bed_id_fkey TO pts_plant_log_entry_from_zone_id_fkey;
+ALTER TABLE pts_plant_log_entry RENAME CONSTRAINT pts_plant_log_entry_to_bed_id_fkey TO pts_plant_log_entry_to_zone_id_fkey;

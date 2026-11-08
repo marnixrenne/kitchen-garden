@@ -12,7 +12,7 @@ import org.springframework.web.server.ResponseStatusException
 @Service
 class GardenCommandService(
     private val repository: GardenRepository,
-    private val bedRepository: BedRepository,
+    private val zoneRepository: ZoneRepository,
     private val plantLogRepository: PlantLogRepository,
     private val plantPlanCommandService: PlantPlanCommandService,
     private val userResolver: UserResolver,
@@ -37,16 +37,16 @@ class GardenCommandService(
         if (!deleted) throw ResponseStatusException(HttpStatus.NOT_FOUND)
     }
 
-    fun add(authentication: Authentication, gardenId: GardenId, plantId: PlantId, bedId: BedId?) {
+    fun add(authentication: Authentication, gardenId: GardenId, plantId: PlantId, zoneId: ZoneId?) {
         accessGuard.validate(authentication, gardenId)
-        val bed = if (bedId != null) {
-            bedRepository.find(gardenId, bedId) ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Bed is not in this garden")
+        val zone = if (zoneId != null) {
+            zoneRepository.find(gardenId, zoneId) ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Zone is not in this garden")
         } else {
-            // Only a garden with a single bed can place a plant without being told where
-            bedRepository.findAll(gardenId).singleOrNull()
-                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Garden has several beds; choose one")
+            // Only a garden with a single zone can place a plant without being told where
+            zoneRepository.findAll(gardenId).singleOrNull()
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Garden has several zones; choose one")
         }
-        repository.add(gardenId, plantId, bed.id)
+        repository.add(gardenId, plantId, zone.id)
     }
 
     fun remove(authentication: Authentication, gardenId: GardenId, plantId: PlantId) =
@@ -55,7 +55,7 @@ class GardenCommandService(
     fun logAction(authentication: Authentication, gardenId: GardenId, request: PlantLogRequest): PlantLogResponse {
         accessGuard.validate(authentication, gardenId)
         if (request.action == LogAction.MOVED)
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Moves are recorded by moving the plant to another bed")
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Moves are recorded by moving the plant to another zone")
         val entry = plantLogRepository.save(userResolver.resolve(authentication), gardenId, request)
         if (request.action in setOf(LogAction.SEEDING_INDOOR, LogAction.SEEDING_OUTDOOR, LogAction.PLANTING)) {
             try {

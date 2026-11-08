@@ -7,7 +7,7 @@ data class CreateGardenRequest(val name: String)
 data class PlantInstance(
     val id: PlantInstanceId,
     val plantId: PlantId,
-    val bedId: BedId,
-    /** The bed gets less sun than the plant needs. */
+    val zoneId: ZoneId,
+    /** The zone gets less sun than the plant needs. */
     val sunShortfall: Boolean,
 )
