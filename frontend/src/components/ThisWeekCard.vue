@@ -7,13 +7,15 @@ import { activeGardenId } from '../stores/garden.js'
 import { zoneLabel } from '../utils/zones.js'
 import { ACTION_ICON, ACTION_LABEL_KEY, allActions, buildActionBuckets } from '../utils/openActions.js'
 
-const props = defineProps({ zoneId: { type: String, default: null } })
+const props = defineProps({
+  zones:  { type: Array,  default: () => [] },
+  zoneId: { type: String, default: null },
+})
 const emit = defineEmits(['refresh'])
 const { t, te, tm, locale } = useI18n()
 const router = useRouter()
 
 const weekSummary = ref(null)
-const zones       = ref([])
 const instances   = ref([])
 const plantLog    = ref({})
 const plantPlan   = ref({})
@@ -107,7 +109,7 @@ const zoneGroups = computed(() => {
   const actionsByInstance = {}
   for (const item of actions.value) (actionsByInstance[item.instanceId] ??= []).push(item)
 
-  return zones.value
+  return props.zones
     .filter(zone => !props.zoneId || zone.id === props.zoneId)
     .map(zone => ({
       zone,
@@ -131,8 +133,7 @@ const openActionCount = computed(() =>
 async function fetchAll() {
   loading.value = true
   const gid = activeGardenId.value
-  const [zonesRes, weekRes, instRes, logRes, planRes, lcRes, detailRes] = await Promise.all([
-    fetch(`/api/gardens/${gid}/zones`),
+  const [weekRes, instRes, logRes, planRes, lcRes, detailRes] = await Promise.all([
     fetch(`/api/gardens/${gid}/week`),
     fetch(`/api/gardens/${gid}/instances`),
     fetch(`/api/gardens/${gid}/plant-log`),
@@ -140,7 +141,6 @@ async function fetchAll() {
     fetch(`/api/gardens/${gid}/lifecycle`),
     fetch(`/api/gardens/${gid}/details`),
   ])
-  if (zonesRes.ok)  zones.value       = await zonesRes.json()
   if (weekRes.ok)   weekSummary.value = await weekRes.json()
   if (instRes.ok)   instances.value   = await instRes.json()
   if (logRes.ok)    plantLog.value     = await logRes.json()

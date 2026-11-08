@@ -31,7 +31,6 @@ function planned(action, start) {
 
 async function mountCard({ zoneId = null, plan = {}, log = {}, week = WEEK } = {}) {
   const routes = {
-    [`/api/gardens/${GARDEN}/zones`]:     [VEG, HERBS, EMPTY],
     [`/api/gardens/${GARDEN}/week`]:      week,
     [`/api/gardens/${GARDEN}/instances`]: INSTANCES,
     [`/api/gardens/${GARDEN}/plant-log`]: log,
@@ -44,7 +43,7 @@ async function mountCard({ zoneId = null, plan = {}, log = {}, week = WEEK } = {
   )
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/:p(.*)*', component: { template: '<div />' } }] })
   const wrapper = mount(ThisWeekCard, {
-    props: { zoneId },
+    props: { zoneId, zones: [VEG, HERBS, EMPTY] },
     global: { plugins: [router, i18n], stubs: { Teleport: true } },
   })
   await flushPromises()
@@ -72,6 +71,14 @@ describe('ThisWeekCard', () => {
     expect(veg.text()).not.toContain('Bean')
     expect(herbs.find('.week-empty').text()).toBe('Nothing to do this week')
     expect(empty.find('.week-empty').text()).toBe('Nothing to do this week')
+  })
+
+  it('shows a zone added while the card is open', async () => {
+    const wrapper = await mountCard()
+
+    await wrapper.setProps({ zones: [VEG, HERBS, EMPTY, { id: 'zone-new', name: 'New' }] })
+
+    expect(zoneNames(wrapper)).toEqual(['Veg', 'Herbs', 'Empty', 'New'])
   })
 
   it('links each zone on the garden page to its own page', async () => {

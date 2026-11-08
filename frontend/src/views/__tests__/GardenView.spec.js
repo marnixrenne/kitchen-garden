@@ -237,6 +237,29 @@ describe('GardenView scoped to one zone', () => {
     expect(wrapper.findComponent(ThisWeekCard).props('zoneId')).toBe(HERBS_ZONE.id)
   })
 
+  it('adds a zone from the this-week tab and hands it to the card', async () => {
+    const zones = [MAIN_ZONE]
+    const { wrapper } = await mountAt(`/gardens/${GARDEN}`, { zones, instances: [] })
+
+    await wrapper.find('.add-zone-btn').trigger('click')
+    await wrapper.find('.bf-field input').setValue('Herbs')
+    zones.push(HERBS_ZONE)  // what the next fetch of the zones returns
+    await wrapper.find('.eg-save').trigger('click')
+    await flushPromises()
+
+    const [url] = global.fetch.mock.calls.find(([, options]) => options?.method === 'POST')
+    expect(url).toBe(`/api/gardens/${GARDEN}/zones`)
+    expect(wrapper.findComponent(ThisWeekCard).props('zones').map(z => z.id)).toEqual([MAIN_ZONE.id, HERBS_ZONE.id])
+  })
+
+  it('offers adding a zone on the calendar tab but not on the log tab or a zone page', async () => {
+    const config = { zones: [MAIN_ZONE, HERBS_ZONE], instances: INSTANCES }
+
+    expect((await mountAt(`/gardens/${GARDEN}?tab=calendar`, config)).wrapper.find('.add-zone-btn').exists()).toBe(true)
+    expect((await mountAt(`/gardens/${GARDEN}?tab=log`, config)).wrapper.find('.add-zone-btn').exists()).toBe(false)
+    expect((await mountAt(`/gardens/${GARDEN}/zones/${HERBS_ZONE.id}`, config)).wrapper.find('.add-zone-btn').exists()).toBe(false)
+  })
+
   it('falls back to the garden when the zone no longer exists', async () => {
     const { router } = await mountAt(`/gardens/${GARDEN}/zones/gone`, { zones: [MAIN_ZONE], instances: [] })
 

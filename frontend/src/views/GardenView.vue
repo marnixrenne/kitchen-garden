@@ -611,7 +611,7 @@ watch(gardens, (list) => {
       <button class="garden-tab" :class="{ active: activeTab === 'log' }" @click="setTab('log')">{{ t('garden.logNav') }}</button>
     </div>
 
-    <div v-if="!loading && activeTab === 'calendar' && !zoneId" class="zone-toolbar">
+    <div v-if="!loading && activeTab !== 'log' && !zoneId" class="zone-toolbar">
       <button v-if="!hasSeveralZones && zones.length === 1" class="zone-settings-link" @click="openZoneModal(zones[0])">
         {{ t('zones.settings') }}
       </button>
@@ -837,7 +837,7 @@ watch(gardens, (list) => {
         </template>
       </div>
       <!-- This week -->
-      <ThisWeekCard v-if="activeTab === 'week'" class="this-week-card" :zone-id="zoneId" @refresh="onWeekRefresh" />
+      <ThisWeekCard v-if="activeTab === 'week'" class="this-week-card" :zones="zones" :zone-id="zoneId" @refresh="onWeekRefresh" />
 
       <!-- Planting suggestions -->
       <div v-if="activeTab === 'calendar' && !zoneId && suggestions && (suggestions.sunGroups.length > 0 || suggestions.conflicts.length > 0)" class="suggestions">
