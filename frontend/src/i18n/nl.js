@@ -273,6 +273,10 @@ export default {
   home: 'Ontdekken',
   myGarden: 'Mijn tuin',
   garden: {
+    job: {
+      seeding: 'Zaaien', germination: 'Kieming', harvest: 'Oogsten',
+      pruning: 'Snoeien', fertilizing: 'Bemesten', watering: 'Water geven',
+    },
     add: '+ Voeg toe aan mijn tuin',
     added: '✓ In mijn tuin',
     addTooltip: 'Voeg toe aan mijn tuin',

@@ -255,8 +255,7 @@ describe('GardenView scoped to one zone', () => {
 
     for (const query of ['', '?tab=calendar', '?tab=log']) {
       const { wrapper } = await mountAt(`/gardens/${GARDEN}${query}`, config)
-      expect(wrapper.find('.zone-toolbar + .garden-tabs').exists()).toBe(true)
-      expect(wrapper.find('.add-zone-btn').exists()).toBe(true)
+      expect(wrapper.find('.page-header .add-zone-btn').exists()).toBe(true)
     }
     expect((await mountAt(`/gardens/${GARDEN}/zones/${HERBS_ZONE.id}`, config)).wrapper.find('.add-zone-btn').exists()).toBe(false)
   })

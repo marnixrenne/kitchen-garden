@@ -4,8 +4,9 @@ import { useI18n } from 'vue-i18n'
 import { useRouter, RouterLink } from 'vue-router'
 import { csrfHeaders } from '../stores/auth.js'
 import { activeGardenId } from '../stores/garden.js'
+import ZoneGround from './ZoneGround.vue'
 import { zoneLabel } from '../utils/zones.js'
-import { ACTION_ICON, ACTION_LABEL_KEY, allActions, buildActionBuckets } from '../utils/openActions.js'
+import { ACTION_ICON, ACTION_LABEL_KEY, allActions, buildActionBuckets, weekRangeLabel as formatWeekRange } from '../utils/openActions.js'
 
 const props = defineProps({
   zones:  { type: Array,  default: () => [] },
@@ -48,15 +49,7 @@ function instanceSeedDate(instanceId) {
 }
 
 function weekRangeLabel() {
-  if (!weekSummary.value) return ''
-  const ws = weekSummary.value
-  const months = tm('months')
-  const sm = months[ws.weekStartMonth - 1]
-  const em = months[ws.weekEndMonth - 1]
-  const range = ws.weekStartMonth === ws.weekEndMonth
-    ? `${ws.weekStartDay}–${ws.weekEndDay} ${em}`
-    : `${ws.weekStartDay} ${sm} – ${ws.weekEndDay} ${em}`
-  return `${t('garden.week')} ${ws.week} · ${range}`
+  return weekSummary.value ? formatWeekRange(weekSummary.value, t, tm) : ''
 }
 
 const seedModalInfo = computed(() => {
@@ -111,18 +104,26 @@ const zoneGroups = computed(() => {
 
   return props.zones
     .filter(zone => !props.zoneId || zone.id === props.zoneId)
-    .map(zone => ({
-      zone,
-      rows: instances.value
+    .map(zone => {
+      const allRows = instances.value
         .filter(inst => inst.zoneId === zone.id && plantById[inst.plantId])
         .map(inst => {
           const rowActions = actionsByInstance[inst.id] ?? []
           return { instanceId: inst.id, plant: plantById[inst.plantId], actions: rowActions, seeded: rowActions.find(a => a.seedDate) ?? null }
         })
+        .sort((x, y) => pName(x.plant).localeCompare(pName(y.plant)))
+      return {
+        zone,
         // The Garden shows what needs doing; a Zone's own page shows all its Plants
-        .filter(row => props.zoneId || row.actions.length > 0)
-        .sort((x, y) => pName(x.plant).localeCompare(pName(y.plant))),
-    }))
+        rows: props.zoneId ? allRows : allRows.filter(row => row.actions.length > 0),
+        ground: allRows.map(row => ({
+          id: row.instanceId,
+          name: pName(row.plant),
+          emoji: row.plant.emoji,
+          active: row.actions.some(a => !a.done),
+        })),
+      }
+    })
 })
 
 const openActionCount = computed(() =>
@@ -235,22 +236,23 @@ defineOptions({ inheritAttrs: false })
       <span class="week-card-range">{{ weekRangeLabel() }}</span>
     </div>
 
-    <section v-for="{ zone, rows } in zoneGroups" :key="zone.id" class="week-zone">
+    <section v-for="{ zone, rows, ground } in zoneGroups" :key="zone.id" class="week-zone">
       <div v-if="!zoneId" class="week-zone-header">
         <h3 class="week-zone-name">
           <RouterLink :to="`/gardens/${activeGardenId}/zones/${zone.id}`">{{ zoneLabel(t, zone.name) }}</RouterLink>
         </h3>
         <button class="week-zone-settings" @click="emit('edit-zone', zone)">{{ t('zones.settings') }}</button>
       </div>
+      <ZoneGround v-if="!zoneId" :plants="ground" />
 
-      <p v-if="rows.length === 0" class="week-empty">{{ zoneId ? t('zones.empty') : t('dashboard.nothingOpen') }}</p>
+      <p v-if="rows.length === 0" class="week-empty">{{ ground.length === 0 ? t('zones.empty') : t('dashboard.nothingOpen') }}</p>
 
       <div v-for="row in rows" :key="row.instanceId" class="week-plant">
         <div class="week-plant-header">
-          <span class="wi-emoji">{{ row.plant.emoji ?? '🌱' }}</span>
+          <span v-if="zoneId" class="wi-emoji">{{ row.plant.emoji ?? '🌱' }}</span>
           <a class="wi-name" @click.prevent="router.push(`/plant/${row.plant.id}`)">
             {{ pName(row.plant) }}
-            <span v-if="row.seeded" class="wi-seeded-on"> – {{ row.seeded.seedAction === 'planting' ? t('garden.plantedOn', { date: row.seeded.seedDate }) : t('garden.seededOn', { date: row.seeded.seedDate }) }}</span>
+            <span v-if="row.seeded" class="wi-seeded-on">{{ row.seeded.seedAction === 'planting' ? t('garden.plantedOn', { date: row.seeded.seedDate }) : t('garden.seededOn', { date: row.seeded.seedDate }) }}</span>
           </a>
           <span v-if="row.actions.length === 0" class="week-plant-none">{{ t('dashboard.nothingOpen') }}</span>
         </div>
@@ -446,70 +448,59 @@ defineOptions({ inheritAttrs: false })
 }
 
 .week-card {
-  background: var(--card-bg);
-  border: 1.5px solid var(--green-pale);
-  border-radius: var(--radius);
-  overflow: hidden;
+  background: none;
 }
 
 .week-card-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding: 0.75rem 1.25rem;
-  background: var(--green-pale);
-  gap: 0.75rem;
+  gap: 0.25rem 0.75rem;
+  flex-wrap: wrap;
 }
 
 .week-card-title {
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--green-dark);
 }
 
 .week-card-range {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  color: var(--green-mid);
+  color: var(--text-soft);
   white-space: nowrap;
 }
 
 .week-empty {
-  padding: 1.25rem;
-  font-size: 0.875rem;
-  color: var(--text-muted);
+  padding: 0.6rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text-soft);
 }
 
 /* Groups */
 .week-zone {
-  border-top: 1px solid var(--green-pale);
-}
-
-.week-zone:first-of-type {
-  border-top: none;
+  margin-top: 2rem;
 }
 
 .week-zone-header {
   display: flex;
   align-items: baseline;
   gap: 0.75rem;
-  padding: 0.5rem 1.25rem;
-  background: var(--bg);
-  border-bottom: 1px solid var(--green-pale);
+  margin-bottom: 0.4rem;
 }
 
 .week-zone-settings {
   padding: 0;
   border: none;
   background: none;
-  font-size: 0.75rem;
-  color: var(--green-mid);
-  text-decoration: underline;
+  font-size: 0.8rem;
+  color: var(--text-soft);
   cursor: pointer;
 }
 
 .week-zone-name {
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--green-dark);
 }
@@ -524,12 +515,7 @@ defineOptions({ inheritAttrs: false })
 }
 
 .week-plant {
-  padding: 0.55rem 1.25rem;
-  border-bottom: 1px solid var(--green-pale);
-}
-
-.week-plant:last-child {
-  border-bottom: none;
+  padding: 0.7rem 0 0;
 }
 
 .week-plant-header {
@@ -541,24 +527,35 @@ defineOptions({ inheritAttrs: false })
 
 .week-plant-none {
   margin-left: auto;
-  font-size: 0.75rem;
-  color: var(--text-muted);
+  font-size: 0.8rem;
+  color: var(--text-soft);
 }
 
 .week-action {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.3rem 0 0 1.75rem;
+  padding: 0.25rem 0 0 1.85rem;
 }
 
 .week-action-body {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 0.15rem 0.6rem;
+  gap: 0.1rem 0.75rem;
   flex: 1;
   min-width: 0;
+}
+
+.week-zone-settings:hover {
+  text-decoration: underline;
+}
+
+.week-action-body .wi-daterange {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
 }
 
 .week-action-label {
@@ -604,9 +601,10 @@ defineOptions({ inheritAttrs: false })
 }
 
 .wi-seeded-on {
+  margin-left: 0.4rem;
   font-size: 0.78rem;
   font-weight: 400;
-  color: var(--text-muted);
+  color: var(--text-soft);
 }
 
 .wi-date {
