@@ -1,6 +1,6 @@
 export const ACTION_ORDER = ['seeding', 'germination', 'harvest', 'pruning', 'fertilizing', 'watering']
 
-export const ACTION_ICON = { seeding: '🌱', germination: '🌿', harvest: '🧺', pruning: '✂️', fertilizing: '🌻', watering: '💧' }
+export const ACTION_ICON = { seeding: '🌱', germination: '🌿', harvest: '🧺', pruning: '✂️', fertilizing: '🪴', watering: '💧' }
 
 export const ACTION_LABEL_KEY = Object.fromEntries(ACTION_ORDER.map(a => [a, `garden.job.${a}`]))
 
