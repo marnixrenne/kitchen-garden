@@ -8,7 +8,12 @@ import org.testcontainers.containers.PostgreSQLContainer
 @TestConfiguration(proxyBeanMethods = false)
 class TestcontainersConfig {
 
-    @Bean
+    // One database for every Spring context: Exposed uses whichever context connected last
+    @Bean(destroyMethod = "")
     @ServiceConnection
-    fun postgres(): PostgreSQLContainer<*> = PostgreSQLContainer("postgres:15-alpine")
+    fun postgres(): PostgreSQLContainer<*> = container
+
+    private companion object {
+        val container: PostgreSQLContainer<*> by lazy { PostgreSQLContainer("postgres:15-alpine").apply { start() } }
+    }
 }

@@ -9,32 +9,39 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.marnixrenne.kitchengarden.mail.MailService
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 
 @Service
 class SignupService(
     private val passwordEncoder: PasswordEncoder,
     private val mailService: MailService,
     @Value("\${app.base-url}") private val baseUrl: String,
+    @Value("\${app.signup.max-mails-per-day}") maxMailsPerDay: Int,
 ) {
 
     private val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
 
-    private val signupAttempts = ConcurrentHashMap<String, MutableList<Long>>()
-    private val rateLimitWindowMs = 60 * 60 * 1_000L
-    private val rateLimitMax = 3
+    private val hourMs = 60 * 60 * 1_000L
 
-    fun initiateSignup(rawEmail: String) {
+    private val perEmail   = SlidingWindowLimiter(hourMs, maxHits = 3)
+    private val perAddress = SlidingWindowLimiter(hourMs, maxHits = 5)
+    private val dailyMail  = SlidingWindowLimiter(24 * hourMs, maxHits = maxMailsPerDay)
+
+    /** [clientIp] is null when the visitor's address is unknown; the other limits still apply. */
+    fun initiateSignup(rawEmail: String, clientIp: String?) {
         val email = rawEmail.lowercase()
         if (!emailRegex.matches(email)) throw IllegalArgumentException("Invalid email address")
 
-        checkSignupRateLimit(email)
+        // Before finding out whether the address is registered, so being limited says nothing about that
+        val limits = acquireLimits(email, clientIp)
 
         // If the email is already registered, silently succeed to avoid account enumeration
         val alreadyRegistered = transaction {
             Users.selectAll().where { Users.username eq email }.count() > 0
         }
-        if (alreadyRegistered) return
+        if (alreadyRegistered) {
+            dailyMail.release(ALL_MAIL)
+            return
+        }
 
         val token     = UUID.randomUUID()
         val expiresAt = System.currentTimeMillis() + 24 * 60 * 60 * 1_000L
@@ -78,7 +85,7 @@ class SignupService(
                 """.trimIndent(),
             )
         } catch (e: Exception) {
-            undoRateLimit(email)
+            limits.forEach { it() }
             throw e
         }
     }
@@ -130,6 +137,19 @@ class SignupService(
         }
     }
 
+    /** Counts this request against every limit; returns how to take each count back. */
+    private fun acquireLimits(email: String, clientIp: String?): List<() -> Unit> {
+        val allowed = (clientIp == null || perAddress.tryAcquire(clientIp)) &&
+            perEmail.tryAcquire(email) &&
+            dailyMail.tryAcquire(ALL_MAIL)
+        if (!allowed) throw IllegalArgumentException("Too many signup requests. Please try again later.")
+        return listOfNotNull(
+            clientIp?.let { ip -> { perAddress.release(ip) } },
+            { perEmail.release(email) },
+            { dailyMail.release(ALL_MAIL) },
+        )
+    }
+
     private fun validatePassword(password: String) {
         require(password.length >= 8)              { "Password must be at least 8 characters" }
         // BCrypt silently truncates input at 72 bytes; cap here so two distinct passwords
@@ -140,41 +160,7 @@ class SignupService(
         require(password.any { it.isDigit() })     { "Password must contain a digit" }
     }
 
-    private fun checkSignupRateLimit(email: String) {
-        val now = System.currentTimeMillis()
-        var limited = false
-        // compute() holds a bucket-level lock, making the trim + size-check + add atomic.
-        signupAttempts.compute(email) { _, list ->
-            val updated = list ?: mutableListOf()
-            updated.removeIf { it < now - rateLimitWindowMs }
-            if (updated.size >= rateLimitMax) {
-                limited = true
-            } else {
-                updated.add(now)
-            }
-            updated.ifEmpty { null }
-        }
-        if (limited) throw IllegalArgumentException("Too many signup requests. Please try again later.")
-        evictStaleRateLimitEntries(now)
-    }
-
-    private fun undoRateLimit(email: String) {
-        signupAttempts.compute(email) { _, list ->
-            if (list.isNullOrEmpty()) return@compute null
-            list.removeLast()
-            list.ifEmpty { null }
-        }
-    }
-
-    private fun evictStaleRateLimitEntries(now: Long) {
-        if (signupAttempts.size > 5_000) {
-            signupAttempts.keys.toList().forEach { key ->
-                signupAttempts.compute(key) { _, list ->
-                    if (list == null) return@compute null
-                    list.removeIf { it < now - rateLimitWindowMs }
-                    list.ifEmpty { null }
-                }
-            }
-        }
+    private companion object {
+        const val ALL_MAIL = "all"
     }
 }

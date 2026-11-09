@@ -1,19 +1,23 @@
 package org.marnixrenne.kitchengarden.security
 
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/auth")
-class SignupController(private val signupService: SignupService) {
+class SignupController(
+    private val signupService: SignupService,
+    private val clientIp: ClientIpResolver,
+) {
 
     @PostMapping("/signup")
-    fun signup(@RequestBody body: Map<String, String>): ResponseEntity<Map<String, String>> {
+    fun signup(@RequestBody body: Map<String, String>, request: HttpServletRequest): ResponseEntity<Map<String, String>> {
         val email = body["email"]?.trim()
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "Email is required"))
 
         return try {
-            signupService.initiateSignup(email)
+            signupService.initiateSignup(email, clientIp.resolve(request))
             ResponseEntity.ok(mapOf("message" to "Verification email sent"))
         } catch (e: IllegalArgumentException) {
             val status = if (e.message?.startsWith("Too many") == true) 429 else 400
