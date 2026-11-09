@@ -278,6 +278,7 @@ export default {
     removePlanting: 'Verwijderen',
     removePlantingConfirm: 'Deze {plant} uit de zone verwijderen? Het logboek en de planning worden ook verwijderd.',
     removePlantingFailed: 'De plant kon niet worden verwijderd. Probeer het opnieuw.',
+    connectionFailed: 'De server is niet bereikbaar. Controleer je verbinding en probeer het opnieuw.',
     job: {
       seeding: 'Zaaien', germination: 'Kieming', harvest: 'Oogsten',
       pruning: 'Snoeien', fertilizing: 'Bemesten', watering: 'Water geven',
@@ -422,12 +423,15 @@ export default {
     setSunPrompt: 'Stel de zonligging van deze zone in voor beter advies.',
     loadFailed: 'De planten konden niet worden geladen. Probeer het opnieuw.',
     addFailed: 'De plant kon niet worden toegevoegd. Probeer het opnieuw.',
+    dismiss: 'Sluiten',
     done: 'Klaar',
   },
   dashboard: {
     title:       'Dashboard',
     noGardens:   'Je hebt nog geen tuin.',
     createFirst: 'Maak je eerste tuin aan',
+    gardensFailed: 'Je tuinen konden niet worden geladen.',
+    retry:       'Opnieuw proberen',
     loadFailed:  'Deze tuin kon niet worden geladen.',
     nothingOpen: 'Deze week niets te doen',
     more:        '+{n} meer',
@@ -518,6 +522,7 @@ export default {
     password: 'Wachtwoord',
     submit: 'Inloggen',
     error: 'Ongeldige gebruikersnaam of wachtwoord',
+    sessionExpired: 'Je sessie is verlopen. Log opnieuw in.',
   },
   signup: {
     title: 'Account aanmaken',

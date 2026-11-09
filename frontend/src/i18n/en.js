@@ -278,6 +278,7 @@ export default {
     removePlanting: 'Remove',
     removePlantingConfirm: 'Remove this {plant} from the zone? Its log and plan will be deleted too.',
     removePlantingFailed: 'The planting could not be removed. Try again.',
+    connectionFailed: 'Could not reach the server. Check your connection and try again.',
     job: {
       seeding: 'Sow', germination: 'Germination', harvest: 'Harvest',
       pruning: 'Prune', fertilizing: 'Feed', watering: 'Water',
@@ -422,12 +423,15 @@ export default {
     setSunPrompt: 'Set this zone\'s sun exposure for better advice.',
     loadFailed: 'The plants could not be loaded. Try again.',
     addFailed: 'The plant could not be added. Try again.',
+    dismiss: 'Dismiss',
     done: 'Done',
   },
   dashboard: {
     title:       'Dashboard',
     noGardens:   "You don't have a garden yet.",
     createFirst: 'Create your first garden',
+    gardensFailed: 'Your gardens could not be loaded.',
+    retry:       'Try again',
     loadFailed:  'This garden could not be loaded.',
     nothingOpen: 'Nothing to do this week',
     more:        '+{n} more',
@@ -518,6 +522,7 @@ export default {
     password: 'Password',
     submit: 'Sign in',
     error: 'Invalid username or password',
+    sessionExpired: 'Your session has expired. Sign in again.',
   },
   signup: {
     title: 'Create account',

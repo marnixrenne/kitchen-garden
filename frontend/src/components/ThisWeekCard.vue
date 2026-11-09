@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, RouterLink } from 'vue-router'
 import { csrfHeaders } from '../stores/auth.js'
@@ -7,6 +7,7 @@ import { activeGardenId } from '../stores/garden.js'
 import ZoneGround from './ZoneGround.vue'
 import { zoneLabel } from '../utils/zones.js'
 import { latestSowing } from '../utils/plantings.js'
+import { todayIso } from '../utils/dates.js'
 import { ACTION_ICON, ACTION_LABEL_KEY, allActions, buildActionBuckets, weekRangeLabel as formatWeekRange } from '../utils/openActions.js'
 
 const props = defineProps({
@@ -29,8 +30,6 @@ const seedModal    = ref({ open: false, plant: null, instanceId: null, method: '
 const actionModal  = ref({ open: false, plant: null, instanceId: null, action: '', date: '', comment: '', saving: false, error: '' })
 const removeModal  = ref({ open: false, row: null, saving: false, error: '' })
 const advanceModal = ref({ open: false, item: null, date: '', comment: '', saving: false, error: '' })
-
-function todayIso() { return new Date().toISOString().slice(0, 10) }
 
 function formatDate(d) {
   return new Date(d + 'T00:00:00').toLocaleDateString(locale.value, { day: 'numeric', month: 'short' })
@@ -128,24 +127,27 @@ const openActionCount = computed(() =>
     sum + group.rows.reduce((n, row) => n + row.actions.filter(a => !a.done).length, 0), 0)
 )
 
+let latestFetch = 0
+
 async function fetchAll(quietly = false) {
+  const thisFetch = ++latestFetch
   if (!quietly) loading.value = true
   const gid = activeGardenId.value
-  const [weekRes, instRes, logRes, planRes, lcRes, detailRes] = await Promise.all([
-    fetch(`/api/gardens/${gid}/week`),
-    fetch(`/api/gardens/${gid}/instances`),
-    fetch(`/api/gardens/${gid}/plant-log`),
-    fetch(`/api/gardens/${gid}/plan`),
-    fetch(`/api/gardens/${gid}/lifecycle`),
-    fetch(`/api/gardens/${gid}/details`),
-  ])
-  if (weekRes.ok)   weekSummary.value = await weekRes.json()
-  if (instRes.ok)   instances.value   = await instRes.json()
-  if (logRes.ok)    plantLog.value     = await logRes.json()
-  if (planRes.ok)   plantPlan.value    = await planRes.json()
-  if (lcRes.ok)     lifecycle.value    = await lcRes.json()
-  if (detailRes.ok) plants.value       = await detailRes.json()
-  loading.value = false
+  try {
+    const responses = await Promise.all(
+      ['week', 'instances', 'plant-log', 'plan', 'lifecycle', 'details'].map(r => fetch(`/api/gardens/${gid}/${r}`))
+    )
+    const [week, inst, log, plan, lc, details] = await Promise.all(responses.map(r => r.ok ? r.json() : null))
+    if (thisFetch !== latestFetch) return  // a newer request, or another Garden, has taken over
+    if (week)    weekSummary.value = week
+    if (inst)    instances.value   = inst
+    if (log)     plantLog.value    = log
+    if (plan)    plantPlan.value   = plan
+    if (lc)      lifecycle.value   = lc
+    if (details) plants.value      = details
+  } finally {
+    if (thisFetch === latestFetch) loading.value = false
+  }
 }
 
 function openRemoveModal(row) {
@@ -192,6 +194,8 @@ async function submitAdvance() {
     lifecycle.value = { ...lifecycle.value, [item.instanceId]: await res.json() }
     advanceModal.value.open = false
     emit('refresh')
+  } catch {
+    advanceModal.value.error = t('garden.connectionFailed')
   } finally {
     advanceModal.value.saving = false
   }
@@ -223,6 +227,8 @@ async function submitSeed() {
     seedModal.value.open = false
     await fetchAll()
     emit('refresh')
+  } catch {
+    seedModal.value.error = t('garden.connectionFailed')
   } finally {
     seedModal.value.saving = false
   }
@@ -238,12 +244,15 @@ async function submitAction() {
     actionModal.value.open = false
     await fetchAll()
     emit('refresh')
+  } catch {
+    actionModal.value.error = t('garden.connectionFailed')
   } finally {
     actionModal.value.saving = false
   }
 }
 
 onMounted(() => fetchAll())
+watch(activeGardenId, id => { if (id) fetchAll() })
 
 defineExpose({ reload: () => fetchAll(true) })
 

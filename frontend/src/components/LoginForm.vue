@@ -1,11 +1,12 @@
 <script setup>
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { login } from '../stores/auth.js'
 
 const { t } = useI18n()
 const router = useRouter()
+const route  = useRoute()
 
 const username = ref('')
 const password = ref('')
@@ -56,6 +57,7 @@ async function submit() {
         />
       </div>
 
+      <p v-if="route.query.expired && !error" class="expired" role="status">{{ t('login.sessionExpired') }}</p>
       <p v-if="error" class="error">{{ t('login.error') }}</p>
 
       <button type="submit" :disabled="loading">
@@ -128,6 +130,12 @@ input {
 
 input:focus {
   border-color: var(--green-mid);
+}
+
+.expired {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  text-align: center;
 }
 
 .error {

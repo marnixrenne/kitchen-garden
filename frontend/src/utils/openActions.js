@@ -1,3 +1,5 @@
+import { todayIso } from './dates.js'
+
 export const ACTION_ORDER = ['seeding', 'germination', 'harvest', 'pruning', 'fertilizing', 'watering']
 
 export const ACTION_ICON = { seeding: '🌱', germination: '🌿', harvest: '🧺', pruning: '✂️', fertilizing: '🪴', watering: '💧' }
@@ -12,11 +14,6 @@ function isDone(plantLog, instanceId, entry) {
     l.date >= entry.plannedDateStart &&
     l.date <= entry.plannedDateEnd
   )
-}
-
-function localToday() {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 }
 
 function planDateRange(entry, formatDate) {
@@ -40,7 +37,7 @@ export function buildActionBuckets({ weekSummary, instances, plantLog, plantPlan
   const instanceIdsByPlant = {}
   for (const inst of instances) (instanceIdsByPlant[inst.plantId] ??= []).push(inst.id)
 
-  const today = localToday()
+  const today = todayIso()
 
   const buckets = Object.fromEntries(ACTION_ORDER.map(a => [a, []]))
 

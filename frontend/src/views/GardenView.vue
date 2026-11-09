@@ -8,6 +8,7 @@ import { activeGardenName, activeGardenId, gardens, setActiveGarden } from '../s
 import { csrfHeaders } from '../stores/auth.js'
 import { ZONE_TYPES, ASPECTS, SUN_LEVELS, MAX_DIMENSION_CM, zoneLabel } from '../utils/zones.js'
 import { latestSowing } from '../utils/plantings.js'
+import { todayIso } from '../utils/dates.js'
 
 const router = useRouter()
 const route  = useRoute()
@@ -124,35 +125,27 @@ function hasExpandContent(instanceId) {
   return (plantLog.value[instanceId]?.length ?? 0) > 0 || (plantPlan.value[instanceId]?.length ?? 0) > 0
 }
 
-async function fetchInstances() {
-  const res = await fetch(`/api/gardens/${activeGardenId.value}/instances`)
-  if (res.ok) instances.value = await res.json()
+// Reads part of the active Garden; a reply arriving after a switch to another Garden is dropped
+async function readGarden(resource, apply) {
+  const gardenId = activeGardenId.value
+  const res = await fetch(`/api/gardens/${gardenId}/${resource}`)
+  if (!res.ok) return
+  const data = await res.json()
+  if (gardenId === activeGardenId.value) apply(data, gardenId)
 }
 
-async function fetchZones() {
-  const gardenId = activeGardenId.value
-  const res = await fetch(`/api/gardens/${gardenId}/zones`)
-  if (!res.ok) return
-  zones.value = await res.json()
-  if (gardenId === activeGardenId.value && zoneId.value && !zones.value.some(z => z.id === zoneId.value)) {
+const fetchInstances = () => readGarden('instances', data => { instances.value = data })
+const fetchPlantLog  = () => readGarden('plant-log', data => { plantLog.value = data })
+const fetchPlantPlan = () => readGarden('plan',      data => { plantPlan.value = data })
+const fetchLifecycle = () => readGarden('lifecycle', data => { lifecycle.value = data })
+const fetchPlants    = () => readGarden('details',   data => { plants.value = data })
+
+const fetchZones = () => readGarden('zones', (data, gardenId) => {
+  zones.value = data
+  if (zoneId.value && !data.some(z => z.id === zoneId.value)) {
     router.replace({ path: `/gardens/${gardenId}`, query: route.query })
   }
-}
-
-async function fetchPlantLog() {
-  const res = await fetch(`/api/gardens/${activeGardenId.value}/plant-log`)
-  if (res.ok) plantLog.value = await res.json()
-}
-
-async function fetchPlantPlan() {
-  const res = await fetch(`/api/gardens/${activeGardenId.value}/plan`)
-  if (res.ok) plantPlan.value = await res.json()
-}
-
-async function fetchLifecycle() {
-  const res = await fetch(`/api/gardens/${activeGardenId.value}/lifecycle`)
-  if (res.ok) lifecycle.value = await res.json()
-}
+})
 
 function isPlanEntryDone(instanceId, entry) {
   return (plantLog.value[instanceId] ?? []).some(log =>
@@ -209,12 +202,26 @@ function zoneDetails(zone) {
   return parts.join(' · ')
 }
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
-}
-
 async function errorText(res) {
   try { return (await res.json()).message || `Error ${res.status}` } catch { return `Error ${res.status}` }
+}
+
+// Sends what a popup asks for and closes it on success. On failure the popup
+// stays open with an error, ready to try again. Resolves with whether it worked.
+async function submitPopup(m, busyFlag, send) {
+  m[busyFlag] = true
+  m.error = ''
+  try {
+    const res = await send()
+    if (!res.ok) { m.error = await errorText(res); return false }
+    m.open = false
+    return true
+  } catch {
+    m.error = t('garden.connectionFailed')
+    return false
+  } finally {
+    m[busyFlag] = false
+  }
 }
 
 // Create / edit zone
@@ -255,8 +262,6 @@ const zoneFormError = computed(() => {
 async function saveZone() {
   const m = zoneModal.value
   if (zoneFormError.value || m.saving) return
-  m.saving = true
-  m.error = ''
   const body = {
     name:        m.name.trim() || null,
     type:        m.type || null,
@@ -265,13 +270,11 @@ async function saveZone() {
     sunExposure: m.sunExposure || null,
     aspect:      m.aspect || null,
   }
-  const res = await fetch(
+  const saved = await submitPopup(m, 'saving', () => fetch(
     m.zone ? `/api/gardens/${activeGardenId.value}/zones/${m.zone.id}` : `/api/gardens/${activeGardenId.value}/zones`,
     { method: m.zone ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json', ...csrfHeaders() }, body: JSON.stringify(body) },
-  )
-  m.saving = false
-  if (!res.ok) { m.error = await errorText(res); return }
-  m.open = false
+  ))
+  if (!saved) return
   // A zone's sun exposure changes the instances' sun warnings
   await Promise.all([fetchZones(), fetchInstances()])
 }
@@ -303,15 +306,11 @@ async function confirmDeleteZone() {
   const params = m.plantCount === 0 ? ''
     : m.disposition === 'move' ? `?plants=move&targetZoneId=${m.targetZoneId}`
     : '?plants=delete'
-  m.deleting = true
-  m.error = ''
-  const res = await fetch(`/api/gardens/${activeGardenId.value}/zones/${m.zone.id}${params}`, {
+  const deleted = await submitPopup(m, 'deleting', () => fetch(`/api/gardens/${activeGardenId.value}/zones/${m.zone.id}${params}`, {
     method: 'DELETE',
     headers: csrfHeaders(),
-  })
-  m.deleting = false
-  if (!res.ok) { m.error = await errorText(res); return }
-  m.open = false
+  }))
+  if (!deleted) return
   if (m.plantCount > 0 && m.disposition === 'delete') await loadAll()
   else await Promise.all([fetchZones(), fetchInstances(), fetchPlantLog()])
 }
@@ -331,16 +330,12 @@ const moveTargets = computed(() =>
 async function confirmMove() {
   const m = moveModal.value
   if (!m.zoneId || m.saving) return
-  m.saving = true
-  m.error = ''
-  const res = await fetch(`/api/gardens/${activeGardenId.value}/instances/${m.instance.id}/move`, {
+  const moved = await submitPopup(m, 'saving', () => fetch(`/api/gardens/${activeGardenId.value}/instances/${m.instance.id}/move`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ zoneId: m.zoneId, date: m.date || null, comment: m.comment.trim() || null }),
-  })
-  m.saving = false
-  if (!res.ok) { m.error = await errorText(res); return }
-  m.open = false
+  }))
+  if (!moved) return
   await Promise.all([fetchInstances(), fetchPlantLog()])
 }
 
@@ -355,16 +350,12 @@ function openEntryModal(entry) {
 async function saveEntry() {
   const m = entryModal.value
   if (!m.date || m.saving) return
-  m.saving = true
-  m.error = ''
-  const res = await fetch(`/api/gardens/${activeGardenId.value}/plant-log/${m.entry.id}`, {
+  const saved = await submitPopup(m, 'saving', () => fetch(`/api/gardens/${activeGardenId.value}/plant-log/${m.entry.id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ date: m.date, comment: m.comment.trim() || null }),
-  })
-  m.saving = false
-  if (!res.ok) { m.error = await errorText(res); return }
-  m.open = false
+  }))
+  if (!saved) return
   await fetchPlantLog()
 }
 
@@ -484,8 +475,7 @@ const addPlantsOpen = ref(false)
 const weekCard = ref(null)
 
 async function onPlantAdded() {
-  const res = await fetch(`/api/gardens/${activeGardenId.value}/details`)
-  if (res.ok) plants.value = await res.json()
+  await fetchPlants()
   await fetchInstances()
   weekCard.value?.reload?.()
 }
@@ -564,6 +554,7 @@ async function confirmDeleteGarden() {
 }
 
 async function loadAll() {
+  const gardenId = activeGardenId.value
   loading.value = true
   plants.value = []
   suggestions.value = null
@@ -573,18 +564,17 @@ async function loadAll() {
   plantPlan.value = {}
   lifecycle.value = {}
   expandedPlantings.value = new Set()
-  const [detailsRes, suggestionsRes] = await Promise.all([
-    fetch(`/api/gardens/${activeGardenId.value}/details`),
-    fetch(`/api/gardens/${activeGardenId.value}/suggestions`),
-  ])
-  if (detailsRes.ok)     plants.value      = await detailsRes.json()
-  if (suggestionsRes.ok) suggestions.value = await suggestionsRes.json()
-  loading.value = false
+  try {
+    await Promise.all([fetchPlants(), readGarden('suggestions', data => { suggestions.value = data })])
+  } finally {
+    if (gardenId === activeGardenId.value) loading.value = false
+  }
+  if (gardenId !== activeGardenId.value) return
   await Promise.all([fetchZones(), fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
 }
 
 onMounted(loadAll)
-watch(activeGardenId, loadAll)
+watch(activeGardenId, id => { if (id) loadAll() })
 
 // An address for a Garden the user doesn't have (deleted, or from another account)
 watch(gardens, (list) => {

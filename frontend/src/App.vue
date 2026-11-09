@@ -3,7 +3,8 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, RouterView, RouterLink } from 'vue-router'
 import { user, logout, csrfHeaders } from './stores/auth.js'
-import { activeGardenId, activeGardenName, gardens, gardensLoaded, newGardenModal, openNewGardenModal, setActiveGarden } from './stores/garden.js'
+import { activeGardenId, activeGardenName, clearGardens, fetchGardens, gardens, newGardenModal, openNewGardenModal, setActiveGarden } from './stores/garden.js'
+import { addPlantFailed } from './stores/zonePicker.js'
 import ZonePickerModal from './components/ZonePickerModal.vue'
 
 const { t, locale } = useI18n()
@@ -26,24 +27,11 @@ watch(user, async (u) => {
 
 async function handleLogout() {
   await logout()
-  gardens.value = []
-  gardensLoaded.value = false
-  setActiveGarden(null)
+  clearGardens()
   router.push('/')
 }
 
 // ── Gardens list ─────────────────────────────────────────────────────────────
-
-async function fetchGardens() {
-  const res = await fetch('/api/gardens')
-  if (res.ok) {
-    gardens.value = await res.json()
-    if (gardens.value.length > 0 && !activeGardenId.value) {
-      setActiveGarden(gardens.value[0].id)
-    }
-    gardensLoaded.value = true
-  }
-}
 
 watch(user, (u) => { if (u) fetchGardens() }, { immediate: true })
 
@@ -69,6 +57,8 @@ onUnmounted(() => document.removeEventListener('click', handleDocClick))
 
 // ── New garden modal ──────────────────────────────────────────────────────────
 
+router.afterEach(() => { addPlantFailed.value = false })
+
 async function submitNewGarden() {
   const name = newGardenModal.value.name.trim()
   if (!name) return
@@ -89,6 +79,8 @@ async function submitNewGarden() {
     setActiveGarden(created.id)
     newGardenModal.value.open = false
     router.push('/garden')
+  } catch {
+    newGardenModal.value.error = t('garden.connectionFailed')
   } finally {
     newGardenModal.value.saving = false
   }
@@ -116,7 +108,7 @@ async function submitNewGarden() {
                 v-for="g in gardens"
                 :key="g.id"
                 class="nav-garden-item"
-                :class="{ 'nav-garden-item--active': g.id === activeGardenId.value }"
+                :class="{ 'nav-garden-item--active': g.id === activeGardenId }"
                 @click="selectGarden(g)"
               >{{ g.name }}</button>
             </div>
@@ -136,6 +128,11 @@ async function submitNewGarden() {
   </header>
   <RouterView />
   <ZonePickerModal />
+
+  <div v-if="addPlantFailed && user" class="add-failed" role="alert">
+    <span>{{ t('addPlants.addFailed') }}</span>
+    <button :aria-label="t('addPlants.dismiss')" @click="addPlantFailed = false">×</button>
+  </div>
 
   <Teleport to="body">
     <div v-if="newGardenModal.open" class="ng-backdrop" @click.self="newGardenModal.open = false">
@@ -376,6 +373,34 @@ header h1 { font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
 }
 
 .ng-input:focus { border-color: var(--green-mid); }
+
+.add-failed {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  background: #b91c1c;
+  color: #fff;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  z-index: 300;
+}
+
+.add-failed button {
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
 
 .ng-error {
   font-size: 0.8rem;
