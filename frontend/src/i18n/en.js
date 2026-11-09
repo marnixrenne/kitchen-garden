@@ -427,7 +427,7 @@ export default {
   dashboard: {
     title:       'Dashboard',
     noGardens:   "You don't have a garden yet.",
-    explore:     'Explore plants',
+    createFirst: 'Create your first garden',
     loadFailed:  'This garden could not be loaded.',
     nothingOpen: 'Nothing to do this week',
     more:        '+{n} more',

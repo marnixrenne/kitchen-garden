@@ -427,7 +427,7 @@ export default {
   dashboard: {
     title:       'Dashboard',
     noGardens:   'Je hebt nog geen tuin.',
-    explore:     'Planten ontdekken',
+    createFirst: 'Maak je eerste tuin aan',
     loadFailed:  'Deze tuin kon niet worden geladen.',
     nothingOpen: 'Deze week niets te doen',
     more:        '+{n} meer',

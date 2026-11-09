@@ -3,7 +3,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, RouterView, RouterLink } from 'vue-router'
 import { user, logout, csrfHeaders } from './stores/auth.js'
-import { activeGardenId, activeGardenName, gardens, gardensLoaded, setActiveGarden } from './stores/garden.js'
+import { activeGardenId, activeGardenName, gardens, gardensLoaded, newGardenModal, openNewGardenModal, setActiveGarden } from './stores/garden.js'
 import ZonePickerModal from './components/ZonePickerModal.vue'
 
 const { t, locale } = useI18n()
@@ -68,12 +68,6 @@ onMounted(()  => document.addEventListener('click', handleDocClick))
 onUnmounted(() => document.removeEventListener('click', handleDocClick))
 
 // ── New garden modal ──────────────────────────────────────────────────────────
-
-const newGardenModal = ref({ open: false, name: '', saving: false, error: '' })
-
-function openNewGardenModal() {
-  newGardenModal.value = { open: true, name: '', saving: false, error: '' }
-}
 
 async function submitNewGarden() {
   const name = newGardenModal.value.name.trim()

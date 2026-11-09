@@ -4,7 +4,7 @@ import { createRouter, createMemoryHistory } from 'vue-router'
 import { createI18n } from 'vue-i18n'
 import en from '../../i18n/en.js'
 import DashboardView from '../DashboardView.vue'
-import { gardens, gardensLoaded } from '../../stores/garden.js'
+import { gardens, gardensLoaded, newGardenModal } from '../../stores/garden.js'
 
 const i18n = createI18n({ legacy: false, locale: 'en', messages: { en } })
 
@@ -158,9 +158,11 @@ describe('DashboardView', () => {
     expect(wrapper.find('.dash-count').exists()).toBe(false)
   })
 
-  it('points to the catalogue when there are no gardens', async () => {
+  it('offers to create a first garden when there are none', async () => {
     const wrapper = await mountDashboard([], {})
 
-    expect(wrapper.find('.dash-explore').attributes('href')).toBe('/discover')
+    await wrapper.find('.dash-create').trigger('click')
+
+    expect(newGardenModal.value.open).toBe(true)
   })
 })

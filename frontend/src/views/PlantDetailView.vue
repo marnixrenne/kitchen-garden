@@ -2,9 +2,8 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { csrfHeaders } from '../stores/auth.js'
 import { activeGardenId } from '../stores/garden.js'
-import { chooseZone, addPlantUrl } from '../stores/zonePicker.js'
+import { addToActiveGarden } from '../stores/zonePicker.js'
 import { plantCounts } from '../utils/plantings.js'
 
 const route  = useRoute()
@@ -58,10 +57,7 @@ const fertilizerTipText = computed(() => {
 })
 
 async function addToGarden(id) {
-  const zoneId = await chooseZone(id)
-  if (zoneId === null) return
-  const res = await fetch(addPlantUrl(id, zoneId), { method: 'POST', headers: csrfHeaders() })
-  if (res.ok) counts.value = { ...counts.value, [id]: (counts.value[id] ?? 0) + 1 }
+  if (await addToActiveGarden(id)) counts.value = { ...counts.value, [id]: (counts.value[id] ?? 0) + 1 }
 }
 
 async function loadPlant(id) {

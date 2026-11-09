@@ -4,7 +4,7 @@ import { createRouter, createMemoryHistory } from 'vue-router'
 import { createI18n } from 'vue-i18n'
 import en from '../../i18n/en.js'
 import HomeView from '../HomeView.vue'
-import { setActiveGarden } from '../../stores/garden.js'
+import { setActiveGarden, gardensLoaded, newGardenModal } from '../../stores/garden.js'
 
 const i18n = createI18n({ legacy: false, locale: 'en', messages: { en } })
 
@@ -29,7 +29,11 @@ async function mountExplore(instances = []) {
 
 describe('HomeView adding to the garden', () => {
   beforeEach(() => setActiveGarden(GARDEN))
-  afterEach(() => vi.restoreAllMocks())
+  afterEach(() => {
+    vi.restoreAllMocks()
+    gardensLoaded.value = false
+    newGardenModal.value.open = false
+  })
 
   it('counts up with every planting added, without ever removing one', async () => {
     const wrapper = await mountExplore()
@@ -45,6 +49,31 @@ describe('HomeView adding to the garden', () => {
 
     expect(global.fetch.mock.calls.filter(([, o]) => o?.method === 'POST')).toHaveLength(2)
     expect(global.fetch.mock.calls.some(([, o]) => o?.method === 'DELETE')).toBe(false)
+  })
+
+  it('adds one planting when the button is clicked twice in quick succession', async () => {
+    const wrapper = await mountExplore()
+    const add = wrapper.find('.garden-btn')
+
+    add.trigger('click')
+    add.trigger('click')
+    await flushPromises()
+
+    expect(global.fetch.mock.calls.filter(([, o]) => o?.method === 'POST')).toHaveLength(1)
+    expect(wrapper.find('.garden-count').text()).toBe('1×')
+  })
+
+  it('asks for a first garden instead of adding when there is none', async () => {
+    gardensLoaded.value = true
+    const wrapper = await mountExplore()
+    setActiveGarden(null)
+
+    await wrapper.find('.garden-btn').trigger('click')
+    await flushPromises()
+
+    expect(newGardenModal.value.open).toBe(true)
+    expect(global.fetch.mock.calls.filter(([, o]) => o?.method === 'POST')).toHaveLength(0)
+    expect(global.fetch.mock.calls.some(([u]) => u.includes('/gardens/null'))).toBe(false)
   })
 
   it('starts from the plantings already in the garden', async () => {
