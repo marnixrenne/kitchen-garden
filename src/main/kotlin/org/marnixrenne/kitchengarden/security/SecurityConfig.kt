@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.web.servlet.ServletContextInitializer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -32,8 +33,17 @@ class SecurityConfig(
     @Value("\${app.base-url}") private val baseUrl: String,
     private val userLoginService: UserLoginService,
     private val bruteForce: BruteForceProtectionService,
+    private val clientIp: ClientIpResolver,
 ) {
     private val json = ObjectMapper()
+
+    // The app sits behind Render's TLS proxy and sees plain http, so go by the public address
+    private val servedOverHttps = baseUrl.startsWith("https://")
+
+    @Bean
+    fun secureSessionCookie() = ServletContextInitializer { context ->
+        if (servedOverHttps) context.sessionCookieConfig.isSecure = true
+    }
 
     @Bean
     fun sessionRegistry(): SessionRegistry = SessionRegistryImpl()
@@ -45,7 +55,14 @@ class SecurityConfig(
     fun securityFilterChain(http: HttpSecurity, sessionRegistry: SessionRegistry): SecurityFilterChain {
         http
             .csrf { csrf ->
-                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                csrf.csrfTokenRepository(
+                    CookieCsrfTokenRepository.withHttpOnlyFalse().apply {
+                        setCookieCustomizer { cookie ->
+                            cookie.sameSite("Lax")
+                            if (servedOverHttps) cookie.secure(true)
+                        }
+                    }
+                )
                 // Use the non-XOR handler: the JS SPA reads the raw cookie value and sends
                 // it as X-XSRF-TOKEN, so we must not apply XOR-masking on the server side.
                 csrf.csrfTokenRequestHandler(CsrfTokenRequestAttributeHandler())
@@ -74,12 +91,12 @@ class SecurityConfig(
                 auth.requestMatchers("/api/**").authenticated()
                 auth.anyRequest().permitAll()
             }
-            .addFilterBefore(BruteForceFilter(bruteForce, json), UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterBefore(BruteForceFilter(bruteForce, clientIp, json), UsernamePasswordAuthenticationFilter::class.java)
             .addFilterAfter(CsrfCookieFilter(), UsernamePasswordAuthenticationFilter::class.java)
             .formLogin { form ->
                 form.loginProcessingUrl("/api/auth/login")
-                form.successHandler { _, response, authentication ->
-                    bruteForce.reset(authentication.name)
+                form.successHandler { request, response, authentication ->
+                    bruteForce.reset(authentication.name, clientIp.resolve(request))
                     userLoginService.recordLogin(authentication.name)
                     val roles = authentication.authorities.map { it.authority }
                     response.status = HttpServletResponse.SC_OK
@@ -92,8 +109,9 @@ class SecurityConfig(
                 }
                 form.failureHandler { request, response, _ ->
                     val username = request.getParameter("username").orEmpty()
-                    bruteForce.recordFailure(username)
-                    val blocked = bruteForce.isBlocked(username)
+                    val ip = clientIp.resolve(request)
+                    bruteForce.recordFailure(username, ip)
+                    val blocked = bruteForce.isBlocked(username, ip)
                     response.status = if (blocked) HttpServletResponse.SC_FORBIDDEN else HttpServletResponse.SC_UNAUTHORIZED
                     response.contentType = "application/json"
                     response.writer.write(
@@ -140,6 +158,7 @@ class SecurityConfig(
 
     private class BruteForceFilter(
         private val bruteForce: BruteForceProtectionService,
+        private val clientIp: ClientIpResolver,
         private val json: ObjectMapper,
     ) : OncePerRequestFilter() {
         override fun doFilterInternal(
@@ -149,7 +168,7 @@ class SecurityConfig(
         ) {
             if (request.method == "POST" && request.requestURI.endsWith("/api/auth/login")) {
                 val username = request.getParameter("username").orEmpty()
-                if (bruteForce.isBlocked(username)) {
+                if (bruteForce.isBlocked(username, clientIp.resolve(request))) {
                     response.status = HttpServletResponse.SC_FORBIDDEN
                     response.contentType = "application/json"
                     response.writer.write(
