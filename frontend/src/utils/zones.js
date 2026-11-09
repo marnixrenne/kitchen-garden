@@ -17,3 +17,7 @@ export function isSunShortfall(zoneExposure, plantRequirement) {
 export function zoneLabel(t, name) {
   return name ?? t('zones.mainZone')
 }
+
+export function moveDescription(t, entry) {
+  return t('zones.movedFromTo', { from: zoneLabel(t, entry.fromZoneName), to: zoneLabel(t, entry.toZoneName) })
+}
