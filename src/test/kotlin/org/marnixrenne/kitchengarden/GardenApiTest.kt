@@ -219,4 +219,53 @@ class GardenApiTest : IntegrationTestBase() {
             jsonPath("$.name") { value("Renamed") }
         }
     }
+
+    @Test
+    fun `adding a plant that does not exist is not found`() {
+        val gardenId = createGardenId()
+
+        mvc.post("/api/gardens/$gardenId/plants/${java.util.UUID.randomUUID()}") { with(user("admin")); with(csrf()) }
+            .andExpect { status { isNotFound() } }
+    }
+
+    @Test
+    fun `logging for a planting from another garden is not found`() {
+        val gardenId = createGardenId()
+        val otherInstance = addInstance(createGardenId(), tomatoId())
+
+        mvc.post("/api/gardens/$gardenId/plant-log") {
+            with(user("admin")); with(csrf())
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"instanceId":"$otherInstance","action":"watering","date":"2026-05-01","comment":null}"""
+        }.andExpect { status { isNotFound() } }
+    }
+
+    private fun logWithComment(gardenId: String, instanceId: String, comment: String) =
+        mvc.post("/api/gardens/$gardenId/plant-log") {
+            with(user("admin")); with(csrf())
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"instanceId":"$instanceId","action":"watering","date":"2026-05-01","comment":"$comment"}"""
+        }
+
+    @Test
+    fun `a log comment can be up to 1000 characters`() {
+        val gardenId = createGardenId()
+        val instanceId = addInstance(gardenId, tomatoId())
+
+        logWithComment(gardenId, instanceId, "x".repeat(1000)).andExpect { status { isCreated() } }
+        logWithComment(gardenId, instanceId, "x".repeat(1001)).andExpect { status { isBadRequest() } }
+    }
+
+    @Test
+    fun `advancing a stage refuses an overlong comment`() {
+        val gardenId = createGardenId()
+        val instanceId = addInstance(gardenId, tomatoId())
+        logAction(gardenId, instanceId, "2026-05-01")
+
+        mvc.put("/api/gardens/$gardenId/lifecycle/$instanceId/advance") {
+            with(user("admin")); with(csrf())
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"date":"2026-05-02","comment":"${"x".repeat(1001)}"}"""
+        }.andExpect { status { isBadRequest() } }
+    }
 }

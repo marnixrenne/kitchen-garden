@@ -103,7 +103,8 @@ class ExposedGardenRepository : GardenRepository {
             .toSet()
     }
 
-    override fun add(gardenId: GardenId, plantId: PlantId, zoneId: ZoneId): PlantInstanceId = transaction {
+    override fun add(gardenId: GardenId, plantId: PlantId, zoneId: ZoneId): PlantInstanceId? = transaction {
+        if (Plants.selectAll().where { Plants.id eq plantId.value }.empty()) return@transaction null
         val id = UUID.randomUUID()
         GardenPlantInstances.insert {
             it[GardenPlantInstances.id]        = id

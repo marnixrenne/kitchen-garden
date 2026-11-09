@@ -46,7 +46,7 @@ class GardenCommandService(
             zoneRepository.findAll(gardenId).singleOrNull()
                 ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Garden has several zones; choose one")
         }
-        val instanceId = repository.add(gardenId, plantId, zone.id)
+        val instanceId = repository.add(gardenId, plantId, zone.id) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
         return repository.findInstances(gardenId).first { it.id == instanceId }
     }
 
@@ -59,7 +59,8 @@ class GardenCommandService(
         accessGuard.validate(authentication, gardenId)
         if (request.action == LogAction.MOVED)
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Moves are recorded by moving the plant to another zone")
-        val entry = plantLogRepository.save(userResolver.resolve(authentication), gardenId, request)
+        val entry = plantLogRepository.save(userResolver.resolve(authentication), gardenId, request.copy(comment = validatedComment(request.comment)))
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
         if (request.action in setOf(LogAction.SEEDING_INDOOR, LogAction.SEEDING_OUTDOOR, LogAction.PLANTING)) {
             try {
                 plantPlanCommandService.generateAndSave(entry.id, entry.plantId, request.date)
@@ -77,7 +78,7 @@ class GardenCommandService(
         // Other entries drive generated plans, which a date change would leave stale
         if (entry.action != LogAction.MOVED)
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Only move entries can be edited")
-        val comment = request.comment?.takeIf { it.isNotBlank() }
+        val comment = validatedComment(request.comment)
         plantLogRepository.updateEntry(entryId, request.copy(comment = comment))
         return entry.copy(date = request.date, comment = comment)
     }

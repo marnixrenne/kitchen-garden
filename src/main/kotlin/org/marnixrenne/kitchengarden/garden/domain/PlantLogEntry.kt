@@ -22,6 +22,8 @@ enum class LogAction(@JsonValue val key: String) {
     }
 }
 
+const val MAX_COMMENT_LENGTH = 1000
+
 data class PlantLogRequest(
     val instanceId: PlantInstanceId,
     val action: LogAction,

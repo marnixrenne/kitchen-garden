@@ -1,5 +1,6 @@
 package org.marnixrenne.kitchengarden.garden.lifecycle.application
 
+import org.marnixrenne.kitchengarden.garden.application.validatedComment
 import org.marnixrenne.kitchengarden.garden.domain.GardenId
 import org.marnixrenne.kitchengarden.garden.domain.PlantInstanceId
 import org.marnixrenne.kitchengarden.garden.lifecycle.domain.AdvanceRequest
@@ -17,6 +18,6 @@ class PlantLifecycleCommandService(
     private val userResolver: UserResolver,
 ) {
     fun advance(authentication: Authentication, gardenId: GardenId, instanceId: PlantInstanceId, request: AdvanceRequest?): PlantLifecycle =
-        repository.advance(userResolver.resolve(authentication), gardenId, instanceId, request)
+        repository.advance(userResolver.resolve(authentication), gardenId, instanceId, request?.copy(comment = validatedComment(request.comment)))
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
 }

@@ -60,7 +60,7 @@ class ZoneCommandService(
         val currentZoneId = repository.findInstanceZone(gardenId, instanceId) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
         val target = repository.find(gardenId, request.zoneId) ?: throw badRequest("Target zone is not in this garden")
         if (target.id == currentZoneId) throw badRequest("Plant is already in this zone")
-        val comment = request.comment?.takeIf { it.isNotBlank() }
+        val comment = validatedComment(request.comment)
         return repository.move(userResolver.resolve(authentication), instanceId, target, request.date ?: LocalDate.now(), comment)
     }
 

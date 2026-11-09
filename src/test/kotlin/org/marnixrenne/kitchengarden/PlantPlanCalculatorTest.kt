@@ -222,4 +222,44 @@ class PlantPlanCalculatorTest {
         )
         assertTrue(periods.isEmpty())
     }
+
+    private fun harvestOf(seedDate: LocalDate, vararg months: Int) = PlantPlanCalculator.compute(
+        seedDate = seedDate,
+        germinationDaysMin = null, germinationDaysMax = null,
+        daysToMaturityMin = null, daysToMaturityMax = null,
+        harvestMonths = months.toList(),
+        pruningConfig = null, fertilizingConfig = null,
+    ).single { it.action == PlanAction.HARVEST }
+
+    @Test
+    fun `a winter harvest sown in December runs to the end of winter`() {
+        val harvest = harvestOf(LocalDate.of(2025, 12, 10), 1, 2, 3, 11, 12)
+
+        assertEquals(LocalDate.of(2026, 1, 1), harvest.start)
+        assertEquals(LocalDate.of(2026, 3, 31), harvest.end)
+    }
+
+    @Test
+    fun `a winter harvest sown before it starts continues into the next year`() {
+        val harvest = harvestOf(LocalDate.of(2025, 10, 10), 1, 2, 3, 11, 12)
+
+        assertEquals(LocalDate.of(2025, 11, 1), harvest.start)
+        assertEquals(LocalDate.of(2026, 3, 31), harvest.end)
+    }
+
+    @Test
+    fun `a short pause in the harvest does not end the season`() {
+        val harvest = harvestOf(LocalDate.of(2025, 3, 10), 5, 6, 7, 9, 10)
+
+        assertEquals(LocalDate.of(2025, 5, 1), harvest.start)
+        assertEquals(LocalDate.of(2025, 10, 31), harvest.end)
+    }
+
+    @Test
+    fun `a harvest all year runs for twelve months`() {
+        val harvest = harvestOf(LocalDate.of(2025, 3, 10), 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+
+        assertEquals(LocalDate.of(2025, 4, 1), harvest.start)
+        assertEquals(LocalDate.of(2026, 3, 31), harvest.end)
+    }
 }

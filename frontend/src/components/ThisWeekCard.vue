@@ -392,7 +392,7 @@ defineOptions({ inheritAttrs: false })
           </div>
           <div class="form-row form-row--col">
             <label class="form-label" for="tw-seed-comment">{{ t('garden.seedModal.commentLabel') }}</label>
-            <textarea id="tw-seed-comment" v-model="seedModal.comment" class="form-textarea" :placeholder="t('garden.seedModal.commentPlaceholder')" rows="3" />
+            <textarea id="tw-seed-comment" v-model="seedModal.comment" class="form-textarea" maxlength="1000" :placeholder="t('garden.seedModal.commentPlaceholder')" rows="3" />
           </div>
           <p v-if="seedModal.error" class="modal-error">{{ seedModal.error }}</p>
           <div class="modal-actions">
@@ -427,7 +427,7 @@ defineOptions({ inheritAttrs: false })
           </div>
           <div class="form-row form-row--col">
             <label class="form-label" for="tw-advance-comment">{{ t('garden.seedModal.commentLabel') }}</label>
-            <textarea id="tw-advance-comment" v-model="advanceModal.comment" class="form-textarea" :placeholder="t('garden.seedModal.commentPlaceholder')" rows="2" />
+            <textarea id="tw-advance-comment" v-model="advanceModal.comment" class="form-textarea" maxlength="1000" :placeholder="t('garden.seedModal.commentPlaceholder')" rows="2" />
           </div>
           <p v-if="advanceModal.error" class="modal-error">{{ advanceModal.error }}</p>
           <div class="modal-actions">
@@ -481,7 +481,7 @@ defineOptions({ inheritAttrs: false })
           </div>
           <div class="form-row form-row--col">
             <label class="form-label" for="tw-action-comment">{{ t('garden.seedModal.commentLabel') }}</label>
-            <textarea id="tw-action-comment" v-model="actionModal.comment" class="form-textarea" :placeholder="t('garden.seedModal.commentPlaceholder')" rows="2" />
+            <textarea id="tw-action-comment" v-model="actionModal.comment" class="form-textarea" maxlength="1000" :placeholder="t('garden.seedModal.commentPlaceholder')" rows="2" />
           </div>
           <p v-if="actionModal.error" class="modal-error">{{ actionModal.error }}</p>
           <div class="modal-actions">

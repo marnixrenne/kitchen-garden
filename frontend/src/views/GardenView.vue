@@ -4,11 +4,15 @@ import { useRouter, useRoute, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ThisWeekCard from '../components/ThisWeekCard.vue'
 import AddPlantsModal from '../components/AddPlantsModal.vue'
+import ZoneFormModal from '../components/ZoneFormModal.vue'
+import DeleteZoneModal from '../components/DeleteZoneModal.vue'
+import MovePlantModal from '../components/MovePlantModal.vue'
+import MoveEntryModal from '../components/MoveEntryModal.vue'
+import RenameGardenModal from '../components/RenameGardenModal.vue'
+import DeleteGardenModal from '../components/DeleteGardenModal.vue'
 import { activeGardenName, activeGardenId, gardens, setActiveGarden } from '../stores/garden.js'
-import { csrfHeaders } from '../stores/auth.js'
-import { ZONE_TYPES, ASPECTS, SUN_LEVELS, MAX_DIMENSION_CM, zoneLabel } from '../utils/zones.js'
+import { zoneLabel } from '../utils/zones.js'
 import { latestSowing } from '../utils/plantings.js'
-import { todayIso } from '../utils/dates.js'
 
 const router = useRouter()
 const route  = useRoute()
@@ -202,160 +206,42 @@ function zoneDetails(zone) {
   return parts.join(' · ')
 }
 
-async function errorText(res) {
-  try { return (await res.json()).message || `Error ${res.status}` } catch { return `Error ${res.status}` }
-}
+// Popups: each is open while its value is set
 
-// Sends what a popup asks for and closes it on success. On failure the popup
-// stays open with an error, ready to try again. Resolves with whether it worked.
-async function submitPopup(m, busyFlag, send) {
-  m[busyFlag] = true
-  m.error = ''
-  try {
-    const res = await send()
-    if (!res.ok) { m.error = await errorText(res); return false }
-    m.open = false
-    return true
-  } catch {
-    m.error = t('garden.connectionFailed')
-    return false
-  } finally {
-    m[busyFlag] = false
-  }
-}
-
-// Create / edit zone
-
-const zoneModal = ref({ open: false })
+const zoneForm       = ref(null)  // { zone }; zone is null for a new one
+const zoneToDelete   = ref(null)
+const plantMove      = ref(null)  // { plant, instance }
+const moveEntry      = ref(null)
+const renamingGarden = ref(false)
+const deletingGarden = ref(false)
 
 function openZoneModal(zone = null) {
-  zoneModal.value = {
-    open: true,
-    zone,
-    name:        zone?.name ?? '',
-    type:        zone?.type ?? '',
-    lengthCm:    zone?.lengthCm ?? '',
-    widthCm:     zone?.widthCm ?? '',
-    sunExposure: zone?.sunExposure ?? '',
-    aspect:      zone?.aspect ?? '',
-    saving: false,
-    error: '',
-  }
+  zoneForm.value = { zone }
 }
-
-function validDimension(value) {
-  if (value === '' || value === null) return true
-  const n = Number(value)
-  return Number.isInteger(n) && n >= 1 && n <= MAX_DIMENSION_CM
-}
-
-// The unnamed zone a garden starts with may stay unnamed; every other zone needs a name
-const zoneFormError = computed(() => {
-  const m = zoneModal.value
-  if (!m.open) return ''
-  const mayStayUnnamed = m.zone && m.zone.name === null
-  if (!m.name.trim() && !mayStayUnnamed) return t('zones.nameRequired')
-  if (!validDimension(m.lengthCm) || !validDimension(m.widthCm)) return t('zones.dimensionsInvalid', { max: MAX_DIMENSION_CM })
-  return ''
-})
-
-async function saveZone() {
-  const m = zoneModal.value
-  if (zoneFormError.value || m.saving) return
-  const body = {
-    name:        m.name.trim() || null,
-    type:        m.type || null,
-    lengthCm:    m.lengthCm === '' ? null : Number(m.lengthCm),
-    widthCm:     m.widthCm === '' ? null : Number(m.widthCm),
-    sunExposure: m.sunExposure || null,
-    aspect:      m.aspect || null,
-  }
-  const saved = await submitPopup(m, 'saving', () => fetch(
-    m.zone ? `/api/gardens/${activeGardenId.value}/zones/${m.zone.id}` : `/api/gardens/${activeGardenId.value}/zones`,
-    { method: m.zone ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json', ...csrfHeaders() }, body: JSON.stringify(body) },
-  ))
-  if (!saved) return
-  // A zone's sun exposure changes the instances' sun warnings
-  await Promise.all([fetchZones(), fetchInstances()])
-}
-
-// Delete zone
-
-const deleteZoneModal = ref({ open: false })
 
 function plantsInZone(zone) {
   return instances.value.filter(i => i.zoneId === zone.id).length
 }
 
-function openDeleteZoneModal(zone) {
-  const others = zones.value.filter(b => b.id !== zone.id)
-  deleteZoneModal.value = {
-    open: true,
-    zone,
-    plantCount: plantsInZone(zone),
-    disposition: 'move',
-    targetZoneId: others[0]?.id ?? null,
-    deleting: false,
-    error: '',
-  }
+async function onZoneSaved() {
+  zoneForm.value = null
+  // A zone's sun exposure changes the instances' sun warnings
+  await Promise.all([fetchZones(), fetchInstances()])
 }
 
-async function confirmDeleteZone() {
-  const m = deleteZoneModal.value
-  if (m.deleting) return
-  const params = m.plantCount === 0 ? ''
-    : m.disposition === 'move' ? `?plants=move&targetZoneId=${m.targetZoneId}`
-    : '?plants=delete'
-  const deleted = await submitPopup(m, 'deleting', () => fetch(`/api/gardens/${activeGardenId.value}/zones/${m.zone.id}${params}`, {
-    method: 'DELETE',
-    headers: csrfHeaders(),
-  }))
-  if (!deleted) return
-  if (m.plantCount > 0 && m.disposition === 'delete') await loadAll()
+async function onZoneDeleted(plantsRemoved) {
+  zoneToDelete.value = null
+  if (plantsRemoved) await loadAll()
   else await Promise.all([fetchZones(), fetchInstances(), fetchPlantLog()])
 }
 
-// Move a plant
-
-const moveModal = ref({ open: false })
-
-function openMoveModal(plant, instance) {
-  moveModal.value = { open: true, plant, instance, zoneId: null, date: todayIso(), comment: '', saving: false, error: '' }
-}
-
-const moveTargets = computed(() =>
-  moveModal.value.open ? zones.value.filter(b => b.id !== moveModal.value.instance.zoneId) : []
-)
-
-async function confirmMove() {
-  const m = moveModal.value
-  if (!m.zoneId || m.saving) return
-  const moved = await submitPopup(m, 'saving', () => fetch(`/api/gardens/${activeGardenId.value}/instances/${m.instance.id}/move`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-    body: JSON.stringify({ zoneId: m.zoneId, date: m.date || null, comment: m.comment.trim() || null }),
-  }))
-  if (!moved) return
+async function onPlantMoved() {
+  plantMove.value = null
   await Promise.all([fetchInstances(), fetchPlantLog()])
 }
 
-// Edit a move log entry: only its date and comment can change
-
-const entryModal = ref({ open: false })
-
-function openEntryModal(entry) {
-  entryModal.value = { open: true, entry, date: entry.date, comment: entry.comment ?? '', saving: false, error: '' }
-}
-
-async function saveEntry() {
-  const m = entryModal.value
-  if (!m.date || m.saving) return
-  const saved = await submitPopup(m, 'saving', () => fetch(`/api/gardens/${activeGardenId.value}/plant-log/${m.entry.id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-    body: JSON.stringify({ date: m.date, comment: m.comment.trim() || null }),
-  }))
-  if (!saved) return
+async function onMoveEntrySaved() {
+  moveEntry.value = null
   await fetchPlantLog()
 }
 
@@ -489,70 +375,6 @@ async function onWeekRefresh() {
   await Promise.all([fetchZones(), fetchInstances(), fetchPlantLog(), fetchPlantPlan(), fetchLifecycle()])
 }
 
-// ── Rename garden ─────────────────────────────────────────────────────────────
-
-const editModal = ref({ open: false, name: '', saving: false, error: '' })
-
-function openEditModal() {
-  editModal.value.name = activeGardenName.value ?? ''
-  editModal.value.error = ''
-  editModal.value.open = true
-}
-
-async function confirmRenameGarden() {
-  const id = activeGardenId.value
-  if (!id) return
-  editModal.value.saving = true
-  editModal.value.error = ''
-  try {
-    const res = await fetch(`/api/gardens/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-      body: JSON.stringify({ name: editModal.value.name.trim() }),
-    })
-    if (!res.ok) { editModal.value.error = t('garden.editGardenFailed'); return }
-    const updated = await res.json()
-    const idx = gardens.value.findIndex(g => g.id === id)
-    if (idx !== -1) gardens.value[idx] = updated
-    editModal.value.open = false
-  } catch {
-    editModal.value.error = t('garden.editGardenFailed')
-  } finally {
-    editModal.value.saving = false
-  }
-}
-
-// ── Delete garden ─────────────────────────────────────────────────────────────
-
-const deleteModal = ref({ open: false, deleting: false, error: '' })
-
-function openDeleteModal() {
-  deleteModal.value = { open: true, deleting: false, error: '' }
-}
-
-async function confirmDeleteGarden() {
-  const id = activeGardenId.value
-  if (!id) return
-  deleteModal.value.deleting = true
-  deleteModal.value.error = ''
-  try {
-    const res = await fetch(`/api/gardens/${id}`, {
-      method: 'DELETE',
-      headers: csrfHeaders(),
-    })
-    if (!res.ok) { deleteModal.value.error = t('garden.deleteGardenFailed'); return }
-    deleteModal.value.open = false
-    const remaining = gardens.value.filter(g => g.id !== id)
-    setActiveGarden(remaining.length > 0 ? remaining[0].id : null)
-    gardens.value = remaining
-    router.push(remaining.length > 0 ? '/' : '/discover')
-  } catch {
-    deleteModal.value.error = t('garden.deleteGardenFailed')
-  } finally {
-    deleteModal.value.deleting = false
-  }
-}
-
 async function loadAll() {
   const gardenId = activeGardenId.value
   loading.value = true
@@ -601,13 +423,13 @@ watch(gardens, (list) => {
       <button v-if="focusedZone" class="add-plants-btn" @click="addPlantsOpen = true">+ {{ t('addPlants.button') }}</button>
       <div v-if="!zoneId" class="page-header-actions">
         <button class="add-zone-btn" @click="openZoneModal()">+ {{ t('zones.add') }}</button>
-        <button class="edit-garden-btn" @click="openEditModal" :title="t('garden.editGarden')">
+        <button class="edit-garden-btn" @click="renamingGarden = true" :title="t('garden.editGarden')">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
         </button>
-        <button class="delete-garden-btn" @click="openDeleteModal" :title="t('garden.deleteGarden')">
+        <button class="delete-garden-btn" @click="deletingGarden = true" :title="t('garden.deleteGarden')">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3 6 5 6 21 6"/>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
@@ -663,7 +485,7 @@ watch(gardens, (list) => {
               v-if="entry.action === 'moved'"
               class="log-edit-btn"
               :title="t('zones.editEntry')"
-              @click="openEntryModal(entry)"
+              @click="moveEntry = entry"
             >✎</button>
           </div>
           <p v-if="entry.comment" class="log-comment">{{ entry.comment }}</p>
@@ -722,7 +544,7 @@ watch(gardens, (list) => {
                   <span v-if="group.rows.length === 0" class="zone-empty">{{ t('zones.empty') }}</span>
                   <span class="zone-actions">
                     <button class="zone-icon-btn" :title="t('zones.edit')" @click="openZoneModal(group.zone)">✎</button>
-                    <button v-if="hasSeveralZones" class="zone-icon-btn danger" :title="t('zones.delete')" @click="openDeleteZoneModal(group.zone)">🗑</button>
+                    <button v-if="hasSeveralZones" class="zone-icon-btn danger" :title="t('zones.delete')" @click="zoneToDelete = group.zone">🗑</button>
                   </span>
                 </div>
               </td>
@@ -763,7 +585,7 @@ watch(gardens, (list) => {
                     class="move-btn"
                     :class="{ 'push-right': !lifecycle[instance.id] }"
                     :title="t('zones.moveToZone')"
-                    @click.stop="openMoveModal(plant, instance)"
+                    @click.stop="plantMove = { plant, instance }"
                   >⇄</button>
                 </td>
                 <td
@@ -896,214 +718,32 @@ watch(gardens, (list) => {
     </template>
   </main>
 
-  <Teleport to="body">
-    <div v-if="editModal.open" class="dg-backdrop" @click.self="editModal.open = false">
-      <div class="dg-modal" role="dialog" aria-modal="true">
-        <div class="eg-header">{{ t('garden.editGarden') }}</div>
-        <div class="dg-body">
-          <input
-            v-model="editModal.name"
-            class="eg-input"
-            :placeholder="t('garden.editGardenPlaceholder')"
-            maxlength="100"
-            @keydown.enter="confirmRenameGarden"
-            @keydown.esc="editModal.open = false"
-          />
-          <p v-if="editModal.error" class="bf-error" role="alert">{{ editModal.error }}</p>
-          <div class="dg-actions">
-            <button class="dg-cancel" @click="editModal.open = false" :disabled="editModal.saving">
-              {{ t('garden.seedModal.cancel') }}
-            </button>
-            <button class="eg-save" @click="confirmRenameGarden" :disabled="editModal.saving || !editModal.name.trim()">
-              {{ t('garden.editGardenSave') }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </Teleport>
-
-  <Teleport to="body">
-    <div v-if="deleteModal.open" class="dg-backdrop" @click.self="deleteModal.open = false">
-      <div class="dg-modal" role="dialog" aria-modal="true">
-        <div class="dg-header">{{ t('garden.deleteGarden') }}</div>
-        <div class="dg-body">
-          <p class="dg-warning">{{ t('garden.deleteGardenConfirm', { name: activeGardenName ?? t('myGarden') }) }}</p>
-          <p v-if="deleteModal.error" class="bf-error" role="alert">{{ deleteModal.error }}</p>
-          <div class="dg-actions">
-            <button class="dg-cancel" @click="deleteModal.open = false" :disabled="deleteModal.deleting">
-              {{ t('garden.seedModal.cancel') }}
-            </button>
-            <button class="dg-confirm" @click="confirmDeleteGarden" :disabled="deleteModal.deleting">
-              {{ t('garden.deleteGardenConfirmBtn') }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </Teleport>
-
-  <Teleport to="body">
-    <div v-if="zoneModal.open" class="dg-backdrop" @click.self="zoneModal.open = false">
-      <div class="dg-modal" role="dialog" aria-modal="true">
-        <div class="eg-header">{{ zoneModal.zone ? t('zones.edit') : t('zones.add') }}</div>
-        <div class="dg-body">
-          <label class="bf-field">
-            <span class="bf-label">{{ t('zones.name') }}</span>
-            <input
-              v-model="zoneModal.name"
-              class="eg-input"
-              maxlength="100"
-              :placeholder="zoneModal.zone && zoneModal.zone.name === null ? t('zones.mainZone') : t('zones.namePlaceholder')"
-            />
-          </label>
-          <label class="bf-field">
-            <span class="bf-label">{{ t('zones.typeLabel') }}</span>
-            <select v-model="zoneModal.type" class="eg-input">
-              <option value="">{{ t('zones.notSet') }}</option>
-              <option v-for="type in ZONE_TYPES" :key="type" :value="type">{{ t(`zones.type.${type}`) }}</option>
-            </select>
-          </label>
-          <div class="bf-row">
-            <label class="bf-field">
-              <span class="bf-label">{{ t('zones.lengthCm') }}</span>
-              <input v-model="zoneModal.lengthCm" class="eg-input" type="number" min="1" :max="MAX_DIMENSION_CM" step="1" />
-            </label>
-            <label class="bf-field">
-              <span class="bf-label">{{ t('zones.widthCm') }}</span>
-              <input v-model="zoneModal.widthCm" class="eg-input" type="number" min="1" :max="MAX_DIMENSION_CM" step="1" />
-            </label>
-          </div>
-          <div class="bf-row">
-            <label class="bf-field">
-              <span class="bf-label">{{ t('zones.sunLabel') }}</span>
-              <select v-model="zoneModal.sunExposure" class="eg-input">
-                <option value="">{{ t('zones.notSet') }}</option>
-                <option v-for="sun in SUN_LEVELS" :key="sun" :value="sun">{{ t(`sunRequirement.${sun}`) }}</option>
-              </select>
-            </label>
-            <label class="bf-field">
-              <span class="bf-label">{{ t('zones.aspectLabel') }}</span>
-              <select v-model="zoneModal.aspect" class="eg-input">
-                <option value="">{{ t('zones.notSet') }}</option>
-                <option v-for="aspect in ASPECTS" :key="aspect" :value="aspect">{{ t(`zones.aspect.${aspect}`) }}</option>
-              </select>
-            </label>
-          </div>
-          <p v-if="zoneFormError || zoneModal.error" class="bf-error">{{ zoneModal.error || zoneFormError }}</p>
-          <div class="dg-actions">
-            <button class="dg-cancel" @click="zoneModal.open = false" :disabled="zoneModal.saving">
-              {{ t('garden.seedModal.cancel') }}
-            </button>
-            <button class="eg-save" @click="saveZone" :disabled="zoneModal.saving || !!zoneFormError">
-              {{ t('garden.editGardenSave') }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </Teleport>
-
-  <Teleport to="body">
-    <div v-if="deleteZoneModal.open" class="dg-backdrop" @click.self="deleteZoneModal.open = false">
-      <div class="dg-modal" role="dialog" aria-modal="true">
-        <div class="dg-header">{{ t('zones.delete') }}</div>
-        <div class="dg-body">
-          <p class="dg-warning">{{ t('zones.deleteConfirm', { name: zoneLabel(t, deleteZoneModal.zone.name) }) }}</p>
-          <template v-if="deleteZoneModal.plantCount > 0">
-            <p class="dg-warning">{{ t('zones.deleteHasPlants', deleteZoneModal.plantCount) }}</p>
-            <label class="bf-radio">
-              <input v-model="deleteZoneModal.disposition" type="radio" value="move" />
-              {{ t('zones.deleteMovePlants') }}
-            </label>
-            <select v-if="deleteZoneModal.disposition === 'move'" v-model="deleteZoneModal.targetZoneId" class="eg-input">
-              <option
-                v-for="zone in zones.filter(b => b.id !== deleteZoneModal.zone.id)"
-                :key="zone.id"
-                :value="zone.id"
-              >{{ zoneLabel(t, zone.name) }}</option>
-            </select>
-            <label class="bf-radio">
-              <input v-model="deleteZoneModal.disposition" type="radio" value="delete" />
-              {{ t('zones.deleteRemovePlants') }}
-            </label>
-          </template>
-          <p v-if="deleteZoneModal.error" class="bf-error">{{ deleteZoneModal.error }}</p>
-          <div class="dg-actions">
-            <button class="dg-cancel" @click="deleteZoneModal.open = false" :disabled="deleteZoneModal.deleting">
-              {{ t('garden.seedModal.cancel') }}
-            </button>
-            <button class="dg-confirm" @click="confirmDeleteZone" :disabled="deleteZoneModal.deleting">
-              {{ t('zones.deleteConfirmBtn') }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </Teleport>
-
-  <Teleport to="body">
-    <div v-if="moveModal.open" class="dg-backdrop" @click.self="moveModal.open = false">
-      <div class="dg-modal" role="dialog" aria-modal="true">
-        <div class="eg-header">{{ t('zones.moveTitle', { plant: plantName(moveModal.plant) }) }}</div>
-        <div class="dg-body">
-          <label class="bf-field">
-            <span class="bf-label">{{ t('zones.moveTo') }}</span>
-            <select v-model="moveModal.zoneId" class="eg-input">
-              <option :value="null" disabled>{{ t('zones.chooseZone') }}</option>
-              <option v-for="zone in moveTargets" :key="zone.id" :value="zone.id">{{ zoneLabel(t, zone.name) }}</option>
-            </select>
-          </label>
-          <label class="bf-field">
-            <span class="bf-label">{{ t('garden.seedModal.dateLabel') }}</span>
-            <input v-model="moveModal.date" class="eg-input" type="date" />
-          </label>
-          <label class="bf-field">
-            <span class="bf-label">{{ t('garden.seedModal.commentLabel') }}</span>
-            <input v-model="moveModal.comment" class="eg-input" :placeholder="t('garden.seedModal.commentPlaceholder')" />
-          </label>
-          <p v-if="moveModal.error" class="bf-error">{{ moveModal.error }}</p>
-          <div class="dg-actions">
-            <button class="dg-cancel" @click="moveModal.open = false" :disabled="moveModal.saving">
-              {{ t('garden.seedModal.cancel') }}
-            </button>
-            <button class="eg-save" @click="confirmMove" :disabled="moveModal.saving || !moveModal.zoneId">
-              {{ t('zones.moveConfirm') }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </Teleport>
-
-  <Teleport to="body">
-    <div v-if="entryModal.open" class="dg-backdrop" @click.self="entryModal.open = false">
-      <div class="dg-modal" role="dialog" aria-modal="true">
-        <div class="eg-header">{{ t('zones.editEntry') }}</div>
-        <div class="dg-body">
-          <p class="dg-warning">{{ moveDescription(entryModal.entry) }}</p>
-          <label class="bf-field">
-            <span class="bf-label">{{ t('garden.seedModal.dateLabel') }}</span>
-            <input v-model="entryModal.date" class="eg-input" type="date" />
-          </label>
-          <label class="bf-field">
-            <span class="bf-label">{{ t('garden.seedModal.commentLabel') }}</span>
-            <input v-model="entryModal.comment" class="eg-input" :placeholder="t('garden.seedModal.commentPlaceholder')" />
-          </label>
-          <p v-if="entryModal.error" class="bf-error">{{ entryModal.error }}</p>
-          <div class="dg-actions">
-            <button class="dg-cancel" @click="entryModal.open = false" :disabled="entryModal.saving">
-              {{ t('garden.seedModal.cancel') }}
-            </button>
-            <button class="eg-save" @click="saveEntry" :disabled="entryModal.saving || !entryModal.date">
-              {{ t('garden.editGardenSave') }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </Teleport>
-
+<RenameGardenModal v-if="renamingGarden" @close="renamingGarden = false" />
+  <DeleteGardenModal v-if="deletingGarden" @close="deletingGarden = false" />
+  <ZoneFormModal v-if="zoneForm" :zone="zoneForm.zone" @close="zoneForm = null" @saved="onZoneSaved" />
+  <DeleteZoneModal
+    v-if="zoneToDelete"
+    :zone="zoneToDelete"
+    :zones="zones"
+    :plant-count="plantsInZone(zoneToDelete)"
+    @close="zoneToDelete = null"
+    @deleted="onZoneDeleted"
+  />
+  <MovePlantModal
+    v-if="plantMove"
+    :plant-name="plantName(plantMove.plant)"
+    :instance="plantMove.instance"
+    :zones="zones"
+    @close="plantMove = null"
+    @moved="onPlantMoved"
+  />
+  <MoveEntryModal
+    v-if="moveEntry"
+    :entry="moveEntry"
+    :description="moveDescription(moveEntry)"
+    @close="moveEntry = null"
+    @saved="onMoveEntrySaved"
+  />
 </template>
 
 <style scoped>
@@ -1190,120 +830,6 @@ main {
   border-color: #b91c1c;
   color: #b91c1c;
 }
-
-/* Edit / rename garden modal */
-.eg-header {
-  padding: 0.85rem 1.25rem;
-  background: var(--green-pale);
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--green-dark);
-}
-
-.eg-input {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1.5px solid var(--green-pale);
-  border-radius: 8px;
-  font-size: 0.9rem;
-  color: var(--text);
-  outline: none;
-  box-sizing: border-box;
-  transition: border-color 0.15s;
-}
-
-.eg-input:focus { border-color: var(--green-mid); }
-
-.eg-save {
-  padding: 0.4rem 1rem;
-  border: none;
-  border-radius: 8px;
-  background: var(--green-mid);
-  color: #fff;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.eg-save:hover:not(:disabled) { background: var(--green-dark); }
-.eg-save:disabled { opacity: 0.5; cursor: default; }
-
-/* Delete garden modal */
-.dg-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-  padding: 1rem;
-}
-
-.dg-modal {
-  background: #fff;
-  border-radius: 10px;
-  width: 100%;
-  max-width: 380px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  overflow: hidden;
-}
-
-.dg-header {
-  padding: 0.85rem 1.25rem;
-  background: #fee2e2;
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #b91c1c;
-}
-
-.dg-body {
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.dg-warning {
-  font-size: 0.9rem;
-  color: var(--text);
-  line-height: 1.5;
-}
-
-.dg-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-
-.dg-cancel {
-  padding: 0.4rem 0.9rem;
-  border: 1.5px solid var(--green-pale);
-  border-radius: 8px;
-  background: #fff;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.dg-cancel:hover:not(:disabled) { border-color: var(--green-mid); color: var(--green-dark); }
-
-.dg-confirm {
-  padding: 0.4rem 1rem;
-  border: none;
-  border-radius: 8px;
-  background: #dc2626;
-  color: #fff;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-
-.dg-confirm:hover:not(:disabled) { opacity: 0.85; }
-.dg-confirm:disabled, .dg-cancel:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .ical-btn {
   padding: 0.4rem 0.9rem;
@@ -1930,14 +1456,6 @@ main {
 
 .move-btn.push-right { margin-left: auto; }
 .move-btn:hover { border-color: var(--green-mid); }
-
-.bf-field { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; min-width: 0; }
-.bf-label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); }
-.bf-row { display: flex; gap: 0.75rem; }
-.bf-radio { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
-.bf-error { font-size: 0.82rem; color: #b91c1c; }
-
-.dg-body .eg-input { background: #fff; }
 
 .log-move { font-size: .85rem; color: var(--text-muted); }
 

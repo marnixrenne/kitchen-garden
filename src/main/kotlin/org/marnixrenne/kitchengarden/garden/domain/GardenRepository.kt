@@ -10,7 +10,8 @@ interface GardenRepository {
     fun renameGarden(gardenId: GardenId, userId: UserId, name: String): GardenSummary?
     fun deleteGarden(gardenId: GardenId, userId: UserId): Boolean
     fun findPlantIds(gardenId: GardenId): Set<PlantId>
-    fun add(gardenId: GardenId, plantId: PlantId, zoneId: ZoneId): PlantInstanceId
+    /** Null when the Plant doesn't exist. */
+    fun add(gardenId: GardenId, plantId: PlantId, zoneId: ZoneId): PlantInstanceId?
     fun removeInstance(gardenId: GardenId, instanceId: PlantInstanceId): Boolean
     fun findRecommendationCandidates(countryCode: String?): List<RecommendationCandidate>
     /** Companion relationships with at least one side in [plantIds]. */
