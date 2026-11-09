@@ -5,6 +5,7 @@ import { activeGardenId, gardensLoaded, openNewGardenModal } from './garden.js'
 const closed = { open: false, zones: [], plant: null, resolve: null }
 
 export const zonePicker = ref({ ...closed })
+export const addPlantFailed = ref(false)
 
 // Asks which zone a plant goes in. Resolves with:
 //   undefined — the garden has a single zone, so the backend places the plant there
@@ -38,20 +39,27 @@ export function addPlantUrl(plantId, zoneId) {
 const beingAdded = new Set()
 
 // Adds a planting to the active garden, asking which zone when there is a choice.
-// Resolves with whether a planting was created. Without a garden it asks for a
-// first one instead; a repeat click on a plant still being added is ignored.
+// Resolves with whether a planting was created, and reports a failure through
+// addPlantFailed. Without a garden it asks for a first one instead; a repeat
+// click on a plant still being added is ignored.
 export async function addToActiveGarden(plantId) {
   if (!activeGardenId.value) {
     if (gardensLoaded.value) openNewGardenModal()
+    else addPlantFailed.value = true
     return false
   }
   if (beingAdded.has(plantId)) return false
   beingAdded.add(plantId)
+  addPlantFailed.value = false
   try {
     const zoneId = await chooseZone(plantId)
     if (zoneId === null) return false
     const res = await fetch(addPlantUrl(plantId, zoneId), { method: 'POST', headers: csrfHeaders() })
+    addPlantFailed.value = !res.ok
     return res.ok
+  } catch {
+    addPlantFailed.value = true
+    return false
   } finally {
     beingAdded.delete(plantId)
   }

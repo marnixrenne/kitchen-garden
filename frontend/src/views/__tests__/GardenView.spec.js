@@ -180,6 +180,120 @@ describe('GardenView zones', () => {
   })
 })
 
+describe('GardenView popups when the connection drops', () => {
+  beforeEach(() => setActiveGarden(GARDEN))
+  afterEach(() => vi.restoreAllMocks())
+
+  const INSTANCES = [
+    { id: 'i-tomato', plantId: TOMATO.id, zoneId: MAIN_ZONE.id,  sunShortfall: false },
+    { id: 'i-basil',  plantId: BASIL.id,  zoneId: HERBS_ZONE.id, sunShortfall: false },
+  ]
+  const MOVED = { id: 'e1', action: 'moved', date: '2026-05-02', comment: null, fromZoneName: 'A', toZoneName: 'B' }
+
+  async function failingWrites() {
+    const wrapper = await mountGarden({
+      zones: [MAIN_ZONE, HERBS_ZONE],
+      instances: INSTANCES,
+      extra: { [`/api/gardens/${GARDEN}/plant-log`]: { 'i-tomato': [MOVED] } },
+    })
+    const read = global.fetch
+    global.fetch = vi.fn((url, init) => init?.method ? Promise.reject(new Error('offline')) : read(url, init))
+    return wrapper
+  }
+
+  async function expectRetryable(wrapper, confirm) {
+    await flushPromises()
+    expect(wrapper.find('.bf-error').text()).toBe(en.garden.connectionFailed)
+    expect(wrapper.find(confirm).attributes('disabled')).toBeUndefined()
+  }
+
+  it('saving a zone', async () => {
+    const wrapper = await failingWrites()
+    await wrapper.find('.add-zone-btn').trigger('click')
+    await wrapper.find('.bf-field input').setValue('Kas')
+    await wrapper.find('.eg-save').trigger('click')
+    await expectRetryable(wrapper, '.eg-save')
+  })
+
+  it('deleting a zone', async () => {
+    const wrapper = await failingWrites()
+    await wrapper.find('.zone-icon-btn.danger').trigger('click')
+    await wrapper.find('.dg-confirm').trigger('click')
+    await expectRetryable(wrapper, '.dg-confirm')
+  })
+
+  it('moving a plant', async () => {
+    const wrapper = await failingWrites()
+    await wrapper.find('.move-btn').trigger('click')
+    await wrapper.find('[role="dialog"] select').setValue(HERBS_ZONE.id)
+    await wrapper.find('.eg-save').trigger('click')
+    await expectRetryable(wrapper, '.eg-save')
+  })
+
+  it('editing a move', async () => {
+    const wrapper = await failingWrites()
+    await wrapper.findAll('.garden-tab')[2].trigger('click')
+    await wrapper.find('.log-edit-btn').trigger('click')
+    await wrapper.find('.eg-save').trigger('click')
+    await expectRetryable(wrapper, '.eg-save')
+  })
+})
+
+describe('GardenView dates and garden switching', () => {
+  beforeEach(() => setActiveGarden(GARDEN))
+  afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
+
+  it('defaults the date of a move to the local day just after midnight', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 5, 10, 0, 30))
+    const wrapper = await mountGarden({
+      zones: [MAIN_ZONE, HERBS_ZONE],
+      instances: [{ id: 'i-tomato', plantId: TOMATO.id, zoneId: MAIN_ZONE.id, sunShortfall: false }],
+    })
+
+    await wrapper.find('.move-btn').trigger('click')
+
+    expect(wrapper.find('[role="dialog"] input[type=date]').element.value).toBe('2026-06-10')
+  })
+
+  it('ignores a slow reply from the garden switched away from', async () => {
+    const wrapper = await mountGarden({ zones: [MAIN_ZONE], instances: [] })
+    let release
+    const held = new Promise(r => { release = r })
+    global.fetch = vi.fn(async (url) => {
+      const [, id, resource] = url.match(/^\/api\/gardens\/([^/]+)\/(.+)$/)
+      if (id === 'slow') await held
+      const plant = id === 'slow' ? TOMATO : BASIL
+      const data = {
+        details: [plant],
+        suggestions: { sunGroups: [], conflicts: [] },
+        zones: [MAIN_ZONE],
+        instances: [{ id: `i-${id}`, plantId: plant.id, zoneId: MAIN_ZONE.id, sunShortfall: false }],
+      }[resource] ?? {}
+      return { ok: true, json: async () => data }
+    })
+
+    setActiveGarden('slow')
+    await flushPromises()
+    setActiveGarden('fast')
+    await flushPromises()
+    release()
+    await flushPromises()
+
+    expect(wrapper.findAll('.plant-row').map(r => r.find('.plant-name').text())).toEqual([expect.stringContaining('Basil')])
+  })
+
+  it('asks for nothing when the active garden is cleared at logout', async () => {
+    await mountGarden({ zones: [MAIN_ZONE], instances: [] })
+    global.fetch.mockClear()
+
+    setActiveGarden(null)
+    await flushPromises()
+
+    expect(global.fetch).not.toHaveBeenCalled()
+  })
+})
+
 describe('zone picker', () => {
   beforeEach(() => setActiveGarden(GARDEN))
   afterEach(() => vi.restoreAllMocks())

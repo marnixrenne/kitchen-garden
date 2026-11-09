@@ -5,6 +5,7 @@ import { createI18n } from 'vue-i18n'
 import en from '../../i18n/en.js'
 import HomeView from '../HomeView.vue'
 import { setActiveGarden, gardensLoaded, newGardenModal } from '../../stores/garden.js'
+import { addPlantFailed } from '../../stores/zonePicker.js'
 
 const i18n = createI18n({ legacy: false, locale: 'en', messages: { en } })
 
@@ -33,6 +34,7 @@ describe('HomeView adding to the garden', () => {
     vi.restoreAllMocks()
     gardensLoaded.value = false
     newGardenModal.value.open = false
+    addPlantFailed.value = false
   })
 
   it('counts up with every planting added, without ever removing one', async () => {
@@ -74,6 +76,31 @@ describe('HomeView adding to the garden', () => {
     expect(newGardenModal.value.open).toBe(true)
     expect(global.fetch.mock.calls.filter(([, o]) => o?.method === 'POST')).toHaveLength(0)
     expect(global.fetch.mock.calls.some(([u]) => u.includes('/gardens/null'))).toBe(false)
+  })
+
+  it.each([
+    ['the server refuses', () => Promise.resolve({ ok: false, status: 500, json: async () => ({}) })],
+    ['the connection drops', () => Promise.reject(new Error('offline'))],
+  ])('reports a failed add when %s, without counting it', async (_, post) => {
+    const wrapper = await mountExplore()
+    const read = global.fetch
+    global.fetch = vi.fn((url, options) => options?.method === 'POST' ? post() : read(url, options))
+
+    await wrapper.find('.garden-btn').trigger('click')
+    await flushPromises()
+
+    expect(addPlantFailed.value).toBe(true)
+    expect(wrapper.find('.garden-count').exists()).toBe(false)
+  })
+
+  it('clears a reported failure on the next add', async () => {
+    const wrapper = await mountExplore()
+    addPlantFailed.value = true
+
+    await wrapper.find('.garden-btn').trigger('click')
+    await flushPromises()
+
+    expect(addPlantFailed.value).toBe(false)
   })
 
   it('starts from the plantings already in the garden', async () => {

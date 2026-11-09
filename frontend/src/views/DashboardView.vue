@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import ZoneGround from '../components/ZoneGround.vue'
-import { gardens, gardensLoaded, openNewGardenModal } from '../stores/garden.js'
+import { gardens, gardensLoaded, gardensFailed, fetchGardens, openNewGardenModal } from '../stores/garden.js'
 import { zoneLabel } from '../utils/zones.js'
 import { ACTION_ICON, ACTION_LABEL_KEY, buildActionBuckets, openActions, weekRangeLabel } from '../utils/openActions.js'
 
@@ -103,7 +103,12 @@ watch([gardens, gardensLoaded], load, { immediate: true })
       <p v-if="weekLabel && !loading" class="dash-week">{{ weekLabel }}</p>
     </div>
 
-    <div v-if="loading" class="dash-message">{{ t('loading') }}</div>
+    <div v-if="gardensFailed && !gardensLoaded" class="dash-message">
+      <p>{{ t('dashboard.gardensFailed') }}</p>
+      <button class="dash-retry" @click="fetchGardens">{{ t('dashboard.retry') }}</button>
+    </div>
+
+    <div v-else-if="loading" class="dash-message">{{ t('loading') }}</div>
 
     <div v-else-if="gardens.length === 0" class="dash-message">
       <p>{{ t('dashboard.noGardens') }}</p>
@@ -187,7 +192,8 @@ main {
   color: var(--text-soft);
 }
 
-.dash-create {
+.dash-create,
+.dash-retry {
   margin-top: 0.75rem;
   padding: 0.5rem 1.1rem;
   border: none;

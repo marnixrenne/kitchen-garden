@@ -14,6 +14,19 @@ export function csrfHeaders() {
   return token ? { 'X-XSRF-TOKEN': token } : {}
 }
 
+// Calls onExpired the first time the API refuses a user who thinks they are signed in.
+export function watchForExpiredSession(onExpired) {
+  const send = globalThis.fetch
+  globalThis.fetch = async (url, options) => {
+    const res = await send(url, options)
+    if (res.status === 401 && user.value && !String(url).startsWith('/api/auth/')) {
+      user.value = null
+      onExpired()
+    }
+    return res
+  }
+}
+
 export async function checkAuth() {
   const res = await fetch('/api/auth/me')
   user.value = res.ok ? await res.json() : null

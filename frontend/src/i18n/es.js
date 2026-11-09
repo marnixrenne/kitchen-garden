@@ -276,6 +276,7 @@ export default {
     removePlanting: 'Eliminar',
     removePlantingConfirm: '¿Eliminar este {plant} de la zona? También se borrarán su registro y su planificación.',
     removePlantingFailed: 'No se ha podido eliminar la planta. Inténtalo de nuevo.',
+    connectionFailed: 'No se ha podido contactar con el servidor. Comprueba tu conexión e inténtalo de nuevo.',
     job: {
       seeding: 'Sembrar', germination: 'Germinación', harvest: 'Cosechar',
       pruning: 'Podar', fertilizing: 'Abonar', watering: 'Regar',
@@ -420,12 +421,15 @@ export default {
     setSunPrompt: 'Indica la exposición al sol de esta zona para mejores consejos.',
     loadFailed: 'No se han podido cargar las plantas. Inténtalo de nuevo.',
     addFailed: 'No se ha podido añadir la planta. Inténtalo de nuevo.',
+    dismiss: 'Cerrar',
     done: 'Listo',
   },
   dashboard: {
     title:       'Panel',
     noGardens:   'Aún no tienes ningún huerto.',
     createFirst: 'Crea tu primer huerto',
+    gardensFailed: 'No se han podido cargar tus huertos.',
+    retry:       'Reintentar',
     loadFailed:  'No se ha podido cargar este huerto.',
     nothingOpen: 'Nada que hacer esta semana',
     more:        '+{n} más',
@@ -516,6 +520,7 @@ export default {
     password: 'Contraseña',
     submit: 'Iniciar sesión',
     error: 'Usuario o contraseña incorrectos',
+    sessionExpired: 'Tu sesión ha caducado. Inicia sesión de nuevo.',
   },
   signup: {
     title: 'Crear cuenta',

@@ -4,7 +4,7 @@ import { createRouter, createMemoryHistory } from 'vue-router'
 import { createI18n } from 'vue-i18n'
 import en from '../../i18n/en.js'
 import DashboardView from '../DashboardView.vue'
-import { gardens, gardensLoaded, newGardenModal } from '../../stores/garden.js'
+import { gardens, gardensLoaded, gardensFailed, fetchGardens, newGardenModal } from '../../stores/garden.js'
 
 const i18n = createI18n({ legacy: false, locale: 'en', messages: { en } })
 
@@ -156,6 +156,28 @@ describe('DashboardView', () => {
 
     expect(wrapper.find('.dash-failed').exists()).toBe(true)
     expect(wrapper.find('.dash-count').exists()).toBe(false)
+  })
+
+  it.each([
+    ['the server refuses', () => Promise.resolve({ ok: false, status: 500, json: async () => ({}) })],
+    ['the connection drops', () => Promise.reject(new Error('offline'))],
+  ])('says so and offers a retry when the gardens cannot be loaded because %s', async (_, reply) => {
+    global.fetch = vi.fn(reply)
+    await fetchGardens()
+    const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/:p(.*)*', component: { template: '<div />' } }] })
+    const wrapper = mount(DashboardView, { global: { plugins: [router, i18n] } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain(en.dashboard.gardensFailed)
+    expect(wrapper.text()).not.toContain(en.loading)
+
+    global.fetch = vi.fn(async () => ({ ok: true, json: async () => [] }))
+    await wrapper.find('.dash-retry').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain(en.dashboard.gardensFailed)
+    expect(wrapper.find('.dash-create').exists()).toBe(true)
+    gardensFailed.value = false
   })
 
   it('offers to create a first garden when there are none', async () => {

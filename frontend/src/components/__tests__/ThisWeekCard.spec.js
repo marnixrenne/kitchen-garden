@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { createI18n } from 'vue-i18n'
 import en from '../../i18n/en.js'
 import ThisWeekCard from '../ThisWeekCard.vue'
 import { setActiveGarden } from '../../stores/garden.js'
+
+enableAutoUnmount(afterEach)
 
 const i18n = createI18n({ legacy: false, locale: 'en', messages: { en } })
 
@@ -248,5 +250,73 @@ describe('ThisWeekCard', () => {
     expect(plantRows(wrapper)).toHaveLength(1)
     expect(plantRows(wrapper)[0].text()).toContain('Basil')
     expect(wrapper.find('.week-card-title').text()).toBe('1 open action')
+  })
+
+  it('defaults the date of a job to the local day just after midnight', async () => {
+    vi.setSystemTime(new Date(2026, 5, 10, 0, 30))
+    const wrapper = await mountCard({ plan: { 'i-tomato': [planned('watering', '2026-06-10')] } })
+
+    await wrapper.find('.wi-btn--log').trigger('click')
+
+    expect(wrapper.find('#tw-action-date').element.value).toBe('2026-06-10')
+  })
+
+  describe('when the connection drops while saving', () => {
+    const SOW_WEEK = { ...WEEK, actions: [{ type: 'sow', plant: TOMATO }] }
+
+    it.each([
+      ['logging a job', '.wi-btn--log', { plan: { 'i-tomato': [planned('watering', '2026-06-10')] } }],
+      ['sowing', '.wi-btn--seed', { week: SOW_WEEK, lifecycle: {} }],
+      ['advancing a stage', '.wi-btn--advance', { plan: { 'i-tomato': [planned('germination', '2026-06-10')] }, lifecycle: { 'i-tomato': { nextState: 'germinating_indoor' } } }],
+    ])('%s shows an error and can be tried again', async (_, button, config) => {
+      const wrapper = await mountCard(config)
+      await wrapper.find(button).trigger('click')
+      const read = global.fetch
+      global.fetch = vi.fn((url, init) => init?.method ? Promise.reject(new Error('offline')) : read(url, init))
+
+      await wrapper.find('.modal-body').trigger('submit')
+      await flushPromises()
+
+      expect(wrapper.find('.modal-error').text()).toBe(en.garden.connectionFailed)
+      expect(wrapper.find('.modal-save').attributes('disabled')).toBeUndefined()
+    })
+  })
+
+  describe('switching gardens', () => {
+    function replyPerGarden(perGarden) {
+      global.fetch = vi.fn(async (url) => {
+        const [, id, resource] = url.match(/^\/api\/gardens\/([^/]+)\/(.+)$/)
+        await perGarden[id].hold
+        const data = { week: WEEK, instances: INSTANCES, 'plant-log': {}, plan: perGarden[id].plan, lifecycle: SEEDED, details: [TOMATO, BEANS, BASIL] }[resource]
+        return { ok: true, json: async () => data }
+      })
+    }
+    const tomatoJob = { 'i-tomato': [planned('watering', '2026-06-10')] }
+    const basilJob  = { 'i-basil':  [planned('watering', '2026-06-10')] }
+
+    it('shows the jobs of the garden switched to', async () => {
+      const wrapper = await mountCard({ plan: tomatoJob })
+      replyPerGarden({ other: { plan: basilJob } })
+
+      setActiveGarden('other')
+      await flushPromises()
+
+      expect(plantRows(wrapper).map(r => r.find('.wi-name').text())).toEqual(['Basil'])
+    })
+
+    it('ignores a slow reply from the garden switched away from', async () => {
+      const wrapper = await mountCard({ plan: {} })
+      let release
+      replyPerGarden({ slow: { plan: tomatoJob, hold: new Promise(r => { release = r }) }, fast: { plan: basilJob } })
+
+      setActiveGarden('slow')
+      await flushPromises()
+      setActiveGarden('fast')
+      await flushPromises()
+      release()
+      await flushPromises()
+
+      expect(plantRows(wrapper).map(r => r.find('.wi-name').text())).toEqual(['Basil'])
+    })
   })
 })
