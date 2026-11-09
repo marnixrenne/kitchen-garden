@@ -1,0 +1,125 @@
+.eg-header {
+  padding: 0.85rem 1.25rem;
+  background: var(--green-pale);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--green-dark);
+}
+
+.eg-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1.5px solid var(--green-pale);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: var(--text);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.eg-input:focus { border-color: var(--green-mid); }
+
+.eg-save {
+  padding: 0.4rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--green-mid);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.eg-save:hover:not(:disabled) { background: var(--green-dark); }
+
+.eg-save:disabled { opacity: 0.5; cursor: default; }
+
+.dg-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+
+.dg-modal {
+  background: #fff;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+.dg-header {
+  padding: 0.85rem 1.25rem;
+  background: #fee2e2;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+.dg-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dg-warning {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.dg-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.dg-cancel {
+  padding: 0.4rem 0.9rem;
+  border: 1.5px solid var(--green-pale);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dg-cancel:hover:not(:disabled) { border-color: var(--green-mid); color: var(--green-dark); }
+
+.dg-confirm {
+  padding: 0.4rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.dg-confirm:hover:not(:disabled) { opacity: 0.85; }
+
+.dg-confirm:disabled, .dg-cancel:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.bf-field { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; min-width: 0; }
+
+.bf-label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); }
+
+.bf-row { display: flex; gap: 0.75rem; }
+
+.bf-radio { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+
+.bf-error { font-size: 0.82rem; color: #b91c1c; }
+
+.dg-body .eg-input { background: #fff; }

@@ -71,14 +71,23 @@ object PlantPlanCalculator {
             seedDate.plusDays(daysToMaturityMin.toLong()) to seedDate.plusDays(endDays.toLong())
         }
         harvestMonths.isNotEmpty() -> {
+            val months     = harvestMonths.distinct().sorted()
             val seedMonth  = seedDate.monthValue
-            val firstMonth = harvestMonths.firstOrNull { it > seedMonth } ?: harvestMonths.first()
-            val lastMonth  = harvestMonths.last()
+            val firstMonth = months.firstOrNull { it > seedMonth } ?: months.first()
             val year       = if (firstMonth <= seedMonth) seedDate.year + 1 else seedDate.year
-            val endYear    = if (lastMonth < firstMonth) year + 1 else year
             LocalDate.of(year, firstMonth, 1) to
-                LocalDate.of(endYear, lastMonth, YearMonth.of(endYear, lastMonth).lengthOfMonth())
+                YearMonth.of(year, firstMonth).plusMonths(monthsUntilSeasonEnd(months, firstMonth)).atEndOfMonth()
         }
         else -> null
+    }
+
+    /**
+     * The season runs up to the longest stretch without harvest in the year. A shorter
+     * pause doesn't end it, and a season can continue past New Year.
+     */
+    private fun monthsUntilSeasonEnd(months: List<Int>, firstMonth: Int): Long {
+        val offsets = months.map { (it - firstMonth + 12) % 12 }.sorted()
+        val gaps = offsets.zipWithNext { a, b -> b - a } + (12 - offsets.last())
+        return offsets[gaps.lastIndexOf(gaps.max())].toLong()
     }
 }

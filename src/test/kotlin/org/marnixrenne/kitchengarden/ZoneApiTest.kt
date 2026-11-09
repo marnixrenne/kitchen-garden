@@ -529,4 +529,23 @@ class ZoneApiTest : IntegrationTestBase() {
             status { isNotFound() }
         }
     }
+
+    @Test
+    fun `a move and an edited move refuse an overlong comment`() {
+        val gardenId = createGarden()
+        addPlant(gardenId, "Carrot")
+        val instance = instanceId(gardenId, "Carrot")
+        val roots = createZoneId(gardenId, "Roots")
+        val tooLong = "x".repeat(1001)
+
+        move(gardenId, instance, roots, ""","comment":"$tooLong"""").andExpect { status { isBadRequest() } }
+
+        move(gardenId, instance, roots).andExpect { status { is2xxSuccessful() } }
+        val entryId = movedEntries(instance).single()["id"] as String
+        mvc.patch("/api/gardens/$gardenId/plant-log/$entryId") {
+            with(user("admin")); with(csrf())
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"date":"2025-06-10","comment":"$tooLong"}"""
+        }.andExpect { status { isBadRequest() } }
+    }
 }

@@ -15,7 +15,7 @@ import java.util.UUID
 @Repository
 class ExposedPlantLogRepository : PlantLogRepository {
 
-    override fun save(userId: UserId, gardenId: GardenId, request: PlantLogRequest): PlantLogResponse {
+    override fun save(userId: UserId, gardenId: GardenId, request: PlantLogRequest): PlantLogResponse? {
         return try {
             doSave(userId, gardenId, request)
         } catch (e: ExposedSQLException) {
@@ -25,7 +25,7 @@ class ExposedPlantLogRepository : PlantLogRepository {
         }
     }
 
-    private fun doSave(userId: UserId, gardenId: GardenId, request: PlantLogRequest): PlantLogResponse = transaction {
+    private fun doSave(userId: UserId, gardenId: GardenId, request: PlantLogRequest): PlantLogResponse? = transaction {
         val instanceRow = (GardenPlantInstances innerJoin Garden)
             .select(GardenPlantInstances.plantId)
             .where {
@@ -33,7 +33,7 @@ class ExposedPlantLogRepository : PlantLogRepository {
                 (GardenPlantInstances.gardenId eq gardenId.value) and
                 (Garden.userId eq userId.value)
             }
-            .firstOrNull() ?: error("Instance ${request.instanceId} not found in garden ${gardenId} for user")
+            .firstOrNull() ?: return@transaction null
         val plantId = instanceRow[GardenPlantInstances.plantId]
 
         val initialState = when (request.action) {
