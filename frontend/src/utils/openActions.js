@@ -28,7 +28,9 @@ function planDateRange(entry, formatDate) {
 // Everything a Garden has to do in the current week, keyed by action in ACTION_ORDER.
 // Each item carries the zoneId of its Plant instance.
 export function buildActionBuckets({ weekSummary, instances, plantLog, plantPlan, lifecycle, plants }, formatDate) {
-  const year = new Date().getFullYear()
+  const now = new Date()
+  // In the first days of January the current week can still have started in December
+  const year = weekSummary.weekStartMonth > now.getMonth() + 1 ? now.getFullYear() - 1 : now.getFullYear()
   const weekStart = new Date(year, weekSummary.weekStartMonth - 1, weekSummary.weekStartDay)
   let   weekEnd   = new Date(year, weekSummary.weekEndMonth   - 1, weekSummary.weekEndDay)
   if (weekEnd < weekStart) weekEnd = new Date(year + 1, weekSummary.weekEndMonth - 1, weekSummary.weekEndDay)

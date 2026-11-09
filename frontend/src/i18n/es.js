@@ -425,7 +425,7 @@ export default {
   dashboard: {
     title:       'Panel',
     noGardens:   'Aún no tienes ningún huerto.',
-    explore:     'Explorar plantas',
+    createFirst: 'Crea tu primer huerto',
     loadFailed:  'No se ha podido cargar este huerto.',
     nothingOpen: 'Nada que hacer esta semana',
     more:        '+{n} más',

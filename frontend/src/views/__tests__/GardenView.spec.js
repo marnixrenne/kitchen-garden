@@ -226,6 +226,16 @@ describe('zone picker', () => {
 
     await expect(choice).resolves.toBeNull()
   })
+
+  it('cancels an open question when a new one is asked', async () => {
+    mountPicker([MAIN_ZONE, HERBS_ZONE])
+
+    const first = chooseZone(TOMATO.id)
+    await flushPromises()
+    chooseZone(BASIL.id)
+
+    await expect(first).resolves.toBeNull()
+  })
 })
 
 describe('GardenView scoped to one zone', () => {

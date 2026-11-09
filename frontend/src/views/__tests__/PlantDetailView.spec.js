@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { createI18n } from 'vue-i18n'
 import PlantDetailView from '../PlantDetailView.vue'
+import { setActiveGarden } from '../../stores/garden.js'
 
 // ---------------------------------------------------------------------------
 // Minimal i18n setup
@@ -133,6 +134,8 @@ async function mountAt(router, plantId, gardenIds = []) {
 // Tests
 // ---------------------------------------------------------------------------
 describe('PlantDetailView', () => {
+  beforeEach(() => setActiveGarden('garden-1'))
+
   afterEach(() => {
     vi.restoreAllMocks()
   })
@@ -179,6 +182,18 @@ describe('PlantDetailView', () => {
     expect(url).toContain(`/plants/${TOMATO.companions[0].id}`)
     expect(options.method).toBe('POST')
     expect(wrapper.find('.garden-count').text()).toBe('1×')
+  })
+
+  it('adds one planting when the button is clicked twice in quick succession', async () => {
+    const router = makeRouter()
+    const wrapper = await mountAt(router, TOMATO.id, [])
+    const add = wrapper.find('.garden-btn')
+
+    add.trigger('click')
+    add.trigger('click')
+    await flushPromises()
+
+    expect(global.fetch.mock.calls.filter(([, o]) => o?.method === 'POST')).toHaveLength(1)
   })
 
   it('adds another planting of a companion already in the garden, never removing it', async () => {

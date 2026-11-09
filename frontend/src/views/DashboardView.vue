@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import ZoneGround from '../components/ZoneGround.vue'
-import { gardens, gardensLoaded } from '../stores/garden.js'
+import { gardens, gardensLoaded, openNewGardenModal } from '../stores/garden.js'
 import { zoneLabel } from '../utils/zones.js'
 import { ACTION_ICON, ACTION_LABEL_KEY, buildActionBuckets, openActions, weekRangeLabel } from '../utils/openActions.js'
 
@@ -107,7 +107,7 @@ watch([gardens, gardensLoaded], load, { immediate: true })
 
     <div v-else-if="gardens.length === 0" class="dash-message">
       <p>{{ t('dashboard.noGardens') }}</p>
-      <RouterLink class="dash-explore" to="/discover">{{ t('dashboard.explore') }}</RouterLink>
+      <button class="dash-create" @click="openNewGardenModal">{{ t('dashboard.createFirst') }}</button>
     </div>
 
     <template v-else>
@@ -187,11 +187,16 @@ main {
   color: var(--text-soft);
 }
 
-.dash-explore {
-  display: inline-block;
+.dash-create {
   margin-top: 0.75rem;
+  padding: 0.5rem 1.1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--green-mid);
+  color: #fff;
+  font-size: 0.9rem;
   font-weight: 600;
-  color: var(--green-dark);
+  cursor: pointer;
 }
 
 .dash-garden + .dash-garden {

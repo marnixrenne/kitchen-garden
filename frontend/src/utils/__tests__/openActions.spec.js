@@ -100,4 +100,28 @@ describe('open actions', () => {
 
     expect(open).toHaveLength(0)
   })
+
+  describe('in a week that spans New Year', () => {
+    const NEW_YEAR_WEEK = { weekStartDay: 28, weekStartMonth: 12, weekEndDay: 3, weekEndMonth: 1, actions: [] }
+    const openOn = (today, date) => {
+      vi.setSystemTime(today)
+      return openActions(buildActionBuckets(data({ weekSummary: NEW_YEAR_WEEK, plantPlan: { 'i-tomato': [water(date)] } }), formatDate))
+    }
+
+    it('finds a job due in January, once it is January', () => {
+      expect(openOn(new Date(2027, 0, 2), '2027-01-02')).toHaveLength(1)
+    })
+
+    it('finds a job due in December, once it is January', () => {
+      expect(openOn(new Date(2027, 0, 2), '2026-12-30')).toHaveLength(1)
+    })
+
+    it('finds a job due in January while it is still December', () => {
+      expect(openOn(new Date(2026, 11, 30), '2027-01-02')).toHaveLength(1)
+    })
+
+    it('leaves out a job a year away', () => {
+      expect(openOn(new Date(2027, 0, 2), '2027-12-30')).toHaveLength(0)
+    })
+  })
 })

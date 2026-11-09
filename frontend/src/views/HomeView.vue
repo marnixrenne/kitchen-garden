@@ -4,9 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import MonthSelector from '../components/MonthSelector.vue'
 import PlantList from '../components/PlantList.vue'
-import { csrfHeaders } from '../stores/auth.js'
 import { activeGardenId } from '../stores/garden.js'
-import { chooseZone, addPlantUrl } from '../stores/zonePicker.js'
+import { addToActiveGarden } from '../stores/zonePicker.js'
 import { plantCounts } from '../utils/plantings.js'
 
 const CATEGORY_ORDER = ['Fruiting', 'Leafy', 'Brassica', 'Root', 'Legume', 'Herb', 'Flower', 'Sea', 'Fruit']
@@ -63,10 +62,7 @@ async function fetchGarden() {
 }
 
 async function addToGarden(plantId) {
-  const zoneId = await chooseZone(plantId)
-  if (zoneId === null) return
-  const res = await fetch(addPlantUrl(plantId, zoneId), { method: 'POST', headers: csrfHeaders() })
-  if (res.ok) plantings.value = { ...plantings.value, [plantId]: (plantings.value[plantId] ?? 0) + 1 }
+  if (await addToActiveGarden(plantId)) plantings.value = { ...plantings.value, [plantId]: (plantings.value[plantId] ?? 0) + 1 }
 }
 
 async function fetchPlants(month) {
